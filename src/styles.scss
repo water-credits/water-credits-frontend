@@ -1,0 +1,44 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import './theme/variables';
+@import './theme/mixins';
+@import './theme/utilities';
+
+:root {
+  --font-family-sans: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+body {
+  @apply bg-slate-50 dark:bg-dark-bg text-slate-900 dark:text-slate-100 font-sans;
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  @apply font-semibold tracking-tight;
+}
+
+a {
+  @apply text-stellar-blue hover:text-stellar-blue-light transition-colors;
+  text-decoration: none;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-slate-300 dark:bg-slate-700 rounded-full;
+  &:hover {
+    @apply bg-slate-400 dark:bg-slate-600;
+  }
+}
