@@ -59,31 +59,122 @@ export const routes: Routes = [
       },
       {
         path: 'sensors',
-        loadComponent: () => import('./features/sensors/sensors-dashboard/sensors-dashboard').then(m => m.SensorsDashboardComponent)
+        children: [
+          {
+            path: '',
+            loadComponent: () => import('./features/sensors/sensors-dashboard/sensors-dashboard').then(m => m.SensorsDashboardComponent)
+          },
+          {
+            path: 'config',
+            loadComponent: () => import('./features/sensors/sensor-config/sensor-config').then(m => m.SensorConfigComponent)
+          }
+        ]
       },
       {
         path: 'credits',
-        loadComponent: () => import('./features/credits/credits-portfolio/credits-portfolio').then(m => m.CreditsPortfolioComponent)
+        children: [
+          {
+            path: '',
+            loadComponent: () => import('./features/credits/credits-portfolio/credits-portfolio').then(m => m.CreditsPortfolioComponent)
+          },
+          {
+            path: ':id',
+            loadComponent: () => import('./features/credits/credit-detail/credit-detail').then(m => m.CreditDetailComponent)
+          }
+        ]
       },
       {
         path: 'marketplace',
-        loadComponent: () => import('./features/marketplace/marketplace-listings/marketplace-listings').then(m => m.MarketplaceListingsComponent)
+        children: [
+          {
+            path: '',
+            loadComponent: () => import('./features/marketplace/marketplace-listings/marketplace-listings').then(m => m.MarketplaceListingsComponent)
+          },
+          {
+            path: 'new',
+            loadComponent: () => import('./features/marketplace/marketplace-create-listing/marketplace-create-listing').then(m => m.MarketplaceCreateListingComponent)
+          },
+          {
+            path: 'orderbook/:projectId',
+            loadComponent: () => import('./features/marketplace/marketplace-order-book/marketplace-order-book').then(m => m.MarketplaceOrderBookComponent)
+          }
+        ]
       },
       {
         path: 'retirement',
-        loadComponent: () => import('./features/retirement/retirement-history/retirement-history').then(m => m.RetirementHistoryComponent)
+        children: [
+          {
+            path: '',
+            loadComponent: () => import('./features/retirement/retirement-history/retirement-history').then(m => m.RetirementHistoryComponent)
+          },
+          {
+            path: 'new',
+            loadComponent: () => import('./features/retirement/retirement-form/retirement-form').then(m => m.RetirementFormComponent)
+          },
+          {
+            path: ':id/certificate',
+            loadComponent: () => import('./features/retirement/retirement-certificate/retirement-certificate').then(m => m.RetirementCertificateComponent)
+          }
+        ]
       },
       {
         path: 'farmers',
-        loadComponent: () => import('./features/farmers/farmer-dashboard/farmer-dashboard').then(m => m.FarmerDashboardComponent)
+        children: [
+          {
+            path: '',
+            loadComponent: () => import('./features/farmers/farmer-dashboard/farmer-dashboard').then(m => m.FarmerDashboardComponent)
+          },
+          {
+            path: 'parcels',
+            loadComponent: () => import('./features/farmers/farmer-parcels/farmer-parcels').then(m => m.FarmerParcelsComponent)
+          },
+          {
+            path: 'practices',
+            loadComponent: () => import('./features/farmers/farmer-practices/farmer-practices').then(m => m.FarmerPracticesComponent)
+          },
+          {
+            path: 'earnings',
+            loadComponent: () => import('./features/farmers/farmer-earnings/farmer-earnings').then(m => m.FarmerEarningsComponent)
+          }
+        ]
       },
       {
         path: 'governance',
-        loadComponent: () => import('./features/governance/governance-dashboard/governance-dashboard').then(m => m.GovernanceDashboardComponent)
+        children: [
+          {
+            path: '',
+            loadComponent: () => import('./features/governance/governance-dashboard/governance-dashboard').then(m => m.GovernanceDashboardComponent)
+          },
+          {
+            path: 'new',
+            loadComponent: () => import('./features/governance/proposal-form/proposal-form').then(m => m.ProposalFormComponent)
+          },
+          {
+            path: ':id',
+            loadComponent: () => import('./features/governance/proposal-detail/proposal-detail').then(m => m.ProposalDetailComponent)
+          }
+        ]
       },
       {
         path: 'admin',
-        loadComponent: () => import('./features/admin/admin-dashboard/admin-dashboard').then(m => m.AdminDashboardComponent)
+        children: [
+          {
+            path: '',
+            loadComponent: () => import('./features/admin/admin-dashboard/admin-dashboard').then(m => m.AdminDashboardComponent)
+          },
+          {
+            path: 'oracles',
+            loadComponent: () => import('./features/admin/admin-oracles/admin-oracles').then(m => m.AdminOraclesComponent)
+          },
+          {
+            path: 'fees',
+            loadComponent: () => import('./features/admin/admin-fees/admin-fees').then(m => m.AdminFeesComponent)
+          },
+          {
+            path: 'users',
+            loadComponent: () => import('./features/admin/admin-users/admin-users').then(m => m.AdminUsersComponent)
+          }
+        ]
       }
     ]
   },
