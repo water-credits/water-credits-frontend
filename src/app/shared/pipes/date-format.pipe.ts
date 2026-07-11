@@ -28,6 +28,6 @@ export class DateFormatPipe implements PipeTransform {
         : format === 'long'
           ? { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }
           : { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' };
-    return date.toLocaleDateString('en-US', options);
+    return date.toLocaleDateString(navigator.language, options);
   }
 }
