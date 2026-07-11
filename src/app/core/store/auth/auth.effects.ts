@@ -24,8 +24,9 @@ export class AuthEffects {
           if (!signature) throw new Error('Signature failed');
           const result = await this.authService.loginWithCreds(wallet, signature, challenge);
           return AuthActions.loginSuccess({ user: result.user, token: result.token });
-        } catch (error: any) {
-          return AuthActions.loginFailure({ error: error.message || 'Login failed' });
+        } catch (error) {
+          const message = error instanceof Error ? error.message : 'Login failed';
+          return AuthActions.loginFailure({ error: message });
         }
       }),
     ),
@@ -77,10 +78,9 @@ export class AuthEffects {
         try {
           const user = await this.authService.getCurrentUser();
           return AuthActions.getCurrentUserSuccess({ user });
-        } catch (error: any) {
-          return AuthActions.getCurrentUserFailure({
-            error: error.message || 'Failed to fetch user',
-          });
+        } catch (error) {
+          const message = error instanceof Error ? error.message : 'Failed to fetch user';
+          return AuthActions.getCurrentUserFailure({ error: message });
         }
       }),
     ),

@@ -2,12 +2,13 @@ import { Injectable } from '@angular/core';
 import { ApiService } from './api.service';
 import { WalletService } from './wallet.service';
 import { BehaviorSubject } from 'rxjs';
+import { User } from '../models/user.model';
 
 @Injectable({
   providedIn: 'root',
 })
 export class AuthService {
-  private userSubject = new BehaviorSubject<any | null>(null);
+  private userSubject = new BehaviorSubject<User | null>(null);
   public user$ = this.userSubject.asObservable();
 
   constructor(
@@ -29,7 +30,7 @@ export class AuthService {
       });
       const signature = await this.walletService.signChallenge(challenge);
       if (!signature) return false;
-      const { token, user } = await this.apiService.post<{ token: string; user: any }>(
+      const { token, user } = await this.apiService.post<{ token: string; user: User }>(
         '/auth/login',
         { wallet, signature, challenge },
       );
@@ -50,8 +51,8 @@ export class AuthService {
     wallet: string,
     signature: string,
     challenge: string,
-  ): Promise<{ token: string; user: any }> {
-    return this.apiService.post<{ token: string; user: any }>('/auth/login', {
+  ): Promise<{ token: string; user: User }> {
+    return this.apiService.post<{ token: string; user: User }>('/auth/login', {
       wallet,
       signature,
       challenge,
@@ -62,8 +63,8 @@ export class AuthService {
     wallet: string,
     email?: string,
     displayName?: string,
-  ): Promise<{ token: string; user: any }> {
-    return this.apiService.post<{ token: string; user: any }>('/auth/register', {
+  ): Promise<{ token: string; user: User }> {
+    return this.apiService.post<{ token: string; user: User }>('/auth/register', {
       wallet,
       email,
       displayName,
@@ -78,15 +79,15 @@ export class AuthService {
 
   async fetchCurrentUser(): Promise<void> {
     try {
-      const user = await this.apiService.get<any>('/users/me');
+      const user = await this.apiService.get<User>('/users/me');
       this.userSubject.next(user);
     } catch {
       this.logout();
     }
   }
 
-  async getCurrentUser(): Promise<any> {
-    return this.apiService.get<any>('/users/me');
+  async getCurrentUser(): Promise<User> {
+    return this.apiService.get<User>('/users/me');
   }
 
   isLoggedIn(): boolean {
