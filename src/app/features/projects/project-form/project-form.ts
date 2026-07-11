@@ -8,12 +8,7 @@ import { ProjectsService } from '../../../core/services/projects.service';
 import { ProjectCreate } from '../../../core/models/project.model';
 import * as ProjectsActions from '../../../core/store/projects/projects.actions';
 import { LucideAngularModule, ChevronLeft, Check, Droplets, MapPin, FileText, ClipboardList } from 'lucide-angular';
-
-interface FormStep {
-  label: string;
-  icon: any;
-  description: string;
-}
+import { FormStep } from '../../../core/models/shared-interfaces.model';
 
 @Component({
   selector: 'app-project-form',

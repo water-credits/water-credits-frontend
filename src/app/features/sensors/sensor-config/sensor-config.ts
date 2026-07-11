@@ -8,17 +8,7 @@ import { SensorDevice } from '../../../core/models/sensor-reading.model';
 import { DataTableComponent, ColumnDef } from '../../../shared/components/data-table/data-table';
 import { LoadingSpinnerComponent } from '../../../shared/components/loading-spinner/loading-spinner';
 import { LucideAngularModule, Plus, ChevronLeft, Save, X, Gauge, Activity, Droplets, Thermometer, Wind, Atom, FlaskConical, Beaker } from 'lucide-angular';
-
-interface AlertThreshold {
-  key: string;
-  label: string;
-  unit: string;
-  enabled: boolean;
-  min: number;
-  max: number;
-  warningMin: number;
-  warningMax: number;
-}
+import { AlertThreshold } from '../../../core/models/shared-interfaces.model';
 
 const DEFAULT_THRESHOLDS: AlertThreshold[] = [
   { key: 'ph', label: 'pH', unit: '', enabled: true, min: 6.5, max: 8.5, warningMin: 6.0, warningMax: 9.0 },

@@ -5,13 +5,7 @@ import { NgIf } from '@angular/common';
 import { AppState } from '../../../core/store/app.state';
 import { LucideAngularModule, LayoutDashboard, Leaf, Radio, Coins, ShoppingCart, ArrowLeftRight, Sprout, Vote, ShieldCheck, ChevronLeft } from 'lucide-angular';
 import { toggleSidebar } from '../../../core/store/ui/ui.actions';
-
-interface NavItem {
-  label: string;
-  route: string;
-  icon: any;
-  roles?: string[];
-}
+import { NavItem } from '../../../core/models/shared-interfaces.model';
 
 @Component({
   selector: 'app-sidebar',

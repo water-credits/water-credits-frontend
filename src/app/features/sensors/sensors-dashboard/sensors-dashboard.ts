@@ -16,15 +16,7 @@ import { DateFormatPipe } from '../../../shared/pipes/date-format.pipe';
 import { NumberAbbreviatePipe } from '../../../shared/pipes/number-abbreviate.pipe';
 import * as SensorsActions from '../../../core/store/sensors/sensors.actions';
 import { LucideAngularModule, Activity, Droplets, Thermometer, Gauge, Wind, Atom, Beaker, FlaskConical, RefreshCw, Settings, Radio } from 'lucide-angular';
-
-interface ParameterConfig {
-  key: string;
-  label: string;
-  unit: string;
-  icon: any;
-  color: string;
-  decimals: number;
-}
+import { ParameterConfig } from '../../../core/models/shared-interfaces.model';
 
 const PARAMETER_CONFIGS: ParameterConfig[] = [
   { key: 'ph', label: 'pH', unit: '', icon: Beaker, color: '#7B2FBE', decimals: 2 },

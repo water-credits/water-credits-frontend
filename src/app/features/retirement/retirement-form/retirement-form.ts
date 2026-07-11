@@ -17,12 +17,7 @@ import { NotificationService } from '../../../core/services/notification.service
 import { RetirementRequest } from '../../../core/models/retirement.model';
 import { Project } from '../../../core/models/project.model';
 import { NumberAbbreviatePipe } from '../../../shared/pipes/number-abbreviate.pipe';
-
-interface FormStep {
-  label: string;
-  icon: any;
-  description: string;
-}
+import { FormStep } from '../../../core/models/shared-interfaces.model';
 
 const PURPOSE_OPTIONS = [
   'Carbon Offset',
