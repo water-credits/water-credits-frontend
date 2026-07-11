@@ -139,8 +139,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
   ) {}
 
   async ngOnInit(): Promise<void> {
-    this.wsService.connected$.pipe(takeUntil(this.destroy$)).subscribe(connected => {
-      this.wsConnected = connected;
+    this.wsService.connected$.pipe(takeUntil(this.destroy$)).subscribe({
+      next: (connected) => {
+        this.wsConnected = connected;
+      },
+      error: () => {},
     });
     await this.loadData();
   }

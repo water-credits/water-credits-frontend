@@ -198,8 +198,11 @@ export class ProjectDetailComponent implements OnInit, OnDestroy {
     this.store
       .select(selectSelectedProject)
       .pipe(takeUntil(this.destroy$))
-      .subscribe((project) => {
-        this.project = project;
+      .subscribe({
+        next: (project) => {
+          this.project = project;
+        },
+        error: () => {},
       });
   }
 

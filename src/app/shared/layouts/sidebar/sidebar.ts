@@ -45,8 +45,11 @@ export class SidebarComponent {
   protected readonly ChevronLeftIcon = ChevronLeft;
 
   constructor(private store: Store<AppState>) {
-    this.store.select(state => state.ui.sidebarOpen).subscribe(open => {
-      this.isOpen = open;
+    this.store.select(state => state.ui.sidebarOpen).subscribe({
+      next: (open) => {
+        this.isOpen = open;
+      },
+      error: () => {},
     });
   }
 

@@ -196,18 +196,27 @@ export class SensorsDashboardComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    this.wsService.connected$.pipe(takeUntil(this.destroy$)).subscribe(connected => {
-      this.wsConnected = connected;
+    this.wsService.connected$.pipe(takeUntil(this.destroy$)).subscribe({
+      next: (connected) => {
+        this.wsConnected = connected;
+      },
+      error: () => {},
     });
 
-    this.wsService.on('sensor:reading').pipe(takeUntil(this.destroy$)).subscribe((reading: SensorReading) => {
-      this.store.dispatch(SensorsActions.addRealtimeReading({ reading }));
+    this.wsService.on('sensor:reading').pipe(takeUntil(this.destroy$)).subscribe({
+      next: (reading: SensorReading) => {
+        this.store.dispatch(SensorsActions.addRealtimeReading({ reading }));
+      },
+      error: () => {},
     });
 
-    this.store.select(state => (state as any).sensors).pipe(takeUntil(this.destroy$)).subscribe(sensors => {
-      this.devices = sensors.devices;
-      this.recentReadings = sensors.recentReadings;
-      this.updateDerivedData();
+    this.store.select(state => (state as any).sensors).pipe(takeUntil(this.destroy$)).subscribe({
+      next: (sensors) => {
+        this.devices = sensors.devices;
+        this.recentReadings = sensors.recentReadings;
+        this.updateDerivedData();
+      },
+      error: () => {},
     });
 
     this.loadData();
@@ -267,8 +276,11 @@ export class SensorsDashboardComponent implements OnInit, OnDestroy {
   protected toggleAutoRefresh(): void {
     this.autoRefresh = !this.autoRefresh;
     if (this.autoRefresh) {
-      interval(this.refreshInterval).pipe(takeUntil(this.destroy$)).subscribe(() => {
-        this.loadData();
+      interval(this.refreshInterval).pipe(takeUntil(this.destroy$)).subscribe({
+        next: () => {
+          this.loadData();
+        },
+        error: () => {},
       });
       this.notificationService.info('Auto-refresh enabled', `Updating every ${this.refreshInterval / 1000}s`);
     }

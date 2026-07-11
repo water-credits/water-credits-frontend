@@ -47,8 +47,11 @@ export class SearchInputComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.subscription = this.searchSubject
       .pipe(debounceTime(this.debounceMs), distinctUntilChanged())
-      .subscribe((value) => {
-        this.search.emit(value);
+      .subscribe({
+        next: (value) => {
+          this.search.emit(value);
+        },
+        error: () => {},
       });
   }
 
