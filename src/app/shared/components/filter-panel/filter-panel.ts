@@ -8,7 +8,7 @@ export interface FilterOption {
   label: string;
   type: 'select' | 'text' | 'range';
   options?: { value: string; label: string }[];
-  value: any;
+  value: string | number | { min?: number; max?: number };
 }
 
 @Component({
@@ -50,7 +50,7 @@ export interface FilterOption {
 })
 export class FilterPanelComponent {
   @Input() filters: FilterOption[] = [];
-  @Output() filterChange = new EventEmitter<{ key: string; value: any }>();
+  @Output() filterChange = new EventEmitter<{ key: string; value: string | number | { min?: number; max?: number } }>();
   @Output() apply = new EventEmitter<void>();
   @Output() reset = new EventEmitter<void>();
 
@@ -58,12 +58,12 @@ export class FilterPanelComponent {
   protected readonly RotateCcwIcon = RotateCcw;
   protected readonly XIcon = X;
 
-  onFilterChange(key: string, value: any): void {
+  onFilterChange(key: string, value: string | number): void {
     this.filterChange.emit({ key, value });
   }
 
-  onRangeChange(key: string, bound: 'min' | 'max', value: any): void {
+  onRangeChange(key: string, bound: 'min' | 'max', value: number): void {
     const current = this.filters.find(f => f.key === key)?.value || {};
-    this.filterChange.emit({ key, value: { ...current, [bound]: value } });
+    this.filterChange.emit({ key, value: { ...(current as { min?: number; max?: number }), [bound]: value } });
   }
 }
