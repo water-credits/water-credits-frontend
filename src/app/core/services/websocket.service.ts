@@ -48,11 +48,11 @@ export class WebsocketService {
     }
   }
 
-  on(event: string): Observable<any> {
-    return new Observable(observer => {
+  on<T = unknown>(event: string): Observable<T> {
+    return new Observable<T>(observer => {
       if (!this.socket) return;
       
-      this.socket.on(event, (data) => {
+      this.socket.on(event, (data: T) => {
         observer.next(data);
       });
 
@@ -64,7 +64,7 @@ export class WebsocketService {
     });
   }
 
-  emit(event: string, data: any): void {
+  emit(event: string, data?: unknown): void {
     if (this.socket) {
       this.socket.emit(event, data);
     }
