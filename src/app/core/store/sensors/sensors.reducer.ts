@@ -2,7 +2,7 @@ import { createReducer, on } from '@ngrx/store';
 import * as SensorsActions from './sensors.actions';
 import { SensorDevice, SensorReading, ReadingSummary } from '../../models/sensor-reading.model';
 
-export interface SensorsState {
+export export interface SensorsState {
   devices: SensorDevice[];
   readings: SensorReading[];
   recentReadings: SensorReading[];
