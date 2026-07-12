@@ -53,3 +53,16 @@ export interface ReadingSummary {
     temperature?: number;
   };
 }
+
+export interface SensorReadingSubmission {
+  deviceId: string;
+  projectId: string;
+  ph?: number;
+  turbidity?: number;
+  dissolvedOxygen?: number;
+  flowRate?: number;
+  nitrogen?: number;
+  phosphorus?: number;
+  temperature?: number;
+  signature: string;
+}

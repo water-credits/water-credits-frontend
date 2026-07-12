@@ -5,6 +5,7 @@ import {
   SensorReading,
   ReadingBatch,
   ReadingSummary,
+  SensorReadingSubmission,
 } from '../models/sensor-reading.model';
 
 @Injectable({ providedIn: 'root' })
@@ -44,7 +45,7 @@ export class SensorsService {
     return this.api.get<ReadingBatch[]>('/sensors/batches', { params: { projectId } });
   }
 
-  async submitReading(data: any): Promise<SensorReading> {
+  async submitReading(data: SensorReadingSubmission): Promise<SensorReading> {
     return this.api.post<SensorReading>('/sensors/readings', data);
   }
 }
