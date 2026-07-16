@@ -1,6 +1,7 @@
-import { Component, Input, Output, EventEmitter, Type } from '@angular/core';
+import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { NgIf } from '@angular/common';
 import { LucideAngularModule, Inbox } from 'lucide-angular';
+import { LucideIconData } from '../../../core/models/shared-interfaces.model';
 
 @Component({
   selector: 'app-empty-state',
@@ -24,6 +25,6 @@ export class EmptyStateComponent {
   @Input() title = 'Nothing here yet';
   @Input() message = '';
   @Input() actionLabel = '';
-  @Input() icon: Type<unknown> = Inbox;
+  @Input() icon: LucideIconData = Inbox;
   @Output() action = new EventEmitter<void>();
 }

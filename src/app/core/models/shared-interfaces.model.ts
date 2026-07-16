@@ -1,15 +1,19 @@
-import { Type } from '@angular/core';
+/**
+ * Type alias for Lucide icon data.
+ * Matches the internal LucideIconData type from lucide-angular.
+ */
+export type LucideIconData = readonly (readonly [string, Record<string, string | number>])[];
 
 export interface NavItem {
   label: string;
   route: string;
-  icon: Type<unknown>;
+  icon: LucideIconData;
   roles?: string[];
 }
 
 export interface FormStep {
   label: string;
-  icon: Type<unknown>;
+  icon: LucideIconData;
   description: string;
 }
 
@@ -17,7 +21,7 @@ export interface ParameterConfig {
   key: string;
   label: string;
   unit: string;
-  icon: Type<unknown>;
+  icon: LucideIconData;
   color: string;
   decimals: number;
 }

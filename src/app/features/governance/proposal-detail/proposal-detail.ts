@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { NgIf, NgClass } from '@angular/common';
+import { NgIf, NgClass, NgFor } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
   LucideAngularModule,
@@ -26,6 +26,7 @@ import { Proposal, ProposalStatus, ProposalActionType } from '../../../core/mode
   imports: [
     NgIf,
     NgClass,
+    NgFor,
     RouterLink,
     LucideAngularModule,
     StatusBadgeComponent,

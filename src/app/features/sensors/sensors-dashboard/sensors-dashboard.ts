@@ -11,21 +11,65 @@ import { DataTableComponent, ColumnDef } from '../../../shared/components/data-t
 import { StatusBadgeComponent } from '../../../shared/components/status-badge/status-badge';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state';
 import { LoadingSpinnerComponent } from '../../../shared/components/loading-spinner/loading-spinner';
-import { SensorChartComponent, ChartSeries } from '../../../shared/components/sensor-chart/sensor-chart';
+import {
+  SensorChartComponent,
+  ChartSeries,
+} from '../../../shared/components/sensor-chart/sensor-chart';
 import { DateFormatPipe } from '../../../shared/pipes/date-format.pipe';
 import { NumberAbbreviatePipe } from '../../../shared/pipes/number-abbreviate.pipe';
 import * as SensorsActions from '../../../core/store/sensors/sensors.actions';
-import { LucideAngularModule, Activity, Droplets, Thermometer, Gauge, Wind, Atom, Beaker, FlaskConical, RefreshCw, Settings, Radio } from 'lucide-angular';
+import {
+  LucideAngularModule,
+  Activity,
+  Droplets,
+  Thermometer,
+  Gauge,
+  Wind,
+  Atom,
+  Beaker,
+  FlaskConical,
+  RefreshCw,
+  Settings,
+  Radio,
+} from 'lucide-angular';
 import { ParameterConfig } from '../../../core/models/shared-interfaces.model';
 
 const PARAMETER_CONFIGS: ParameterConfig[] = [
   { key: 'ph', label: 'pH', unit: '', icon: Beaker, color: '#7B2FBE', decimals: 2 },
-  { key: 'turbidity', label: 'Turbidity', unit: 'NTU', icon: Droplets, color: '#F59E0B', decimals: 1 },
-  { key: 'dissolvedOxygen', label: 'Dissolved O₂', unit: 'mg/L', icon: Wind, color: '#3B82F6', decimals: 1 },
+  {
+    key: 'turbidity',
+    label: 'Turbidity',
+    unit: 'NTU',
+    icon: Droplets,
+    color: '#F59E0B',
+    decimals: 1,
+  },
+  {
+    key: 'dissolvedOxygen',
+    label: 'Dissolved O₂',
+    unit: 'mg/L',
+    icon: Wind,
+    color: '#3B82F6',
+    decimals: 1,
+  },
   { key: 'flowRate', label: 'Flow Rate', unit: 'm³/s', icon: Gauge, color: '#10B981', decimals: 3 },
   { key: 'nitrogen', label: 'Nitrogen', unit: 'mg/L', icon: Atom, color: '#EF4444', decimals: 2 },
-  { key: 'phosphorus', label: 'Phosphorus', unit: 'mg/L', icon: FlaskConical, color: '#EC4899', decimals: 3 },
-  { key: 'temperature', label: 'Temperature', unit: '°C', icon: Thermometer, color: '#F97316', decimals: 1 },
+  {
+    key: 'phosphorus',
+    label: 'Phosphorus',
+    unit: 'mg/L',
+    icon: FlaskConical,
+    color: '#EC4899',
+    decimals: 3,
+  },
+  {
+    key: 'temperature',
+    label: 'Temperature',
+    unit: '°C',
+    icon: Thermometer,
+    color: '#F97316',
+    decimals: 1,
+  },
 ];
 
 const STATUS_THRESHOLDS: Record<string, { good: [number, number]; warning: [number, number] }> = {
@@ -41,22 +85,55 @@ const STATUS_THRESHOLDS: Record<string, { good: [number, number]; warning: [numb
 @Component({
   selector: 'app-sensors-dashboard',
   standalone: true,
-  imports: [NgIf, NgFor, DecimalPipe, RouterLink, DataTableComponent, StatusBadgeComponent, EmptyStateComponent, LoadingSpinnerComponent, SensorChartComponent, DateFormatPipe, NumberAbbreviatePipe, LucideAngularModule],
+  imports: [
+    NgIf,
+    NgFor,
+    DecimalPipe,
+    RouterLink,
+    DataTableComponent,
+    StatusBadgeComponent,
+    EmptyStateComponent,
+    LoadingSpinnerComponent,
+    SensorChartComponent,
+    DateFormatPipe,
+    NumberAbbreviatePipe,
+    LucideAngularModule,
+  ],
   template: `
     <div class="space-y-6">
       <div class="flex items-center justify-between">
         <div>
           <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Sensor Dashboard</h1>
-          <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Real-time water quality monitoring</p>
+          <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
+            Real-time water quality monitoring
+          </p>
         </div>
         <div class="flex items-center gap-3">
-          <div class="flex items-center gap-2 bg-white dark:bg-dark-bg-lighter rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-1.5">
-            <span class="w-2 h-2 rounded-full" [class]="wsConnected ? 'bg-green-500' : 'bg-red-500'"></span>
-            <span class="text-xs text-slate-500">{{ wsConnected ? 'Connected' : 'Disconnected' }}</span>
+          <div
+            class="flex items-center gap-2 bg-white dark:bg-dark-bg-lighter rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-1.5"
+          >
+            <span
+              class="w-2 h-2 rounded-full"
+              [class]="wsConnected ? 'bg-green-500' : 'bg-red-500'"
+            ></span>
+            <span class="text-xs text-slate-500">{{
+              wsConnected ? 'Connected' : 'Disconnected'
+            }}</span>
           </div>
-          <button (click)="toggleAutoRefresh()" [class]="autoRefresh ? 'bg-stellar-blue/10 text-stellar-blue border-stellar-blue/30' : 'text-slate-400 border-slate-200 dark:border-slate-700'"
-            class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors hover:bg-slate-50 dark:hover:bg-slate-800">
-            <lucide-angular [img]="RefreshCwIcon" class="w-3.5 h-3.5" [class.animate-spin]="autoRefresh"></lucide-angular>
+          <button
+            (click)="toggleAutoRefresh()"
+            [class]="
+              autoRefresh
+                ? 'bg-stellar-blue/10 text-stellar-blue border-stellar-blue/30'
+                : 'text-slate-400 border-slate-200 dark:border-slate-700'
+            "
+            class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors hover:bg-slate-50 dark:hover:bg-slate-800"
+          >
+            <lucide-angular
+              [img]="RefreshCwIcon"
+              class="w-3.5 h-3.5"
+              [class.animate-spin]="autoRefresh"
+            ></lucide-angular>
             {{ autoRefresh ? 'Auto' : 'Manual' }}
           </button>
           <a routerLink="/sensors/config" class="btn btn-outline flex items-center gap-2 text-xs">
@@ -75,29 +152,49 @@ const STATUS_THRESHOLDS: Record<string, { good: [number, number]; warning: [numb
           <div *ngFor="let param of parameterConfigs; trackBy: trackByParam" class="card p-4">
             <div class="flex items-center justify-between mb-3">
               <div class="flex items-center gap-2">
-                <div class="w-8 h-8 rounded-lg flex items-center justify-center" [style.background]="param.color + '20'">
-                  <lucide-angular [img]="param.icon" class="w-4 h-4" [style.color]="param.color"></lucide-angular>
+                <div
+                  class="w-8 h-8 rounded-lg flex items-center justify-center"
+                  [style.background]="param.color + '20'"
+                >
+                  <lucide-angular
+                    [img]="param.icon"
+                    class="w-4 h-4"
+                    [style.color]="param.color"
+                  ></lucide-angular>
                 </div>
-                <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ param.label }}</span>
+                <span
+                  class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider"
+                  >{{ param.label }}</span
+                >
               </div>
               <div class="flex items-center gap-1.5">
                 <span *ngIf="param.unit" class="text-xs text-slate-400">{{ param.unit }}</span>
-                <span class="w-2 h-2 rounded-full" [class]="getStatusDot(param.key, getLatestValue(param.key))"></span>
+                <span
+                  class="w-2 h-2 rounded-full"
+                  [class]="getStatusDot(param.key, getLatestValue(param.key))"
+                ></span>
               </div>
             </div>
             <div class="flex items-baseline gap-1 mb-3">
               <span class="text-2xl font-bold text-slate-900 dark:text-white">
-                {{ getLatestValue(param.key) != null ? (getLatestValue(param.key) | number:'1.0-' + param.decimals) : '--' }}
+                {{
+                  getLatestValue(param.key) != null
+                    ? (getLatestValue(param.key) | number: '1.0-' + param.decimals)
+                    : '--'
+                }}
               </span>
               <span *ngIf="param.unit" class="text-xs text-slate-400">{{ param.unit }}</span>
             </div>
             <div class="flex items-end gap-px h-12">
-              <div *ngFor="let val of sparklineData[param.key] || []; let i = index"
+              <div
+                *ngFor="let val of sparklineData[param.key] || []; let i = index"
                 class="flex-1 rounded-t transition-all duration-300"
-                [style.height.%]="sparklineMax[param.key] > 0 ? (val / sparklineMax[param.key]) * 100 : 0"
+                [style.height.%]="
+                  sparklineMax[param.key] > 0 ? (val / sparklineMax[param.key]) * 100 : 0
+                "
                 [style.background]="param.color"
-                [style.opacity]="0.3 + (i / (sparklineData[param.key]?.length || 1)) * 0.7">
-              </div>
+                [style.opacity]="0.3 + (i / (sparklineData[param.key]?.length || 1)) * 0.7"
+              ></div>
             </div>
           </div>
         </div>
@@ -112,34 +209,55 @@ const STATUS_THRESHOLDS: Record<string, { good: [number, number]; warning: [numb
             />
           </div>
           <div class="card p-5">
-            <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-4">Latest Values</h3>
+            <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-4">
+              Latest Values
+            </h3>
             <div *ngIf="!latestReading" class="text-center py-8 text-sm text-slate-400">
               No readings available
             </div>
             <div *ngIf="latestReading" class="space-y-3">
-              <div *ngFor="let param of parameterConfigs; trackBy: trackByParam" class="flex items-center justify-between py-2 border-b border-slate-100 dark:border-slate-700 last:border-0">
+              <div
+                *ngFor="let param of parameterConfigs; trackBy: trackByParam"
+                class="flex items-center justify-between py-2 border-b border-slate-100 dark:border-slate-700 last:border-0"
+              >
                 <div class="flex items-center gap-2">
-                  <div class="w-6 h-6 rounded flex items-center justify-center" [style.background]="param.color + '20'">
-                    <lucide-angular [img]="param.icon" class="w-3 h-3" [style.color]="param.color"></lucide-angular>
+                  <div
+                    class="w-6 h-6 rounded flex items-center justify-center"
+                    [style.background]="param.color + '20'"
+                  >
+                    <lucide-angular
+                      [img]="param.icon"
+                      class="w-3 h-3"
+                      [style.color]="param.color"
+                    ></lucide-angular>
                   </div>
                   <span class="text-sm text-slate-600 dark:text-slate-400">{{ param.label }}</span>
                 </div>
                 <div class="flex items-center gap-2">
                   <span class="text-sm font-medium text-slate-900 dark:text-white">
-                    {{ getLatestValue(param.key) != null ? (getLatestValue(param.key) | number:'1.0-' + param.decimals) : '--' }}
+                    {{
+                      getLatestValue(param.key) != null
+                        ? (getLatestValue(param.key) | number: '1.0-' + param.decimals)
+                        : '--'
+                    }}
                   </span>
-                  <span class="w-2 h-2 rounded-full" [class]="getStatusDot(param.key, getLatestValue(param.key))"></span>
+                  <span
+                    class="w-2 h-2 rounded-full"
+                    [class]="getStatusDot(param.key, getLatestValue(param.key))"
+                  ></span>
                 </div>
               </div>
               <div class="pt-2 text-xs text-slate-400">
-                Last updated: {{ latestReading.timestamp | dateFormat:'relative' }}
+                Last updated: {{ latestReading.timestamp | dateFormat: 'relative' }}
               </div>
             </div>
           </div>
         </div>
 
         <div class="card p-5">
-          <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-4">Registered Devices</h3>
+          <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-4">
+            Registered Devices
+          </h3>
           <app-data-table
             [columns]="deviceColumns"
             [data]="devices"
@@ -151,7 +269,7 @@ const STATUS_THRESHOLDS: Record<string, { good: [number, number]; warning: [numb
         </div>
       </ng-container>
     </div>
-  `
+  `,
 })
 export class SensorsDashboardComponent implements OnInit, OnDestroy {
   protected loading = true;
@@ -203,21 +321,27 @@ export class SensorsDashboardComponent implements OnInit, OnDestroy {
       error: () => {},
     });
 
-    this.wsService.on('sensor:reading').pipe(takeUntil(this.destroy$)).subscribe({
-      next: (reading: SensorReading) => {
-        this.store.dispatch(SensorsActions.addRealtimeReading({ reading }));
-      },
-      error: () => {},
-    });
+    this.wsService
+      .on<SensorReading>('sensor:reading')
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (reading: SensorReading) => {
+          this.store.dispatch(SensorsActions.addRealtimeReading({ reading }));
+        },
+        error: () => {},
+      });
 
-    this.store.select(state => (state as any).sensors).pipe(takeUntil(this.destroy$)).subscribe({
-      next: (sensors) => {
-        this.devices = sensors.devices;
-        this.recentReadings = sensors.recentReadings;
-        this.updateDerivedData();
-      },
-      error: () => {},
-    });
+    this.store
+      .select((state) => (state as any).sensors)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (sensors) => {
+          this.devices = sensors.devices;
+          this.recentReadings = sensors.recentReadings;
+          this.updateDerivedData();
+        },
+        error: () => {},
+      });
 
     this.loadData();
   }
@@ -230,9 +354,7 @@ export class SensorsDashboardComponent implements OnInit, OnDestroy {
   private async loadData(): Promise<void> {
     this.loading = true;
     try {
-      const [devices] = await Promise.all([
-        this.sensorsService.getDevices(),
-      ]);
+      const [devices] = await Promise.all([this.sensorsService.getDevices()]);
       this.store.dispatch(SensorsActions.loadDevicesSuccess({ devices }));
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to load devices';
@@ -270,20 +392,25 @@ export class SensorsDashboardComponent implements OnInit, OnDestroy {
 
     this.sparklineData = sparklines;
     this.mainChartSeries = this.parameterConfigs
-      .filter(p => chartData[p.key]?.length)
-      .map(p => ({ label: p.label, data: chartData[p.key]!, color: p.color }));
+      .filter((p) => chartData[p.key]?.length)
+      .map((p) => ({ label: p.label, data: chartData[p.key]!, color: p.color }));
   }
 
   protected toggleAutoRefresh(): void {
     this.autoRefresh = !this.autoRefresh;
     if (this.autoRefresh) {
-      interval(this.refreshInterval).pipe(takeUntil(this.destroy$)).subscribe({
-        next: () => {
-          this.loadData();
-        },
-        error: () => {},
-      });
-      this.notificationService.info('Auto-refresh enabled', `Updating every ${this.refreshInterval / 1000}s`);
+      interval(this.refreshInterval)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: () => {
+            this.loadData();
+          },
+          error: () => {},
+        });
+      this.notificationService.info(
+        'Auto-refresh enabled',
+        `Updating every ${this.refreshInterval / 1000}s`,
+      );
     }
   }
 

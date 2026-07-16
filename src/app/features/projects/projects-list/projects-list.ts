@@ -201,8 +201,8 @@ export class ProjectsListComponent implements OnInit, OnDestroy {
     );
   }
 
-  goToProject(project: Project): void {
-    this.router.navigate(['/projects', project.id]);
+  goToProject(project: object): void {
+    this.router.navigate(['/projects', (project as Project).id]);
   }
 
   onSearch(term: string): void {

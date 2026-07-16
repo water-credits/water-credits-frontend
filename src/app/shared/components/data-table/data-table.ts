@@ -130,7 +130,7 @@ export interface ColumnDef {
     </div>
   `,
 })
-export class DataTableComponent<T extends Record<string, unknown> = Record<string, unknown>> {
+export class DataTableComponent<T extends object = Record<string, unknown>> {
   @Input() columns: ColumnDef[] = [];
   @Input() data: T[] = [];
   @Input() loading = false;
@@ -152,11 +152,19 @@ export class DataTableComponent<T extends Record<string, unknown> = Record<strin
   protected readonly ArrowDownIcon = ArrowDown;
   protected readonly ChevronsUpDownIcon = ChevronsUpDown;
 
-  getNestedValue(obj: Record<string, unknown>, path: string): unknown {
-    return path.split('.').reduce((current: Record<string, unknown> | undefined, key) => current?.[key] as Record<string, unknown> | undefined, obj);
+  getNestedValue(obj: object, path: string): unknown {
+    return path
+      .split('.')
+      .reduce(
+        (current: Record<string, unknown> | undefined, key) =>
+          (current as Record<string, unknown> | undefined)?.[key] as
+            | Record<string, unknown>
+            | undefined,
+        obj as Record<string, unknown>,
+      );
   }
 
   trackByRow(index: number, row: T): string {
-    return (row as Record<string, unknown>)?.['id'] as string ?? String(index);
+    return ((row as Record<string, unknown>)?.['id'] as string) ?? String(index);
   }
 }
