@@ -1,0 +1,44 @@
+// Copy this file to environment.ts and fill in your values.
+// environment.ts is gitignored — never commit real secrets or keys.
+
+export const environment = {
+  production: false,
+  name: 'development',
+
+  // Backend API & WebSocket
+  apiUrl: 'http://localhost:3000/api/v1',
+  wsUrl: 'http://localhost:3000',
+
+  // Stellar
+  stellarNetwork: 'testnet',                         // 'testnet' | 'public'
+  sorobanRpcUrl: 'https://soroban-testnet.stellar.org',
+
+  // Deployed contract addresses (Stellar testnet)
+  contracts: {
+    creditFactory:        'REPLACE_WITH_DEPLOYED_ADDRESS',
+    verificationOracle:   'REPLACE_WITH_DEPLOYED_ADDRESS',
+    retirementRegistry:   'REPLACE_WITH_DEPLOYED_ADDRESS',
+    governance:           'REPLACE_WITH_DEPLOYED_ADDRESS',
+  },
+
+  // Leaflet map defaults
+  map: {
+    tileUrl: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    attribution: '&copy; <a href="https://openstreetmap.org">OpenStreetMap</a> contributors',
+    defaultZoom: 5,
+    defaultCenter: [20, 0] as [number, number],
+  },
+
+  // Feature flags
+  features: {
+    marketplace:    true,
+    farmersPortal:  true,
+    governance:     true,
+  },
+
+  // Pagination
+  pagination: {
+    defaultPageSize: 20,
+    pageSizeOptions: [10, 20, 50, 100],
+  },
+};

@@ -30,7 +30,7 @@ This project adheres to the [Contributor Covenant Code of Conduct](CODE_OF_CONDU
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-org/water-credits-frontend
+git clone https://github.com/water-credits/water-credits-frontend
 cd water-credits-frontend
 
 # Install dependencies
@@ -232,7 +232,7 @@ npm run test -- --include src/app/features/sensors/sensors-dashboard
 
 ### Bug Reports
 
-Open a [bug report](https://github.com/your-org/water-credits-frontend/issues/new?template=bug_report.md) with:
+Open a [bug report](https://github.com/water-credits/water-credits-frontend/issues/new?template=bug_report.md) with:
 
 - A clear, descriptive title
 - Steps to reproduce
@@ -242,7 +242,7 @@ Open a [bug report](https://github.com/your-org/water-credits-frontend/issues/ne
 
 ### Feature Requests
 
-Open a [feature request](https://github.com/your-org/water-credits-frontend/issues/new?template=feature_request.md) with:
+Open a [feature request](https://github.com/water-credits/water-credits-frontend/issues/new?template=feature_request.md) with:
 
 - A clear description of the problem or need
 - Proposed solution
@@ -278,6 +278,6 @@ The app uses `@stellar/freighter-api` for Stellar wallet connectivity. See `src/
 
 ## Questions?
 
-If you have questions or need help, open a [discussion](https://github.com/your-org/water-credits-frontend/discussions) or reach out to the maintainers.
+If you have questions or need help, open a [discussion](https://github.com/water-credits/water-credits-frontend/discussions) or reach out via [Telegram (@Escelit)](https://t.me/Escelit) or email [ogazipromise81@gmail.com](mailto:ogazipromise81@gmail.com). For security vulnerabilities, use email — do not open a public issue.
 
 Thank you for contributing! 🚀

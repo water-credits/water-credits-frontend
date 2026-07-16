@@ -5,10 +5,11 @@
 ### *Angular dashboard for the Water Quality & Replenishment Credits protocol*
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Angular](https://img.shields.io/badge/Angular-18-DD0031)](https://angular.dev)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.5-3178C6)](https://typescriptlang.org)
+[![Angular](https://img.shields.io/badge/Angular-21-DD0031)](https://angular.dev)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6)](https://typescriptlang.org)
 [![Tailwind](https://img.shields.io/badge/Tailwind-3-06B6D4)](https://tailwindcss.com)
 [![Stellar](https://img.shields.io/badge/Stellar-Freighter-7B2FBE)](https://freighter.app)
+[![Status](https://img.shields.io/badge/Status-Beta-orange)](ROADMAP.md)
 
 **A full-featured web application for registering projects, monitoring sensors in real time, trading credits, and retiring them with verifiable on-chain certificates.**
 
@@ -1365,7 +1366,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for full details.
 ### Quick Start
 
 ```bash
-git clone https://github.com/your-org/water-credits-frontend
+git clone https://github.com/water-credits/water-credits-frontend
 cd water-credits-frontend
 git checkout -b feat/your-feature
 
@@ -1389,6 +1390,30 @@ git push origin feat/your-feature
 - **File structure** — One component per folder with co-located template and styles
 - **SCSS** — Use design tokens from `theme/_variables.scss`, avoid magic values
 - **Lint** — `ng lint` must pass with zero warnings
+
+---
+
+## 🗺️ Project Status & Roadmap
+
+The project is currently in **Beta**. Core modules are scaffolded and functional against the testnet backend; API wiring and test coverage are in progress.
+
+See [ROADMAP.md](ROADMAP.md) for the full breakdown of what's done, what's in progress, and what's planned for v1.0 and beyond.
+
+---
+
+## 💬 Contact & Community
+
+| Channel | Link |
+|---|---|
+| **GitHub Issues** | [Bug reports & feature requests](https://github.com/water-credits/water-credits-frontend/issues) |
+| **GitHub Discussions** | [Questions, ideas, general discussion](https://github.com/water-credits/water-credits-frontend/discussions) |
+| **Pull Requests** | [Contribute code](https://github.com/water-credits/water-credits-frontend/pulls) |
+| **Telegram** | [@Escelit](https://t.me/Escelit) — direct maintainer contact |
+| **Email** | [ogazipromise81@gmail.com](mailto:ogazipromise81@gmail.com) |
+
+For security vulnerabilities, **do not open a public issue**. Email the maintainer directly at [ogazipromise81@gmail.com](mailto:ogazipromise81@gmail.com).
+
+For general questions, Telegram ([@Escelit](https://t.me/Escelit)) is the fastest way to reach the maintainer. GitHub Discussions is preferred for questions that benefit the whole community — they stay searchable and visible to everyone.
 
 ---
 
