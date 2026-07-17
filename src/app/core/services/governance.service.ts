@@ -7,7 +7,11 @@ import { PaginatedResponse } from '../models/pagination.model';
 export class GovernanceService {
   constructor(private api: ApiService) {}
 
-  async getProposals(params?: { page?: number; limit?: number; status?: string }): Promise<PaginatedResponse<Proposal>> {
+  async getProposals(params?: {
+    page?: number;
+    limit?: number;
+    status?: string;
+  }): Promise<PaginatedResponse<Proposal>> {
     return this.api.get<PaginatedResponse<Proposal>>('/governance/proposals', { params });
   }
 
@@ -15,8 +19,39 @@ export class GovernanceService {
     return this.api.get<Proposal>(`/governance/proposals/${id}`);
   }
 
-  async createProposal(data: { title: string; description: string; actionType: string; actionParams: Record<string, string | number | boolean> }): Promise<Proposal> {
+  async createProposal(data: {
+    title: string;
+    description: string;
+    actionType: string;
+    actionParams: Record<string, string | number | boolean>;
+  }): Promise<Proposal> {
     return this.api.post<Proposal>('/governance/proposals', data);
+  }
+
+  async prepareVote(
+    proposalId: string,
+    vote: 'for' | 'against',
+  ): Promise<{ unsignedXdr?: string; networkPassphrase?: string; proposal?: Proposal }> {
+    try {
+      return await this.api.post<{
+        unsignedXdr?: string;
+        networkPassphrase?: string;
+        proposal?: Proposal;
+      }>(`/governance/proposals/${proposalId}/vote/prepare`, { vote });
+    } catch (err: unknown) {
+      const status = (err as { response?: { status?: number } })?.response?.status;
+      if (status === 404) {
+        await this.api.post<void>(`/governance/proposals/${proposalId}/vote`, { vote });
+        return {};
+      }
+      throw err;
+    }
+  }
+
+  async submitVote(proposalId: string, signedXdr: string): Promise<Proposal> {
+    return this.api.post<Proposal>(`/governance/proposals/${proposalId}/vote/submit`, {
+      signedXdr,
+    });
   }
 
   async vote(proposalId: string, vote: 'for' | 'against'): Promise<void> {

@@ -1,6 +1,8 @@
 import { Component, OnInit } from '@angular/core';
-import { NgIf, NgClass, NgFor } from '@angular/common';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { NgIf, NgFor, AsyncPipe } from '@angular/common';
+import { ActivatedRoute, RouterLink } from '@angular/router';
+import { Store } from '@ngrx/store';
+import { Observable } from 'rxjs';
 import {
   LucideAngularModule,
   ArrowLeft,
@@ -10,8 +12,6 @@ import {
   Clock,
   User,
 } from 'lucide-angular';
-import { GovernanceService } from '../../../core/services/governance.service';
-import { NotificationService } from '../../../core/services/notification.service';
 import { StatusBadgeComponent } from '../../../shared/components/status-badge/status-badge';
 import { LoadingSpinnerComponent } from '../../../shared/components/loading-spinner/loading-spinner';
 import { DateFormatPipe } from '../../../shared/pipes/date-format.pipe';
@@ -19,14 +19,21 @@ import { DurationPipe } from '../../../shared/pipes/duration.pipe';
 import { StellarAddressPipe } from '../../../shared/pipes/stellar-address.pipe';
 import { NumberAbbreviatePipe } from '../../../shared/pipes/number-abbreviate.pipe';
 import { Proposal, ProposalStatus, ProposalActionType } from '../../../core/models/proposal.model';
+import * as GovernanceActions from '../../../core/store/governance/governance.actions';
+import {
+  selectSelectedProposal,
+  selectProposalDetailLoading,
+  selectGovernanceVoting,
+  selectGovernanceExecuting,
+} from '../../../core/store/governance/governance.selectors';
 
 @Component({
   selector: 'app-proposal-detail',
   standalone: true,
   imports: [
     NgIf,
-    NgClass,
     NgFor,
+    AsyncPipe,
     RouterLink,
     LucideAngularModule,
     StatusBadgeComponent,
@@ -46,15 +53,18 @@ import { Proposal, ProposalStatus, ProposalActionType } from '../../../core/mode
         Back to Governance
       </a>
 
-      <div *ngIf="loading" class="flex justify-center py-16">
+      <div *ngIf="loading$ | async" class="flex justify-center py-16">
         <app-loading-spinner size="md" label="Loading proposal..."></app-loading-spinner>
       </div>
 
-      <div *ngIf="!loading && !proposal">
+      <div *ngIf="(loading$ | async) === false && (proposal$ | async) === null">
         <p class="text-center text-slate-500 dark:text-slate-400 py-16">Proposal not found.</p>
       </div>
 
-      <div *ngIf="!loading && proposal" class="space-y-6">
+      <div
+        *ngIf="(loading$ | async) === false && (proposal$ | async) as proposal"
+        class="space-y-6"
+      >
         <div class="card p-6">
           <div class="flex items-start justify-between gap-4 mb-4">
             <div>
@@ -128,10 +138,13 @@ import { Proposal, ProposalStatus, ProposalActionType } from '../../../core/mode
             <div
               class="flex-1 h-4 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden flex"
             >
-              <div class="h-full bg-green-500 transition-all" [style.width.%]="forPercentage"></div>
+              <div
+                class="h-full bg-green-500 transition-all"
+                [style.width.%]="getForPercentage(proposal)"
+              ></div>
               <div
                 class="h-full bg-red-500 transition-all"
-                [style.width.%]="againstPercentage"
+                [style.width.%]="getAgainstPercentage(proposal)"
               ></div>
             </div>
           </div>
@@ -153,41 +166,41 @@ import { Proposal, ProposalStatus, ProposalActionType } from '../../../core/mode
           </div>
         </div>
 
-        <div *ngIf="canVote" class="card p-6">
+        <div *ngIf="canVote(proposal)" class="card p-6">
           <h3 class="text-sm font-semibold text-slate-900 dark:text-white mb-4">Cast Your Vote</h3>
           <div class="flex items-center gap-3">
             <button
-              (click)="castVote('for')"
-              [disabled]="voting"
+              (click)="castVote(proposal.id, 'for')"
+              [disabled]="(voting$ | async) || false"
               class="btn btn-success inline-flex items-center gap-2"
             >
               <lucide-angular [img]="ThumbsUpIcon" class="w-4 h-4"></lucide-angular>
               Vote For
             </button>
             <button
-              (click)="castVote('against')"
-              [disabled]="voting"
+              (click)="castVote(proposal.id, 'against')"
+              [disabled]="(voting$ | async) || false"
               class="btn btn-danger inline-flex items-center gap-2"
             >
               <lucide-angular [img]="ThumbsDownIcon" class="w-4 h-4"></lucide-angular>
               Vote Against
             </button>
-            <span *ngIf="voting" class="text-sm text-slate-500">Processing...</span>
+            <span *ngIf="voting$ | async" class="text-sm text-slate-500">Processing...</span>
           </div>
         </div>
 
-        <div *ngIf="canExecute" class="card p-6">
+        <div *ngIf="canExecute(proposal)" class="card p-6">
           <h3 class="text-sm font-semibold text-slate-900 dark:text-white mb-4">Execution</h3>
           <p class="text-sm text-slate-500 dark:text-slate-400 mb-4">
             This proposal has been approved and is ready for execution.
           </p>
           <button
-            (click)="executeProposal()"
-            [disabled]="executing"
+            (click)="executeProposal(proposal.id)"
+            [disabled]="(executing$ | async) || false"
             class="btn btn-primary inline-flex items-center gap-2"
           >
             <lucide-angular [img]="CheckCircleIcon" class="w-4 h-4"></lucide-angular>
-            {{ executing ? 'Executing...' : 'Execute Proposal' }}
+            {{ (executing$ | async) ? 'Executing...' : 'Execute Proposal' }}
           </button>
         </div>
       </div>
@@ -202,60 +215,46 @@ export class ProposalDetailComponent implements OnInit {
   protected readonly ClockIcon = Clock;
   protected readonly UserIcon = User;
 
-  protected proposal: Proposal | null = null;
-  protected loading = true;
-  protected voting = false;
-  protected executing = false;
+  protected proposal$: Observable<Proposal | null>;
+  protected loading$: Observable<boolean>;
+  protected voting$: Observable<boolean>;
+  protected executing$: Observable<boolean>;
 
   constructor(
     private route: ActivatedRoute,
-    private router: Router,
-    private governanceService: GovernanceService,
-    private notification: NotificationService,
-  ) {}
+    private store: Store,
+  ) {
+    this.proposal$ = this.store.select(selectSelectedProposal);
+    this.loading$ = this.store.select(selectProposalDetailLoading);
+    this.voting$ = this.store.select(selectGovernanceVoting);
+    this.executing$ = this.store.select(selectGovernanceExecuting);
+  }
 
-  async ngOnInit(): Promise<void> {
+  ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
-    if (!id) {
-      this.loading = false;
-      return;
-    }
-    await this.loadProposal(id);
-  }
-
-  async loadProposal(id: string): Promise<void> {
-    try {
-      this.proposal = await this.governanceService.getProposal(id);
-    } catch {
-      this.proposal = null;
-    } finally {
-      this.loading = false;
+    if (id) {
+      this.store.dispatch(GovernanceActions.loadProposalDetail({ id }));
     }
   }
 
-  get forPercentage(): number {
-    if (!this.proposal) return 0;
-    const total = this.proposal.votesFor + this.proposal.votesAgainst;
+  getForPercentage(proposal: Proposal): number {
+    const total = proposal.votesFor + proposal.votesAgainst;
     if (total === 0) return 50;
-    return (this.proposal.votesFor / total) * 100;
+    return (proposal.votesFor / total) * 100;
   }
 
-  get againstPercentage(): number {
-    if (!this.proposal) return 0;
-    const total = this.proposal.votesFor + this.proposal.votesAgainst;
+  getAgainstPercentage(proposal: Proposal): number {
+    const total = proposal.votesFor + proposal.votesAgainst;
     if (total === 0) return 50;
-    return (this.proposal.votesAgainst / total) * 100;
+    return (proposal.votesAgainst / total) * 100;
   }
 
-  get canVote(): boolean {
-    return (
-      this.proposal?.status === ProposalStatus.PENDING ||
-      this.proposal?.status === ProposalStatus.ACTIVE
-    );
+  canVote(proposal: Proposal): boolean {
+    return proposal.status === ProposalStatus.PENDING || proposal.status === ProposalStatus.ACTIVE;
   }
 
-  get canExecute(): boolean {
-    return this.proposal?.status === ProposalStatus.APPROVED;
+  canExecute(proposal: Proposal): boolean {
+    return proposal.status === ProposalStatus.APPROVED;
   }
 
   getActionParamKeys(proposal: Proposal): string[] {
@@ -280,33 +279,11 @@ export class ProposalDetailComponent implements OnInit {
     return map[type] || type;
   }
 
-  async castVote(vote: 'for' | 'against'): Promise<void> {
-    if (!this.proposal || this.voting) return;
-    this.voting = true;
-    try {
-      await this.governanceService.vote(this.proposal.id, vote);
-      this.notification.success('Vote cast', `You voted ${vote} on "${this.proposal.title}"`);
-      await this.loadProposal(this.proposal.id);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Unable to cast vote';
-      this.notification.error('Vote failed', message);
-    } finally {
-      this.voting = false;
-    }
+  castVote(proposalId: string, vote: 'for' | 'against'): void {
+    this.store.dispatch(GovernanceActions.castVote({ proposalId, vote }));
   }
 
-  async executeProposal(): Promise<void> {
-    if (!this.proposal || this.executing) return;
-    this.executing = true;
-    try {
-      await this.governanceService.execute(this.proposal.id);
-      this.notification.success('Proposal executed', `"${this.proposal.title}" has been executed`);
-      await this.loadProposal(this.proposal.id);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Unable to execute proposal';
-      this.notification.error('Execution failed', message);
-    } finally {
-      this.executing = false;
-    }
+  executeProposal(proposalId: string): void {
+    this.store.dispatch(GovernanceActions.executeProposal({ proposalId }));
   }
 }

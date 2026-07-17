@@ -3,6 +3,10 @@ import { provideRouter } from '@angular/router';
 
 import { GovernanceDashboardComponent } from './governance-dashboard';
 
+import { provideStore } from '@ngrx/store';
+import { provideEffects } from '@ngrx/effects';
+import { reducers } from '../../../core/store/app.state';
+
 describe('GovernanceDashboardComponent', () => {
   let component: GovernanceDashboardComponent;
   let fixture: ComponentFixture<GovernanceDashboardComponent>;
@@ -10,7 +14,7 @@ describe('GovernanceDashboardComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [GovernanceDashboardComponent],
-      providers: [provideRouter([])],
+      providers: [provideRouter([]), provideStore(reducers), provideEffects([])],
     }).compileComponents();
 
     fixture = TestBed.createComponent(GovernanceDashboardComponent);

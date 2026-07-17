@@ -6,6 +6,7 @@ import { projectsReducer, ProjectsState } from './projects/projects.reducer';
 import { sensorsReducer, SensorsState } from './sensors/sensors.reducer';
 import { creditsReducer, CreditsState } from './credits/credits.reducer';
 import { retirementReducer, RetirementState } from './retirement/retirement.reducer';
+import { governanceReducer, GovernanceState } from './governance/governance.reducer';
 
 export interface AppState {
   auth: AuthState;
@@ -15,6 +16,7 @@ export interface AppState {
   sensors: SensorsState;
   credits: CreditsState;
   retirement: RetirementState;
+  governance: GovernanceState;
 }
 
 export const reducers: ActionReducerMap<AppState> = {
@@ -25,4 +27,5 @@ export const reducers: ActionReducerMap<AppState> = {
   sensors: sensorsReducer,
   credits: creditsReducer,
   retirement: retirementReducer,
+  governance: governanceReducer,
 };

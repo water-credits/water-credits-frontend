@@ -1,6 +1,9 @@
 import { Component, OnInit } from '@angular/core';
-import { NgIf, NgFor, NgClass } from '@angular/common';
+import { AsyncPipe, NgIf, NgFor, NgClass, NgSwitch, NgSwitchCase } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
+import { Store } from '@ngrx/store';
+import { Observable, combineLatest } from 'rxjs';
+import { map } from 'rxjs/operators';
 import {
   LucideAngularModule,
   Plus,
@@ -12,31 +15,37 @@ import {
   Shield,
   Activity,
 } from 'lucide-angular';
-import { GovernanceService } from '../../../core/services/governance.service';
 import { StatusBadgeComponent } from '../../../shared/components/status-badge/status-badge';
 import { LoadingSpinnerComponent } from '../../../shared/components/loading-spinner/loading-spinner';
-import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state';
-import { DateFormatPipe } from '../../../shared/pipes/date-format.pipe';
+import { DataTableComponent, ColumnDef } from '../../../shared/components/data-table/data-table';
 import { DurationPipe } from '../../../shared/pipes/duration.pipe';
-import { StellarAddressPipe } from '../../../shared/pipes/stellar-address.pipe';
 import { NumberAbbreviatePipe } from '../../../shared/pipes/number-abbreviate.pipe';
 import { Proposal, ProposalStatus, GovernanceConfig } from '../../../core/models/proposal.model';
+import * as GovernanceActions from '../../../core/store/governance/governance.actions';
+import {
+  selectProposals,
+  selectProposalsLoading,
+  selectGovernanceConfig,
+  selectGovernanceConfigLoading,
+} from '../../../core/store/governance/governance.selectors';
+import { selectCurrentUser } from '../../../core/store/auth/auth.selectors';
 
 @Component({
   selector: 'app-governance-dashboard',
   standalone: true,
   imports: [
+    AsyncPipe,
     NgIf,
     NgFor,
     NgClass,
+    NgSwitch,
+    NgSwitchCase,
     RouterLink,
     LucideAngularModule,
     StatusBadgeComponent,
     LoadingSpinnerComponent,
-    EmptyStateComponent,
-    DateFormatPipe,
+    DataTableComponent,
     DurationPipe,
-    StellarAddressPipe,
     NumberAbbreviatePipe,
   ],
   template: `
@@ -54,11 +63,14 @@ import { Proposal, ProposalStatus, GovernanceConfig } from '../../../core/models
         </a>
       </div>
 
-      <div *ngIf="loadingConfig && !config" class="flex justify-center py-8">
+      <div *ngIf="loadingConfig$ | async" class="flex justify-center py-8">
         <app-loading-spinner size="md" label="Loading configuration..."></app-loading-spinner>
       </div>
 
-      <div *ngIf="config" class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div
+        *ngIf="(loadingConfig$ | async) === false && (config$ | async) as config"
+        class="grid grid-cols-2 md:grid-cols-4 gap-4"
+      >
         <div class="card p-4">
           <div class="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mb-2">
             <lucide-angular [img]="ScaleIcon" class="w-3.5 h-3.5"></lucide-angular>
@@ -137,12 +149,12 @@ import { Proposal, ProposalStatus, GovernanceConfig } from '../../../core/models
         <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
           <div class="flex items-center gap-2 overflow-x-auto">
             <button
-              *ngFor="let tab of statusTabs"
-              (click)="selectedStatus = tab.value"
+              *ngFor="let tab of filterTabs"
+              (click)="selectTab(tab.value)"
               [ngClass]="{
-                'bg-stellar-blue text-white': selectedStatus === tab.value,
+                'bg-stellar-blue text-white': selectedTabValue === tab.value,
                 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600':
-                  selectedStatus !== tab.value,
+                  selectedTabValue !== tab.value,
               }"
               class="px-4 py-1.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap"
             >
@@ -151,64 +163,46 @@ import { Proposal, ProposalStatus, GovernanceConfig } from '../../../core/models
           </div>
         </div>
 
-        <div *ngIf="loadingProposals" class="flex justify-center py-12">
-          <app-loading-spinner size="md" label="Loading proposals..."></app-loading-spinner>
-        </div>
-
-        <div *ngIf="!loadingProposals && filteredProposals.length === 0">
-          <app-empty-state
-            title="No proposals found"
-            message="There are no proposals matching the selected filter."
-            [actionLabel]="selectedStatus ? 'View all proposals' : 'Create your first proposal'"
-            (action)="selectedStatus ? (selectedStatus = '') : undefined"
-          ></app-empty-state>
-        </div>
-
-        <div
-          *ngIf="!loadingProposals && filteredProposals.length > 0"
-          class="divide-y divide-slate-100 dark:divide-slate-700/50"
-        >
-          <div
-            *ngFor="let proposal of filteredProposals"
-            class="px-6 py-4 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors cursor-pointer"
-            (click)="goToProposal(proposal.id)"
+        <div class="p-6">
+          <app-data-table
+            [columns]="columns"
+            [data]="(filteredProposals$ | async) || []"
+            [loading]="(loadingProposals$ | async) || false"
+            [showPagination]="false"
+            emptyTitle="No proposals found"
+            emptyMessage="There are no proposals matching the selected filter."
+            (rowClick)="goToProposal($event)"
           >
-            <div class="flex items-start justify-between gap-4">
-              <div class="flex-1 min-w-0">
-                <div class="flex items-center gap-2 mb-1.5">
-                  <h3 class="font-medium text-slate-900 dark:text-white truncate">
-                    {{ proposal.title }}
-                  </h3>
-                  <app-status-badge [status]="proposal.status" class="shrink-0"></app-status-badge>
-                </div>
-                <div class="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
-                  <span>{{ proposal.proposerName || (proposal.proposerId | stellarAddress) }}</span>
-                  <span class="inline-flex items-center gap-1">
-                    <lucide-angular [img]="ClockIcon" class="w-3 h-3"></lucide-angular>
-                    <span>{{ proposal.deadline | duration }} left</span>
-                  </span>
-                  <span>{{ proposal.createdAt | dateFormat: 'relative' }}</span>
-                </div>
-              </div>
-              <div class="text-right shrink-0">
-                <p class="text-sm font-semibold text-slate-900 dark:text-white">
-                  {{ proposal.votesFor | numberAbbreviate }}
-                </p>
-                <p class="text-xs text-slate-500 dark:text-slate-400">for</p>
-              </div>
-            </div>
-            <div class="mt-3 flex items-center gap-2">
-              <div class="flex-1 h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
-                <div
-                  class="h-full bg-green-500 rounded-full transition-all"
-                  [style.width.%]="getVoteRatio(proposal)"
-                ></div>
-              </div>
-              <span class="text-xs text-slate-500 dark:text-slate-400 shrink-0"
-                >{{ proposal.votesAgainst | numberAbbreviate }} against</span
-              >
-            </div>
-          </div>
+            <ng-template #row let-row let-col="column">
+              <ng-container [ngSwitch]="col.key">
+                <span
+                  *ngSwitchCase="'title'"
+                  class="font-medium text-slate-900 dark:text-white truncate block max-w-xs md:max-w-md"
+                >
+                  {{ row.title }}
+                </span>
+                <span *ngSwitchCase="'status'">
+                  <app-status-badge [status]="row.status"></app-status-badge>
+                </span>
+                <span *ngSwitchCase="'votesFor'">
+                  {{ row.votesFor | numberAbbreviate }}
+                </span>
+                <span *ngSwitchCase="'votesAgainst'">
+                  {{ row.votesAgainst | numberAbbreviate }}
+                </span>
+                <span
+                  *ngSwitchCase="'deadline'"
+                  class="whitespace-nowrap inline-flex items-center gap-1"
+                >
+                  <lucide-angular
+                    [img]="ClockIcon"
+                    class="w-3.5 h-3.5 text-slate-400"
+                  ></lucide-angular>
+                  <span>{{ row.deadline | duration }} left</span>
+                </span>
+              </ng-container>
+            </ng-template>
+          </app-data-table>
         </div>
       </div>
     </div>
@@ -224,63 +218,64 @@ export class GovernanceDashboardComponent implements OnInit {
   protected readonly ShieldIcon = Shield;
   protected readonly ActivityIcon = Activity;
 
-  protected config: GovernanceConfig | null = null;
-  protected proposals: Proposal[] = [];
-  protected loadingConfig = true;
-  protected loadingProposals = true;
-  protected selectedStatus = '';
+  protected config$: Observable<GovernanceConfig | null>;
+  protected loadingConfig$: Observable<boolean>;
+  protected loadingProposals$: Observable<boolean>;
+  protected filteredProposals$: Observable<Proposal[]>;
+  protected selectedTabValue = 'all';
 
-  protected readonly statusTabs = [
-    { label: 'All', value: '' },
-    { label: 'Active', value: ProposalStatus.ACTIVE },
-    { label: 'Approved', value: ProposalStatus.APPROVED },
-    { label: 'Rejected', value: ProposalStatus.REJECTED },
-    { label: 'Expired', value: ProposalStatus.EXPIRED },
-    { label: 'Executed', value: ProposalStatus.EXECUTED },
+  protected readonly filterTabs = [
+    { label: 'All', value: 'all' },
+    { label: 'Active', value: 'active' },
+    { label: 'My Proposals', value: 'mine' },
+  ];
+
+  protected columns: ColumnDef[] = [
+    { key: 'title', label: 'Title', sortable: true },
+    { key: 'status', label: 'Status', sortable: true },
+    { key: 'votesFor', label: 'Votes For', sortable: true, align: 'right' },
+    { key: 'votesAgainst', label: 'Votes Against', sortable: true, align: 'right' },
+    { key: 'deadline', label: 'Deadline', sortable: true },
   ];
 
   constructor(
-    private governanceService: GovernanceService,
+    private store: Store,
     private router: Router,
-  ) {}
+  ) {
+    this.config$ = this.store.select(selectGovernanceConfig);
+    this.loadingConfig$ = this.store.select(selectGovernanceConfigLoading);
+    this.loadingProposals$ = this.store.select(selectProposalsLoading);
 
-  async ngOnInit(): Promise<void> {
-    await Promise.all([this.loadConfig(), this.loadProposals()]);
+    // Combine proposals and active user to compute reactive filtered list
+    this.filteredProposals$ = combineLatest([
+      this.store.select(selectProposals),
+      this.store.select(selectCurrentUser),
+    ]).pipe(
+      map(([proposals, user]) => {
+        if (this.selectedTabValue === 'active') {
+          return proposals.filter((p) => p.status === ProposalStatus.ACTIVE);
+        } else if (this.selectedTabValue === 'mine') {
+          return proposals.filter(
+            (p) => p.proposerId === user?.id || p.proposerId === user?.wallet,
+          );
+        }
+        return proposals;
+      }),
+    );
   }
 
-  async loadConfig(): Promise<void> {
-    try {
-      this.config = await this.governanceService.getConfig();
-    } catch {
-      this.config = null;
-    } finally {
-      this.loadingConfig = false;
-    }
+  ngOnInit(): void {
+    this.store.dispatch(GovernanceActions.loadConfig());
+    this.store.dispatch(GovernanceActions.loadProposals({ params: { limit: 50 } }));
   }
 
-  async loadProposals(): Promise<void> {
-    try {
-      const res = await this.governanceService.getProposals({ limit: 50 });
-      this.proposals = res.data || [];
-    } catch {
-      this.proposals = [];
-    } finally {
-      this.loadingProposals = false;
-    }
+  selectTab(tabValue: string): void {
+    this.selectedTabValue = tabValue;
+    // Dispatch loadProposals to sync store with API
+    this.store.dispatch(GovernanceActions.loadProposals({ params: { limit: 50 } }));
   }
 
-  get filteredProposals(): Proposal[] {
-    if (!this.selectedStatus) return this.proposals;
-    return this.proposals.filter((p) => p.status === this.selectedStatus);
-  }
-
-  getVoteRatio(proposal: Proposal): number {
-    const total = proposal.votesFor + proposal.votesAgainst;
-    if (total === 0) return 0;
-    return (proposal.votesFor / total) * 100;
-  }
-
-  goToProposal(id: string): void {
-    this.router.navigate(['/governance', id]);
+  goToProposal(proposal: object): void {
+    this.router.navigate(['/governance', (proposal as Proposal).id]);
   }
 }

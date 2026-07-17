@@ -10,13 +10,20 @@ import { AuthEffects } from './core/store/auth/auth.effects';
 import { ProjectsEffects } from './core/store/projects/projects.effects';
 import { CreditsEffects } from './core/store/credits/credits.effects';
 import { RetirementEffects } from './core/store/retirement/retirement.effects';
+import { GovernanceEffects } from './core/store/governance/governance.effects';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes),
     provideStore(reducers),
-    provideEffects([AuthEffects, ProjectsEffects, CreditsEffects, RetirementEffects]),
+    provideEffects([
+      AuthEffects,
+      ProjectsEffects,
+      CreditsEffects,
+      RetirementEffects,
+      GovernanceEffects,
+    ]),
     provideStoreDevtools({ maxAge: 25, logOnly: !isDevMode() }),
   ],
 };
