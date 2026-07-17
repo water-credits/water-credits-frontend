@@ -48,11 +48,6 @@ import { DateFormatPipe } from '../../../shared/pipes/date-format.pipe';
         [data]="retirements"
         [loading]="loading"
         [pagination]="pagination"
-        [totalPages]="pagination?.totalPages ?? 1"
-        [total]="pagination?.total ?? 0"
-        [limit]="pagination?.limit ?? 10"
-        emptyTitle="No retirements yet"
-        emptyMessage="You haven't retired any credits yet. Start your first retirement to offset your carbon footprint."
         (page)="onPageChange($event)"
       >
         <ng-template #row let-row let-col="column">
@@ -96,11 +91,17 @@ export class RetirementHistoryComponent implements OnInit {
   protected totalPages = 1;
   protected total = 0;
   protected limit = 10;
+  protected pagination = {
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 1,
+  };
 
   protected readonly PlusIcon = Plus;
   protected readonly FileTextIcon = FileText;
 
-  protected columns: ColumnDef[] = [
+  protected columns: ColumnDef<Retirement>[] = [
     { key: 'projectName', label: 'Project', width: '25%' },
     { key: 'amount', label: 'Amount' },
     { key: 'purpose', label: 'Purpose' },
@@ -126,6 +127,12 @@ export class RetirementHistoryComponent implements OnInit {
       this.total = response.total;
       this.totalPages = response.totalPages;
       this.page = response.page;
+      this.pagination = {
+        page: response.page,
+        limit: this.limit,
+        total: response.total,
+        totalPages: response.totalPages,
+      };
     } catch {
       this.retirements = [];
     } finally {

@@ -21,6 +21,14 @@ import {
 import { EmptyStateComponent } from '../empty-state/empty-state';
 import { PaginationControlsComponent } from '../pagination-controls/pagination-controls';
 
+export type {
+  ColumnDef,
+  Pagination,
+  SortEvent,
+  SortDirection,
+  TrackByFunction,
+} from './column-def.model';
+
 @Component({
   selector: 'app-data-table',
   standalone: true,
@@ -36,13 +44,17 @@ export class DataTableComponent<T extends object = Record<string, unknown>> impl
   @Input() emptyTitle = 'No data';
   @Input() emptyMessage = '';
   @Input() pagination: Pagination | null = null;
+  @Input() page = 0;
+  @Input() totalPages = 0;
+  @Input() total = 0;
+  @Input() limit = 10;
   @Input() trackByFn?: TrackByFunction<T>;
   @Input() sortColumn = '';
   @Input() sortDirection: SortDirection = 'asc';
   @Input() virtualScroll = false;
 
   @Output() sort = new EventEmitter<SortEvent>();
-  @Output() page = new EventEmitter<number>();
+  @Output() pageChange = new EventEmitter<number>();
   @Output() rowClick = new EventEmitter<T>();
 
   @ContentChild('row') rowTemplate?: TemplateRef<{ $implicit: T; column: ColumnDef<T> }>;
@@ -61,7 +73,7 @@ export class DataTableComponent<T extends object = Record<string, unknown>> impl
     if (this.trackByFn) {
       return this.trackByFn(index, item);
     }
-    return (item as Record<string, unknown>).id ?? index;
+    return (item as Record<string, unknown>)['id'] ?? index;
   }
 
   protected trackBySkeleton(_index: number): number {
