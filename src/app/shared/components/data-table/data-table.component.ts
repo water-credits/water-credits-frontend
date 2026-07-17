@@ -21,6 +21,14 @@ import {
 import { EmptyStateComponent } from '../empty-state/empty-state';
 import { PaginationControlsComponent } from '../pagination-controls/pagination-controls';
 
+export {
+  ColumnDef,
+  Pagination,
+  SortEvent,
+  SortDirection,
+  TrackByFunction,
+} from './column-def.model';
+
 @Component({
   selector: 'app-data-table',
   standalone: true,
@@ -61,7 +69,7 @@ export class DataTableComponent<T extends object = Record<string, unknown>> impl
     if (this.trackByFn) {
       return this.trackByFn(index, item);
     }
-    return (item as Record<string, unknown>).id ?? index;
+    return (item as Record<string, unknown>)['id'] ?? index;
   }
 
   protected trackBySkeleton(_index: number): number {
