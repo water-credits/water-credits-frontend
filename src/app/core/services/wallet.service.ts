@@ -4,7 +4,7 @@ import { BehaviorSubject } from 'rxjs';
 import { LoggingService } from './logging.service';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class WalletService {
   private publicKeySubject = new BehaviorSubject<string | null>(null);
@@ -65,19 +65,24 @@ export class WalletService {
     }
   }
 
+  /**
+   * Sign a Stellar transaction XDR using the Freighter wallet extension.
+   *
+   * Returns the signed XDR string on success, or `null` when Freighter
+   * resolves but returns no XDR (edge case treated as implicit cancellation).
+   *
+   * **Re-throws** any error thrown by Freighter so callers can distinguish
+   * user-declined rejections (error message contains "declined"/"rejected"/
+   * "cancelled") from genuine extension/network errors.  The prior
+   * catch-and-return-null pattern silently swallowed all failure modes,
+   * preventing the NgRx effect from routing to the correct failure action.
+   */
   async signTx(xdr: string, network: string, networkPassphrase?: string): Promise<string | null> {
-    try {
-      const result = await freighter.signTransaction(xdr, { 
-        networkPassphrase 
-      });
-      if (result.signedTxXdr) {
-        return result.signedTxXdr;
-      }
-      return null;
-    } catch (error) {
-      this.loggingService.error('Failed to sign transaction:', error);
-      return null;
+    const result = await freighter.signTransaction(xdr, { networkPassphrase });
+    if (result.signedTxXdr) {
+      return result.signedTxXdr;
     }
+    return null;
   }
 
   getStoredPublicKey(): string | null {

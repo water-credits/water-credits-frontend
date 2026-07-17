@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { NgIf, NgFor, NgSwitch, NgSwitchCase, NgClass } from '@angular/common';
@@ -11,13 +11,17 @@ import {
   FileText,
   ClipboardList,
 } from 'lucide-angular';
-import { RetirementService } from '../../../core/services/retirement.service';
+import { Store } from '@ngrx/store';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
+
 import { ProjectsService } from '../../../core/services/projects.service';
-import { NotificationService } from '../../../core/services/notification.service';
 import { RetirementRequest } from '../../../core/models/retirement.model';
 import { Project } from '../../../core/models/project.model';
 import { NumberAbbreviatePipe } from '../../../shared/pipes/number-abbreviate.pipe';
 import { FormStep } from '../../../core/models/shared-interfaces.model';
+import { initiateRetirement } from '../../../core/store/retirement/retirement.actions';
+import { selectRetirementPhase } from '../../../core/store/retirement/retirement.selectors';
 
 const PURPOSE_OPTIONS = [
   'Carbon Offset',
@@ -57,10 +61,11 @@ const PURPOSE_OPTIONS = [
           Permanently retire water quality credits to offset your environmental impact.
         </p>
 
+        <!-- Step indicator -->
         <div class="flex items-center justify-between mb-8">
           <div *ngFor="let step of steps; let i = index" class="flex items-center">
             <div
-              [class]="{
+              [ngClass]="{
                 'bg-stellar-blue text-white': i <= currentStep,
                 'bg-slate-200 dark:bg-slate-700 text-slate-500': i > currentStep,
                 'bg-environmental-green text-white': i < currentStep,
@@ -80,7 +85,7 @@ const PURPOSE_OPTIONS = [
             </div>
             <div
               *ngIf="i < steps.length - 1"
-              [class]="{
+              [ngClass]="{
                 'bg-stellar-blue': i < currentStep,
                 'bg-slate-200 dark:bg-slate-700': i >= currentStep,
               }"
@@ -97,6 +102,7 @@ const PURPOSE_OPTIONS = [
         </div>
 
         <ng-container [ngSwitch]="currentStep">
+          <!-- Step 0: Project selection -->
           <div *ngSwitchCase="0" class="space-y-4">
             <div class="relative">
               <lucide-angular
@@ -144,6 +150,7 @@ const PURPOSE_OPTIONS = [
             </div>
           </div>
 
+          <!-- Step 1: Amount -->
           <div *ngSwitchCase="1" class="space-y-4">
             <div>
               <label class="label">Amount of Credits to Retire *</label>
@@ -172,6 +179,7 @@ const PURPOSE_OPTIONS = [
             </div>
           </div>
 
+          <!-- Step 2: Purpose -->
           <div *ngSwitchCase="2" class="space-y-4">
             <div>
               <label class="label">Retirement Purpose *</label>
@@ -185,7 +193,41 @@ const PURPOSE_OPTIONS = [
             </div>
           </div>
 
+          <!-- Step 3: Review & confirm -->
           <div *ngSwitchCase="3" class="space-y-4">
+            <!-- Awaiting-signature banner -->
+            <div
+              *ngIf="phase === 'awaiting_signature'"
+              class="bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-700/30 rounded-lg p-4 text-sm text-blue-800 dark:text-blue-300 flex items-center gap-3"
+            >
+              <svg
+                class="animate-spin w-5 h-5 shrink-0"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  class="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  stroke-width="4"
+                ></circle>
+                <path
+                  class="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                ></path>
+              </svg>
+              <div>
+                <p class="font-medium">Waiting for wallet signature</p>
+                <p class="mt-0.5 text-blue-700 dark:text-blue-400">
+                  Please approve the transaction in your Freighter wallet.
+                </p>
+              </div>
+            </div>
+
             <div class="bg-slate-50 dark:bg-dark-bg rounded-lg p-5 space-y-4">
               <h3 class="font-medium text-slate-900 dark:text-white flex items-center gap-2">
                 <lucide-angular
@@ -219,14 +261,20 @@ const PURPOSE_OPTIONS = [
               <p class="font-medium">Important</p>
               <p class="mt-1">
                 Retiring credits is irreversible. Once retired, these credits will be permanently
-                removed from circulation.
+                removed from circulation and recorded on-chain.
               </p>
             </div>
           </div>
         </ng-container>
 
+        <!-- Navigation buttons -->
         <div class="flex justify-between mt-8 pt-6 border-t border-slate-200 dark:border-slate-700">
-          <button *ngIf="currentStep > 0" (click)="prevStep()" class="btn btn-outline">
+          <button
+            *ngIf="currentStep > 0"
+            (click)="prevStep()"
+            [disabled]="inProgress"
+            class="btn btn-outline"
+          >
             Previous
           </button>
           <button *ngIf="currentStep === 0" (click)="cancel()" class="btn btn-outline">
@@ -244,11 +292,11 @@ const PURPOSE_OPTIONS = [
             <button
               *ngIf="currentStep === 3"
               (click)="confirm()"
-              [disabled]="saving"
+              [disabled]="inProgress"
               class="btn btn-primary flex items-center gap-2"
             >
               <svg
-                *ngIf="saving"
+                *ngIf="inProgress"
                 class="animate-spin w-4 h-4"
                 xmlns="http://www.w3.org/2000/svg"
                 fill="none"
@@ -268,7 +316,7 @@ const PURPOSE_OPTIONS = [
                   d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
                 ></path>
               </svg>
-              {{ saving ? 'Processing...' : 'Confirm & Retire' }}
+              {{ inProgress ? 'Processing...' : 'Confirm & Retire' }}
             </button>
           </div>
         </div>
@@ -276,9 +324,8 @@ const PURPOSE_OPTIONS = [
     </div>
   `,
 })
-export class RetirementFormComponent implements OnInit {
+export class RetirementFormComponent implements OnInit, OnDestroy {
   protected currentStep = 0;
-  protected saving = false;
 
   protected projects: Project[] = [];
   protected filteredProjects: Project[] = [];
@@ -287,6 +334,12 @@ export class RetirementFormComponent implements OnInit {
   protected purpose = '';
   protected searchQuery = '';
   protected purposeOptions = PURPOSE_OPTIONS;
+
+  /** Current wizard phase mirrored from the store for template bindings. */
+  protected phase = 'idle';
+
+  /** True when any async operation is in-flight — disables the confirm button. */
+  protected inProgress = false;
 
   protected readonly ChevronLeft = ChevronLeft;
   protected readonly Check = Check;
@@ -303,18 +356,47 @@ export class RetirementFormComponent implements OnInit {
     },
     { label: 'Amount', icon: Droplets, description: 'Enter the number of credits to retire.' },
     { label: 'Purpose', icon: FileText, description: 'Choose the reason for this retirement.' },
-    { label: 'Review', icon: Check, description: 'Review and confirm your retirement.' },
+    {
+      label: 'Review',
+      icon: Check,
+      description: 'Review and confirm your retirement. Your wallet will be prompted to sign.',
+    },
   ];
+
+  private readonly destroy$ = new Subject<void>();
 
   constructor(
     private router: Router,
-    private retirementService: RetirementService,
     private projectsService: ProjectsService,
-    private notificationService: NotificationService,
+    private store: Store,
   ) {}
 
   async ngOnInit(): Promise<void> {
     await this.loadProjects();
+    this.watchPhase();
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  /** Mirror store phase into local property for template use. */
+  private watchPhase(): void {
+    this.store
+      .select(selectRetirementPhase)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((phase) => {
+        this.phase = phase;
+        this.inProgress =
+          phase === 'preparing' || phase === 'awaiting_signature' || phase === 'submitting';
+
+        // If the user rejected the signature, the effect returns the phase to
+        // 'idle' — keep the form on the review step (step 3) so they can retry.
+      });
+
+    // When the retirement is signature-rejected, keep user on review step.
+    // The notification is shown by the effect; no navigation needed here.
   }
 
   private async loadProjects(): Promise<void> {
@@ -357,36 +439,28 @@ export class RetirementFormComponent implements OnInit {
   }
 
   protected prevStep(): void {
-    if (this.currentStep > 0) this.currentStep--;
+    if (this.currentStep > 0 && !this.inProgress) this.currentStep--;
   }
 
   protected cancel(): void {
     this.router.navigate(['/retirement']);
   }
 
-  protected async confirm(): Promise<void> {
+  /**
+   * Dispatches `initiateRetirement` to the NgRx store.
+   * The RetirementEffects take over from here via exhaustMap — a second click
+   * while the effect is running is silently dropped.
+   */
+  protected confirm(): void {
     if (!this.selectedProject || !this.amount || !this.purpose) return;
-    this.saving = true;
-    try {
-      const request: RetirementRequest = {
-        projectId: this.selectedProject.id,
-        amount: String(this.amount),
-        purpose: this.purpose,
-      };
-      const result = await this.retirementService.createRetirement(request);
-      this.notificationService.success(
-        'Retirement created',
-        'Your credits have been retired successfully',
-      );
-      this.router.navigate(['/retirement', result.id, 'certificate']);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'An error occurred while processing your retirement';
-      this.notificationService.error(
-        'Retirement failed',
-        message,
-      );
-    } finally {
-      this.saving = false;
-    }
+    if (this.inProgress) return; // exhaustMap guard in the effect, but also safe here
+
+    const request: RetirementRequest = {
+      projectId: this.selectedProject.id,
+      amount: String(this.amount),
+      purpose: this.purpose,
+    };
+
+    this.store.dispatch(initiateRetirement({ request }));
   }
 }

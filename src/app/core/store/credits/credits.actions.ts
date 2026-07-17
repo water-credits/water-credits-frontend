@@ -23,3 +23,9 @@ export const loadTransactionsFailure = createAction(
   '[Credits] Load Transactions Failure',
   props<{ error: string }>(),
 );
+
+/**
+ * Clears the cached portfolio so the next `loadPortfolio` call fetches fresh
+ * data. Dispatched automatically after a retirement is confirmed.
+ */
+export const invalidatePortfolio = createAction('[Credits] Invalidate Portfolio');

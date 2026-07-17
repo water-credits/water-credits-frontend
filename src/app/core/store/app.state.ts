@@ -5,6 +5,7 @@ import { uiReducer, UIState } from './ui/ui.reducer';
 import { projectsReducer, ProjectsState } from './projects/projects.reducer';
 import { sensorsReducer, SensorsState } from './sensors/sensors.reducer';
 import { creditsReducer, CreditsState } from './credits/credits.reducer';
+import { retirementReducer, RetirementState } from './retirement/retirement.reducer';
 
 export interface AppState {
   auth: AuthState;
@@ -13,6 +14,7 @@ export interface AppState {
   projects: ProjectsState;
   sensors: SensorsState;
   credits: CreditsState;
+  retirement: RetirementState;
 }
 
 export const reducers: ActionReducerMap<AppState> = {
@@ -22,4 +24,5 @@ export const reducers: ActionReducerMap<AppState> = {
   projects: projectsReducer,
   sensors: sensorsReducer,
   credits: creditsReducer,
+  retirement: retirementReducer,
 };
