@@ -21,7 +21,7 @@ import {
 import { EmptyStateComponent } from '../empty-state/empty-state';
 import { PaginationControlsComponent } from '../pagination-controls/pagination-controls';
 
-export {
+export type {
   ColumnDef,
   Pagination,
   SortEvent,

@@ -382,7 +382,7 @@ export class SensorConfigComponent implements OnInit {
   protected readonly FlaskConical = FlaskConical;
   protected readonly Beaker = Beaker;
 
-  protected deviceColumns: ColumnDef[] = [
+  protected deviceColumns: ColumnDef<SensorDevice>[] = [
     { key: 'deviceId', label: 'Device ID', sortable: true },
     { key: 'manufacturer', label: 'Manufacturer', sortable: true },
     { key: 'model', label: 'Model', sortable: true },

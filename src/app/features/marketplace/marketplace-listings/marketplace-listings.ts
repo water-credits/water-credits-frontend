@@ -61,32 +61,22 @@ import { NumberAbbreviatePipe } from '../../../shared/pipes/number-abbreviate.pi
         </div>
       </div>
 
-      <div class="flex items-center gap-4">
-        <div class="w-64">
-          <app-search-input
-            [placeholder]="'Search listings...'"
-            (search)="onSearch($event)"
-          ></app-search-input>
+      <div class="card p-5">
+        <div class="flex items-center gap-3">
+          <div class="flex-1">
+            <app-search-input
+              [value]="searchQuery"
+              placeholder="Search listings..."
+              (search)="searchQuery = $event; page = 1; loadListings()"
+            />
+          </div>
+          <select [(ngModel)]="statusFilter" (change)="page = 1; loadListings()" class="input">
+            <option value="">All statuses</option>
+            <option value="active">Active</option>
+            <option value="sold">Sold</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
         </div>
-        <select
-          [ngModel]="statusFilter"
-          (ngModelChange)="filterByStatus($event)"
-          class="input w-40"
-        >
-          <option value="">All Status</option>
-          <option value="active">Active</option>
-          <option value="filled">Filled</option>
-          <option value="cancelled">Cancelled</option>
-          <option value="expired">Expired</option>
-        </select>
-        <select
-          [ngModel]="projectFilter"
-          (ngModelChange)="filterByProject($event)"
-          class="input w-56"
-        >
-          <option value="">All Projects</option>
-          <option *ngFor="let p of projects" [value]="p.id">{{ p.name }}</option>
-        </select>
       </div>
 
       <app-loading-spinner
@@ -109,9 +99,6 @@ import { NumberAbbreviatePipe } from '../../../shared/pipes/number-abbreviate.pi
         [data]="listings"
         [loading]="false"
         [pagination]="pagination"
-        [totalPages]="pagination?.totalPages ?? 1"
-        [total]="pagination?.total ?? 0"
-        [limit]="pagination?.limit ?? 10"
         (page)="onPageChange($event)"
       >
         <ng-template #row let-row let-col="column">
@@ -173,14 +160,13 @@ export class MarketplaceListingsComponent implements OnInit {
   loading = true;
   page = 1;
   limit = 10;
-  total = 0;
-  totalPages = 0;
+  pagination: { page: number; limit: number; total: number; totalPages: number } | null = null;
   statusFilter = '';
   projectFilter = '';
   searchQuery = '';
   projects: { id: string; name: string }[] = [];
 
-  columns: ColumnDef[] = [
+  columns: ColumnDef<MarketplaceListing>[] = [
     { key: 'projectName', label: 'Project', sortable: true },
     { key: 'sellerName', label: 'Seller' },
     { key: 'amount', label: 'Amount', align: 'right' },
@@ -210,11 +196,15 @@ export class MarketplaceListingsComponent implements OnInit {
       if (this.searchQuery) params['search'] = this.searchQuery;
       const response = await this.marketplaceService.getListings(params);
       this.listings = response.data;
-      this.total = response.total;
-      this.totalPages = response.totalPages;
-      this.page = response.page;
+      this.pagination = {
+        page: response.page,
+        limit: this.limit,
+        total: response.total,
+        totalPages: response.totalPages,
+      };
     } catch {
       this.listings = [];
+      this.pagination = null;
     } finally {
       this.loading = false;
     }
@@ -246,8 +236,8 @@ export class MarketplaceListingsComponent implements OnInit {
     this.loadListings();
   }
 
-  onSearch(query: string): void {
-    this.searchQuery = query;
+  onSearch(term: string): void {
+    this.searchQuery = term;
     this.page = 1;
     this.loadListings();
   }

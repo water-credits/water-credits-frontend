@@ -299,7 +299,7 @@ export class SensorsDashboardComponent implements OnInit, OnDestroy {
   protected readonly SettingsIcon = Settings;
   protected readonly RadioIcon = Radio;
 
-  protected deviceColumns: ColumnDef[] = [
+  protected deviceColumns: ColumnDef<SensorDevice>[] = [
     { key: 'deviceId', label: 'Device ID', sortable: true },
     { key: 'manufacturer', label: 'Manufacturer', sortable: true },
     { key: 'model', label: 'Model', sortable: true },

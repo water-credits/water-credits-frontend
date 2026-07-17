@@ -11,6 +11,7 @@ import { ProjectsEffects } from './core/store/projects/projects.effects';
 import { CreditsEffects } from './core/store/credits/credits.effects';
 import { RetirementEffects } from './core/store/retirement/retirement.effects';
 import { GovernanceEffects } from './core/store/governance/governance.effects';
+import { SensorsEffects } from './core/store/sensors/sensors.effects';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -23,6 +24,7 @@ export const appConfig: ApplicationConfig = {
       CreditsEffects,
       RetirementEffects,
       GovernanceEffects,
+      SensorsEffects,
     ]),
     provideStoreDevtools({ maxAge: 25, logOnly: !isDevMode() }),
   ],

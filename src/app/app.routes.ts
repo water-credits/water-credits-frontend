@@ -91,6 +91,13 @@ export const routes: Routes = [
                 (m) => m.SensorConfigComponent,
               ),
           },
+          {
+            path: ':projectId',
+            loadComponent: () =>
+              import('./features/sensors/sensors-dashboard/sensors-dashboard').then(
+                (m) => m.SensorsDashboardComponent,
+              ),
+          },
         ],
       },
       {

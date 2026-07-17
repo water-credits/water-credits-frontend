@@ -3,9 +3,10 @@ import { io, Socket } from 'socket.io-client';
 import { environment } from '../../../environments/environment';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { LoggingService } from './logging.service';
+import { SensorReading, SensorAlert } from '../models/sensor-reading.model';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class WebsocketService {
   private socket: Socket | null = null;
@@ -49,9 +50,9 @@ export class WebsocketService {
   }
 
   on<T = unknown>(event: string): Observable<T> {
-    return new Observable<T>(observer => {
+    return new Observable<T>((observer) => {
       if (!this.socket) return;
-      
+
       this.socket.on(event, (data: T) => {
         observer.next(data);
       });
@@ -68,5 +69,21 @@ export class WebsocketService {
     if (this.socket) {
       this.socket.emit(event, data);
     }
+  }
+
+  get sensorReadings$(): Observable<SensorReading> {
+    return this.on<SensorReading>('sensor:reading');
+  }
+
+  get sensorAlerts$(): Observable<SensorAlert> {
+    return this.on<SensorAlert>('sensor:alert');
+  }
+
+  subscribeToProject(projectId: string): void {
+    this.emit('subscribe:project', { projectId });
+  }
+
+  unsubscribeFromProject(projectId: string): void {
+    this.emit('unsubscribe:project', { projectId });
   }
 }

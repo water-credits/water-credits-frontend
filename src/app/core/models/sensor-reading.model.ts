@@ -66,3 +66,15 @@ export interface SensorReadingSubmission {
   temperature?: number;
   signature: string;
 }
+
+export interface SensorAlert {
+  id: string;
+  projectId: string;
+  deviceId: string;
+  parameter: string;
+  value: number;
+  threshold: number;
+  severity: 'info' | 'warning' | 'critical';
+  message: string;
+  timestamp: string;
+}
