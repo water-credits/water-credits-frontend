@@ -4,12 +4,7 @@ import { Retirement, RetirementCertificate } from '../../models/retirement.model
 
 /** The retirement wizard's current phase, used to drive UI state. */
 export type RetirementPhase =
-  | 'idle'
-  | 'preparing'
-  | 'awaiting_signature'
-  | 'submitting'
-  | 'confirmed'
-  | 'failed';
+  'idle' | 'preparing' | 'awaiting_signature' | 'submitting' | 'confirmed' | 'failed';
 
 export interface RetirementState {
   /** Paginated list from the Retirement History view. */
