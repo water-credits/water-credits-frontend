@@ -1,0 +1,131 @@
+# CI — lint → test → build
+#
+# Runs on every pull request targeting main (and on direct pushes to main so
+# the status checks appear on the branch protection dashboard too).
+#
+# Jobs:
+#   lint  — ESLint + Prettier format check
+#   test  — Vitest (via @angular/build:unit-test) + coverage artifact upload
+#   build — Angular production build (bundle budgets enforced as errors)
+#
+# All three jobs are required status checks for main branch protection.
+# See CONTRIBUTING.md §CI/CD for setup instructions.
+
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+# Cancel in-flight runs for the same PR/branch when a new commit is pushed.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ─────────────────────────────────────────────────────────────────────────────
+  # JOB 1 — LINT
+  # Runs: ng lint (ESLint) + prettier --check
+  # Fails the PR if either exits non-zero.
+  # ─────────────────────────────────────────────────────────────────────────────
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: ESLint
+        run: npm run lint
+
+      - name: Prettier format check
+        run: npm run format:check
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # JOB 2 — TEST
+  # Runs: Vitest via the Angular build:unit-test builder (npm run test:ci)
+  # Uploads the coverage report as a workflow artifact.
+  # ─────────────────────────────────────────────────────────────────────────────
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Stub out the environment file so the build and tests can resolve it.
+      # The real values are not needed for unit tests; CI uses the example.
+      - name: Prepare environment file
+        run: cp src/environments/environment.ts.example src/environments/environment.ts
+
+      - name: Run tests with coverage
+        # npm run test:ci → ng test --no-watch --code-coverage
+        # The @angular/build:unit-test builder delegates to Vitest and writes
+        # coverage reports to coverage/ by default.
+        run: npm run test:ci
+
+      - name: Upload coverage report
+        # Always upload so coverage is visible even when a test fails.
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/
+          retention-days: 14
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # JOB 3 — BUILD
+  # Runs: ng build --configuration production
+  # Bundle budgets (maximumError) are enforced by angular.json and treated as
+  # build errors, so this step fails automatically when budgets are exceeded.
+  # ─────────────────────────────────────────────────────────────────────────────
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Prepare environment file
+        run: cp src/environments/environment.ts.example src/environments/environment.ts
+
+      - name: Production build (budget-enforced)
+        run: npm run build -- --configuration production
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          # angular.json does not set outputPath explicitly, so the default
+          # @angular/build:application output directory is dist/.
+          path: dist/
+          retention-days: 7

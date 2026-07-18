@@ -12,6 +12,7 @@ Thank you for your interest in contributing! We welcome contributions from every
 - [Commit Convention](#commit-convention)
 - [Pull Request Process](#pull-request-process)
 - [Testing](#testing)
+- [CI / CD](#ci--cd)
 - [Reporting Issues](#reporting-issues)
 
 ## Code of Conduct
@@ -227,6 +228,83 @@ npm run test -- --include src/app/features/sensors/sensors-dashboard
 - Use `@ngrx/store/testing` for store tests
 - Mock external services (API, WebSocket, Freighter wallet)
 - Follow the existing test patterns in the codebase
+
+## CI / CD
+
+The project uses GitHub Actions for automated quality gates. Two workflow files live in `.github/workflows/`:
+
+| Workflow   | File         | Trigger                                             |
+| ---------- | ------------ | --------------------------------------------------- |
+| **CI**     | `ci.yml`     | Every pull request targeting `main`; push to `main` |
+| **Deploy** | `deploy.yml` | Push to `main` or `release/**`                      |
+
+### CI Jobs (ci.yml)
+
+The CI workflow runs three jobs in sequence. All three must pass before a PR can be merged.
+
+| Job     | Command                                                  | What it checks                                                                    |
+| ------- | -------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| `lint`  | `ng lint` + `npm run format:check`                       | ESLint rules + Prettier formatting                                                |
+| `test`  | `npm run test:ci` (`ng test --no-watch --code-coverage`) | All Vitest unit tests; uploads `coverage/` as a workflow artifact                 |
+| `build` | `npm run build -- --configuration production`            | Angular production build; fails if any bundle budget (`maximumError`) is exceeded |
+
+**Note on the test runner:** `@angular/build:unit-test` (declared in `angular.json`) delegates to Vitest. The spec files use `TestBed` from `@angular/core/testing`; `vitest/globals` are provided automatically by the builder so no explicit `import { describe, it, expect } from 'vitest'` is needed.
+
+### Deploy Job (deploy.yml)
+
+Deploys the production build to **Cloudflare Pages** on every push to `main` (or a `release/**` branch). A `_redirects` file is automatically added to the build output so Angular's pushState router works correctly.
+
+### Required Repository Secrets
+
+Go to **Settings → Secrets and variables → Actions → New repository secret** and add each of the following.
+
+#### CI / Deploy — infrastructure
+
+| Secret name             | How to obtain                                                                                                                                             | Used by      |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
+| `CLOUDFLARE_API_TOKEN`  | [Cloudflare dashboard → Profile → API Tokens](https://dash.cloudflare.com/profile/api-tokens) — create a token with **Cloudflare Pages: Edit** permission | `deploy.yml` |
+| `CLOUDFLARE_ACCOUNT_ID` | Right-hand sidebar of any page in the Cloudflare dashboard                                                                                                | `deploy.yml` |
+| `CF_PAGES_PROJECT_NAME` | The name of your Cloudflare Pages project (e.g. `water-credits-frontend`) — create it at [pages.cloudflare.com](https://pages.cloudflare.com) first       | `deploy.yml` |
+
+#### Production environment — Stellar & backend
+
+| Secret name                            | Description                                                            | Used by      |
+| -------------------------------------- | ---------------------------------------------------------------------- | ------------ |
+| `PROD_API_URL`                         | Backend REST API base URL (e.g. `https://api.water-credits.io/api/v1`) | `deploy.yml` |
+| `PROD_WS_URL`                          | Backend WebSocket server URL (e.g. `https://api.water-credits.io`)     | `deploy.yml` |
+| `STELLAR_NETWORK`                      | `public` for mainnet, `testnet` for testnet                            | `deploy.yml` |
+| `SOROBAN_RPC_URL`                      | Soroban RPC endpoint (e.g. `https://soroban-testnet.stellar.org`)      | `deploy.yml` |
+| `STELLAR_CONTRACT_CREDIT_FACTORY`      | Deployed `CreditFactory` contract address (C…)                         | `deploy.yml` |
+| `STELLAR_CONTRACT_VERIFICATION_ORACLE` | Deployed `VerificationOracle` contract address (C…)                    | `deploy.yml` |
+| `STELLAR_CONTRACT_RETIREMENT_REGISTRY` | Deployed `RetirementRegistry` contract address (C…)                    | `deploy.yml` |
+| `STELLAR_CONTRACT_GOVERNANCE`          | Deployed `Governance` contract address (C…)                            | `deploy.yml` |
+
+The deploy workflow will fail with an authentication error from the Cloudflare Pages action if `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, or `CF_PAGES_PROJECT_NAME` are missing or invalid. The Stellar contract secrets default to empty strings in the generated environment file — incorrect values won't break the build but will cause runtime errors in production.
+
+### Branch Protection Setup (admin required)
+
+To enforce CI as a merge gate on `main`:
+
+1. Go to **Settings → Branches → Add branch protection rule**.
+2. Set the pattern to `main`.
+3. Enable **Require status checks to pass before merging**.
+4. Search for and add the following required checks:
+   - `Lint`
+   - `Test`
+   - `Build`
+5. Enable **Require branches to be up to date before merging**.
+6. Optionally enable **Require a pull request before merging** (1 approving review recommended).
+7. Save the rule.
+
+The status check names match the `name:` fields in `ci.yml`. They will appear in the UI after the first CI run on a PR.
+
+### Dependency Caching
+
+`actions/setup-node@v4` with `cache: 'npm'` caches `~/.npm` keyed on the hash of `package-lock.json`. A warm cache reduces `npm ci` time from ~90 s to ~10 s. The cache is invalidated automatically whenever `package-lock.json` changes.
+
+### Viewing Coverage Reports
+
+After any CI run, go to **Actions → (workflow run) → Artifacts** and download `coverage-report`. Open `coverage/index.html` in a browser to view the full Vitest coverage breakdown.
 
 ## Reporting Issues
 

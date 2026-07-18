@@ -25,9 +25,17 @@ Closes #
 
 <!-- Describe the tests you ran to verify your changes -->
 
-- [ ] `npm test` passes
-- [ ] `npm run lint` passes
-- [ ] `npm run build` succeeds
+- [ ] `npm test` passes locally
+- [ ] `npm run lint` passes locally
+- [ ] `npm run build` succeeds locally
+
+## CI Checks
+
+<!-- These run automatically on every PR — do not merge until all are green -->
+
+- [ ] **Lint** job passes (`ng lint` + `npm run format:check`)
+- [ ] **Test** job passes (all Vitest tests, coverage report uploaded)
+- [ ] **Build** job passes (production build, bundle budgets not exceeded)
 
 ## Checklist
 
