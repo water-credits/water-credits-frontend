@@ -5,7 +5,10 @@ import { UsersService } from '../../../core/services/users.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { StellarAddressPipe } from '../../../shared/pipes/stellar-address.pipe';
 import { DateFormatPipe } from '../../../shared/pipes/date-format.pipe';
-import { DataTableComponent, ColumnDef } from '../../../shared/components/data-table/data-table';
+import {
+  DataTableComponent,
+  ColumnDef,
+} from '../../../shared/components/data-table/data-table.component';
 import { StatusBadgeComponent } from '../../../shared/components/status-badge/status-badge';
 import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog';
 import { User, UserRole } from '../../../core/models/user.model';
@@ -44,11 +47,11 @@ import { getErrorMessage } from '../../../core/utils/error.utils';
         [columns]="userColumns"
         [data]="users"
         [loading]="loading"
-        [page]="page"
-        [totalPages]="totalPages"
-        [total]="total"
-        [limit]="limit"
-        (pageChange)="onPageChange($event)"
+        [pagination]="pagination"
+        [totalPages]="pagination?.totalPages ?? 1"
+        [total]="pagination?.total ?? 0"
+        [limit]="pagination?.limit ?? 10"
+        (page)="onPageChange($event)"
         emptyTitle="No users found"
         emptyMessage="Users will appear here once they register."
       >
@@ -163,7 +166,10 @@ export class AdminUsersComponent implements OnInit {
         `${user.displayName || user.wallet}'s role changed to ${role}.`,
       );
     } catch (error) {
-      this.notification.error('Update Failed', getErrorMessage(error, 'Could not update user role.'));
+      this.notification.error(
+        'Update Failed',
+        getErrorMessage(error, 'Could not update user role.'),
+      );
     }
   }
 
@@ -177,7 +183,10 @@ export class AdminUsersComponent implements OnInit {
         `KYC status for ${user.displayName || user.wallet} set to ${newValue ? 'verified' : 'unverified'}.`,
       );
     } catch (error) {
-      this.notification.error('Update Failed', getErrorMessage(error, 'Could not update KYC status.'));
+      this.notification.error(
+        'Update Failed',
+        getErrorMessage(error, 'Could not update KYC status.'),
+      );
     }
   }
 

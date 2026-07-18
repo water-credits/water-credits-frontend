@@ -4,7 +4,10 @@ import { RouterLink } from '@angular/router';
 import { LucideAngularModule, Plus, FileText } from 'lucide-angular';
 import { RetirementService } from '../../../core/services/retirement.service';
 import { Retirement } from '../../../core/models/retirement.model';
-import { DataTableComponent, ColumnDef } from '../../../shared/components/data-table/data-table';
+import {
+  DataTableComponent,
+  ColumnDef,
+} from '../../../shared/components/data-table/data-table.component';
 import { StatusBadgeComponent } from '../../../shared/components/status-badge/status-badge';
 import { CreditAmountPipe } from '../../../shared/pipes/credit-amount.pipe';
 import { DateFormatPipe } from '../../../shared/pipes/date-format.pipe';
@@ -44,13 +47,8 @@ import { DateFormatPipe } from '../../../shared/pipes/date-format.pipe';
         [columns]="columns"
         [data]="retirements"
         [loading]="loading"
-        [page]="page"
-        [totalPages]="totalPages"
-        [total]="total"
-        [limit]="limit"
-        emptyTitle="No retirements yet"
-        emptyMessage="You haven't retired any credits yet. Start your first retirement to offset your carbon footprint."
-        (pageChange)="onPageChange($event)"
+        [pagination]="pagination"
+        (page)="onPageChange($event)"
       >
         <ng-template #row let-row let-col="column">
           <ng-container [ngSwitch]="col.key">
@@ -93,11 +91,17 @@ export class RetirementHistoryComponent implements OnInit {
   protected totalPages = 1;
   protected total = 0;
   protected limit = 10;
+  protected pagination = {
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 1,
+  };
 
   protected readonly PlusIcon = Plus;
   protected readonly FileTextIcon = FileText;
 
-  protected columns: ColumnDef[] = [
+  protected columns: ColumnDef<Retirement>[] = [
     { key: 'projectName', label: 'Project', width: '25%' },
     { key: 'amount', label: 'Amount' },
     { key: 'purpose', label: 'Purpose' },
@@ -123,6 +127,12 @@ export class RetirementHistoryComponent implements OnInit {
       this.total = response.total;
       this.totalPages = response.totalPages;
       this.page = response.page;
+      this.pagination = {
+        page: response.page,
+        limit: this.limit,
+        total: response.total,
+        totalPages: response.totalPages,
+      };
     } catch {
       this.retirements = [];
     } finally {

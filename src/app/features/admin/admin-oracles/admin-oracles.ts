@@ -5,7 +5,10 @@ import { OracleService } from '../../../core/services/oracle.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { StellarAddressPipe } from '../../../shared/pipes/stellar-address.pipe';
 import { DateFormatPipe } from '../../../shared/pipes/date-format.pipe';
-import { DataTableComponent, ColumnDef } from '../../../shared/components/data-table/data-table';
+import {
+  DataTableComponent,
+  ColumnDef,
+} from '../../../shared/components/data-table/data-table.component';
 import { StatusBadgeComponent } from '../../../shared/components/status-badge/status-badge';
 import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog';
 import { OracleSubmission } from '../../../core/models/oracle.model';
@@ -164,11 +167,11 @@ interface OracleEntry {
           [columns]="submissionColumns"
           [data]="submissions"
           [loading]="submissionsLoading"
-          [page]="page"
-          [totalPages]="totalPages"
-          [total]="total"
-          [limit]="limit"
-          (pageChange)="onPageChange($event)"
+          [pagination]="pagination"
+          [totalPages]="pagination?.totalPages ?? 1"
+          [total]="pagination?.total ?? 0"
+          [limit]="pagination?.limit ?? 10"
+          (page)="onPageChange($event)"
           emptyTitle="No submissions"
           emptyMessage="Oracle submissions will appear here."
         >

@@ -17,7 +17,10 @@ import {
 } from 'lucide-angular';
 import { StatusBadgeComponent } from '../../../shared/components/status-badge/status-badge';
 import { LoadingSpinnerComponent } from '../../../shared/components/loading-spinner/loading-spinner';
-import { DataTableComponent, ColumnDef } from '../../../shared/components/data-table/data-table';
+import {
+  DataTableComponent,
+  ColumnDef,
+} from '../../../shared/components/data-table/data-table.component';
 import { DurationPipe } from '../../../shared/pipes/duration.pipe';
 import { NumberAbbreviatePipe } from '../../../shared/pipes/number-abbreviate.pipe';
 import { Proposal, ProposalStatus, GovernanceConfig } from '../../../core/models/proposal.model';
@@ -168,7 +171,6 @@ import { selectCurrentUser } from '../../../core/store/auth/auth.selectors';
             [columns]="columns"
             [data]="(filteredProposals$ | async) || []"
             [loading]="(loadingProposals$ | async) || false"
-            [showPagination]="false"
             emptyTitle="No proposals found"
             emptyMessage="There are no proposals matching the selected filter."
             (rowClick)="goToProposal($event)"

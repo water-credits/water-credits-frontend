@@ -19,7 +19,10 @@ import { StellarAddressPipe } from '../../../shared/pipes/stellar-address.pipe';
 import { NumberAbbreviatePipe } from '../../../shared/pipes/number-abbreviate.pipe';
 import { LoadingSpinnerComponent } from '../../../shared/components/loading-spinner/loading-spinner';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state';
-import { DataTableComponent, ColumnDef } from '../../../shared/components/data-table/data-table';
+import {
+  DataTableComponent,
+  ColumnDef,
+} from '../../../shared/components/data-table/data-table.component';
 import { RetireCreditsModalComponent } from '../../../shared/components/retire-credits-modal/retire-credits-modal';
 import {
   CreditBalance,
@@ -155,7 +158,6 @@ import {
               [columns]="holdingsColumns"
               [data]="portfolio.holdings || []"
               [loading]="false"
-              [showPagination]="false"
               emptyTitle="No credit holdings"
               emptyMessage="You don't have any credit holdings yet."
             >

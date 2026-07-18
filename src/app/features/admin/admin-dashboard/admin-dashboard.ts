@@ -6,7 +6,10 @@ import { OracleService } from '../../../core/services/oracle.service';
 import { NumberAbbreviatePipe } from '../../../shared/pipes/number-abbreviate.pipe';
 import { DateFormatPipe } from '../../../shared/pipes/date-format.pipe';
 import { StellarAddressPipe } from '../../../shared/pipes/stellar-address.pipe';
-import { DataTableComponent, ColumnDef } from '../../../shared/components/data-table/data-table';
+import {
+  DataTableComponent,
+  ColumnDef,
+} from '../../../shared/components/data-table/data-table.component';
 import { StatusBadgeComponent } from '../../../shared/components/status-badge/status-badge';
 import { AnalyticsOverview } from '../../../core/models/analytics.model';
 import { OracleSubmission } from '../../../core/models/oracle.model';
@@ -271,7 +274,6 @@ import { LoggingService } from '../../../core/services/logging.service';
             [columns]="submissionColumns"
             [data]="recentSubmissions"
             [loading]="submissionsLoading"
-            [showPagination]="false"
             emptyTitle="No submissions yet"
             emptyMessage="Oracle submissions will appear here once they start flowing."
           >

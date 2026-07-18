@@ -3,7 +3,10 @@ import { Router } from '@angular/router';
 import { Store } from '@ngrx/store';
 import { Observable, Subject } from 'rxjs';
 import { NgIf, NgFor, AsyncPipe } from '@angular/common';
-import { DataTableComponent, ColumnDef } from '../../../shared/components/data-table/data-table';
+import {
+  DataTableComponent,
+  ColumnDef,
+} from '../../../shared/components/data-table/data-table.component';
 import { StatusBadgeComponent } from '../../../shared/components/status-badge/status-badge';
 import { SearchInputComponent } from '../../../shared/components/search-input/search-input';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state';
@@ -96,7 +99,7 @@ import { LucideAngularModule, Plus, LayoutGrid, Table2 } from 'lucide-angular';
           [sortDirection]="sortDirection"
           (rowClick)="goToProject($event)"
           (sort)="onSort($event)"
-          (pageChange)="onPageChange($event)"
+          (page)="onPageChange($event)"
           emptyTitle="No projects found"
           emptyMessage="Get started by creating your first water credit project."
         />
