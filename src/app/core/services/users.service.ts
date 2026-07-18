@@ -7,7 +7,11 @@ import { PaginatedResponse } from '../models/pagination.model';
 export class UsersService {
   constructor(private api: ApiService) {}
 
-  async getUsers(params?: { page?: number; limit?: number; role?: string }): Promise<PaginatedResponse<User>> {
+  async getUsers(params?: {
+    page?: number;
+    limit?: number;
+    role?: string;
+  }): Promise<PaginatedResponse<User>> {
     return this.api.get<PaginatedResponse<User>>('/users', { params });
   }
 

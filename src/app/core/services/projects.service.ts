@@ -1,7 +1,13 @@
 import { Injectable } from '@angular/core';
 import { ApiService } from './api.service';
 import { PaginatedResponse } from '../models/pagination.model';
-import { Project, ProjectCreate, ProjectUpdate, ProjectFilters, ProjectDocument } from '../models/project.model';
+import {
+  Project,
+  ProjectCreate,
+  ProjectUpdate,
+  ProjectFilters,
+  ProjectDocument,
+} from '../models/project.model';
 
 @Injectable({ providedIn: 'root' })
 export class ProjectsService {

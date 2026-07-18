@@ -302,7 +302,7 @@ export class CreditsPortfolioComponent implements OnInit, OnDestroy {
   protected showRetireModal = false;
   protected retireProjects: { id: string; name: string; balance: string }[] = [];
 
-  protected readonly holdingsColumns: ColumnDef[] = [
+  protected readonly holdingsColumns: ColumnDef<CreditBalance>[] = [
     { key: 'projectName', label: 'Project', sortable: true },
     { key: 'balance', label: 'Balance', sortable: true, align: 'right' },
     { key: 'totalRetired', label: 'Retired', sortable: true, align: 'right' },

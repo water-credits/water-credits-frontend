@@ -39,7 +39,12 @@ export interface CreateListingRequest {
 export class MarketplaceService {
   constructor(private api: ApiService) {}
 
-  async getListings(params?: { page?: number; limit?: number; status?: string; projectId?: string }): Promise<PaginatedResponse<MarketplaceListing>> {
+  async getListings(params?: {
+    page?: number;
+    limit?: number;
+    status?: string;
+    projectId?: string;
+  }): Promise<PaginatedResponse<MarketplaceListing>> {
     return this.api.get<PaginatedResponse<MarketplaceListing>>('/marketplace/listings', { params });
   }
 

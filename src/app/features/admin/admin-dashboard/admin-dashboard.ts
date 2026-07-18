@@ -319,7 +319,7 @@ export class AdminDashboardComponent implements OnInit {
   protected readonly ShieldCheck = ShieldCheck;
   protected readonly Settings = Settings;
 
-  protected submissionColumns: ColumnDef[] = [
+  protected submissionColumns: ColumnDef<OracleSubmission>[] = [
     { key: 'projectId', label: 'Project ID' },
     { key: 'oracleAddress', label: 'Oracle' },
     { key: 'status', label: 'Status' },

@@ -168,9 +168,6 @@ interface OracleEntry {
           [data]="submissions"
           [loading]="submissionsLoading"
           [pagination]="pagination"
-          [totalPages]="pagination?.totalPages ?? 1"
-          [total]="pagination?.total ?? 0"
-          [limit]="pagination?.limit ?? 10"
           (page)="onPageChange($event)"
           emptyTitle="No submissions"
           emptyMessage="Oracle submissions will appear here."
@@ -217,12 +214,16 @@ export class AdminOraclesComponent implements OnInit {
   protected total = 0;
   protected limit = 10;
 
+  get pagination(): { page: number; totalPages: number; total: number; limit: number } {
+    return { page: this.page, totalPages: this.totalPages, total: this.total, limit: this.limit };
+  }
+
   protected readonly HardDrive = HardDrive;
   protected readonly Plus = Plus;
   protected readonly Trash2 = Trash2;
   protected readonly RefreshCw = RefreshCw;
 
-  protected submissionColumns: ColumnDef[] = [
+  protected submissionColumns: ColumnDef<OracleSubmission>[] = [
     { key: 'projectId', label: 'Project ID' },
     { key: 'oracleAddress', label: 'Oracle', width: '25%' },
     { key: 'status', label: 'Status' },

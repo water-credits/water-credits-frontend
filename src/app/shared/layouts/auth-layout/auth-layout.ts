@@ -12,6 +12,6 @@ import { RouterOutlet } from '@angular/router';
       </div>
     </div>
   `,
-  styles: []
+  styles: [],
 })
 export class AuthLayoutComponent {}

@@ -10,7 +10,7 @@ export interface ToastNotification {
 }
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class NotificationService {
   private notificationsSubject = new BehaviorSubject<ToastNotification[]>([]);
@@ -21,7 +21,7 @@ export class NotificationService {
   show(notification: Omit<ToastNotification, 'id'>) {
     const id = Math.random().toString(36).substring(2, 11);
     const newNotification = { ...notification, id };
-    
+
     const current = this.notificationsSubject.value;
     this.notificationsSubject.next([...current, newNotification]);
 
@@ -50,6 +50,6 @@ export class NotificationService {
 
   remove(id: string) {
     const current = this.notificationsSubject.value;
-    this.notificationsSubject.next(current.filter(n => n.id !== id));
+    this.notificationsSubject.next(current.filter((n) => n.id !== id));
   }
 }

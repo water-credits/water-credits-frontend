@@ -17,5 +17,5 @@ export const uiReducer = createReducer(
   initialState,
   on(UIActions.toggleSidebar, (state) => ({ ...state, sidebarOpen: !state.sidebarOpen })),
   on(UIActions.setDarkMode, (state, { isDark }) => ({ ...state, isDarkMode: isDark })),
-  on(UIActions.setLoading, (state, { isLoading }) => ({ ...state, isLoading }))
+  on(UIActions.setLoading, (state, { isLoading }) => ({ ...state, isLoading })),
 );

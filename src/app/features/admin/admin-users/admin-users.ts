@@ -48,9 +48,6 @@ import { getErrorMessage } from '../../../core/utils/error.utils';
         [data]="users"
         [loading]="loading"
         [pagination]="pagination"
-        [totalPages]="pagination?.totalPages ?? 1"
-        [total]="pagination?.total ?? 0"
-        [limit]="pagination?.limit ?? 10"
         (page)="onPageChange($event)"
         emptyTitle="No users found"
         emptyMessage="Users will appear here once they register."
@@ -132,12 +129,16 @@ export class AdminUsersComponent implements OnInit {
   protected total = 0;
   protected limit = 10;
 
+  get pagination(): { page: number; totalPages: number; total: number; limit: number } {
+    return { page: this.page, totalPages: this.totalPages, total: this.total, limit: this.limit };
+  }
+
   protected readonly roles: string[] = Object.values(UserRole);
   protected readonly Trash2 = Trash2;
   protected readonly Shield = Shield;
   protected readonly Users = Users;
 
-  protected userColumns: ColumnDef[] = [
+  protected userColumns: ColumnDef<User>[] = [
     { key: 'wallet', label: 'Wallet', width: '18%' },
     { key: 'displayName', label: 'Display Name' },
     { key: 'email', label: 'Email' },

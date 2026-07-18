@@ -12,11 +12,17 @@ export class ProjectsEffects {
       ofType(ProjectsActions.loadProjects),
       switchMap(({ filters }) =>
         from(this.projectsService.getProjects(filters)).pipe(
-          map(response => ProjectsActions.loadProjectsSuccess({ response })),
-          catchError(error => of(ProjectsActions.loadProjectsFailure({ error: error.message || 'Failed to load projects' })))
-        )
-      )
-    )
+          map((response) => ProjectsActions.loadProjectsSuccess({ response })),
+          catchError((error) =>
+            of(
+              ProjectsActions.loadProjectsFailure({
+                error: error.message || 'Failed to load projects',
+              }),
+            ),
+          ),
+        ),
+      ),
+    ),
   );
 
   loadProject$ = createEffect(() =>
@@ -24,11 +30,17 @@ export class ProjectsEffects {
       ofType(ProjectsActions.loadProject),
       switchMap(({ id }) =>
         from(this.projectsService.getProject(id)).pipe(
-          map(project => ProjectsActions.loadProjectSuccess({ project })),
-          catchError(error => of(ProjectsActions.loadProjectFailure({ error: error.message || 'Failed to load project' })))
-        )
-      )
-    )
+          map((project) => ProjectsActions.loadProjectSuccess({ project })),
+          catchError((error) =>
+            of(
+              ProjectsActions.loadProjectFailure({
+                error: error.message || 'Failed to load project',
+              }),
+            ),
+          ),
+        ),
+      ),
+    ),
   );
 
   createProject$ = createEffect(() =>
@@ -36,11 +48,17 @@ export class ProjectsEffects {
       ofType(ProjectsActions.createProject),
       switchMap(({ data }) =>
         from(this.projectsService.createProject(data)).pipe(
-          map(project => ProjectsActions.createProjectSuccess({ project })),
-          catchError(error => of(ProjectsActions.createProjectFailure({ error: error.message || 'Failed to create project' })))
-        )
-      )
-    )
+          map((project) => ProjectsActions.createProjectSuccess({ project })),
+          catchError((error) =>
+            of(
+              ProjectsActions.createProjectFailure({
+                error: error.message || 'Failed to create project',
+              }),
+            ),
+          ),
+        ),
+      ),
+    ),
   );
 
   updateProject$ = createEffect(() =>
@@ -48,11 +66,17 @@ export class ProjectsEffects {
       ofType(ProjectsActions.updateProject),
       switchMap(({ id, data }) =>
         from(this.projectsService.updateProject(id, data)).pipe(
-          map(project => ProjectsActions.updateProjectSuccess({ project })),
-          catchError(error => of(ProjectsActions.updateProjectFailure({ error: error.message || 'Failed to update project' })))
-        )
-      )
-    )
+          map((project) => ProjectsActions.updateProjectSuccess({ project })),
+          catchError((error) =>
+            of(
+              ProjectsActions.updateProjectFailure({
+                error: error.message || 'Failed to update project',
+              }),
+            ),
+          ),
+        ),
+      ),
+    ),
   );
 
   constructor(

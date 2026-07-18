@@ -29,5 +29,5 @@ export const walletReducer = createReducer(
   on(WalletActions.disconnectWallet, (state) => ({
     ...state,
     address: null,
-  }))
+  })),
 );

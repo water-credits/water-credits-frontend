@@ -7,7 +7,11 @@ import { PaginatedResponse } from '../models/pagination.model';
 export class OracleService {
   constructor(private api: ApiService) {}
 
-  async getSubmissions(params?: { page?: number; limit?: number; projectId?: string }): Promise<PaginatedResponse<OracleSubmission>> {
+  async getSubmissions(params?: {
+    page?: number;
+    limit?: number;
+    projectId?: string;
+  }): Promise<PaginatedResponse<OracleSubmission>> {
     return this.api.get<PaginatedResponse<OracleSubmission>>('/oracle/submissions', { params });
   }
 

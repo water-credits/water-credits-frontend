@@ -91,10 +91,7 @@ import { LucideAngularModule, Plus, LayoutGrid, Table2 } from 'lucide-angular';
           [columns]="tableColumns"
           [data]="(projects$ | async) || []"
           [loading]="(loading$ | async) || false"
-          [page]="(pagination$ | async)?.page || 1"
-          [totalPages]="(pagination$ | async)?.totalPages || 1"
-          [total]="(pagination$ | async)?.total || 0"
-          [limit]="(pagination$ | async)?.limit || 10"
+          [pagination]="pagination$ | async"
           [sortColumn]="sortColumn"
           [sortDirection]="sortDirection"
           (rowClick)="goToProject($event)"
@@ -159,14 +156,14 @@ export class ProjectsListComponent implements OnInit, OnDestroy {
   protected viewMode: 'table' | 'grid' = 'table';
   protected searchTerm = '';
   protected sortColumn = 'createdAt';
-  protected sortDirection: 'ASC' | 'DESC' = 'DESC';
+  protected sortDirection: 'asc' | 'desc' = 'desc';
   private destroy$ = new Subject<void>();
 
   protected readonly Plus = Plus;
   protected readonly LayoutGrid = LayoutGrid;
   protected readonly Table2 = Table2;
 
-  protected tableColumns: ColumnDef[] = [
+  protected tableColumns: ColumnDef<Project>[] = [
     { key: 'name', label: 'Name', sortable: true },
     { key: 'status', label: 'Status', sortable: true },
     { key: 'methodology', label: 'Methodology', sortable: true },
@@ -198,7 +195,7 @@ export class ProjectsListComponent implements OnInit, OnDestroy {
       ProjectsActions.loadProjects({
         filters: {
           sortBy: this.sortColumn,
-          sortOrder: this.sortDirection,
+          sortOrder: this.sortDirection.toUpperCase() as 'ASC' | 'DESC',
         },
       }),
     );
@@ -214,13 +211,9 @@ export class ProjectsListComponent implements OnInit, OnDestroy {
     this.loadProjects();
   }
 
-  onSort(column: string): void {
-    if (this.sortColumn === column) {
-      this.sortDirection = this.sortDirection === 'ASC' ? 'DESC' : 'ASC';
-    } else {
-      this.sortColumn = column;
-      this.sortDirection = 'ASC';
-    }
+  onSort(event: { column: string; direction: 'asc' | 'desc' }): void {
+    this.sortColumn = event.column;
+    this.sortDirection = event.direction;
     this.loadProjects();
   }
 

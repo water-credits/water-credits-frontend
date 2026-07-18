@@ -18,6 +18,6 @@ import { SidebarComponent } from '../sidebar/sidebar';
       </div>
     </div>
   `,
-  styles: []
+  styles: [],
 })
 export class DefaultLayoutComponent {}

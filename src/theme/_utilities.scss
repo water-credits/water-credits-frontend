@@ -1,14 +1,14 @@
 .btn {
   @apply px-4 py-2 rounded-lg font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
-  
+
   &-primary {
     @apply bg-stellar-blue text-white hover:bg-stellar-blue-dark active:scale-95;
   }
-  
+
   &-secondary {
     @apply bg-environmental-green text-white hover:bg-environmental-green-dark active:scale-95;
   }
-  
+
   &-outline {
     @apply border-2 border-stellar-blue text-stellar-blue hover:bg-stellar-blue hover:text-white active:scale-95;
   }

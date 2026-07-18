@@ -3,7 +3,10 @@ import { NgIf, NgFor } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { LucideAngularModule, ArrowLeft, Send } from 'lucide-angular';
-import { MarketplaceService, CreateListingRequest } from '../../../core/services/marketplace.service';
+import {
+  MarketplaceService,
+  CreateListingRequest,
+} from '../../../core/services/marketplace.service';
 import { ProjectsService } from '../../../core/services/projects.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { Project } from '../../../core/models/project.model';
@@ -12,11 +15,7 @@ import { LoadingSpinnerComponent } from '../../../shared/components/loading-spin
 @Component({
   selector: 'app-marketplace-create-listing',
   standalone: true,
-  imports: [
-    NgIf, NgFor, FormsModule,
-    RouterLink, LucideAngularModule,
-    LoadingSpinnerComponent,
-  ],
+  imports: [NgIf, NgFor, FormsModule, RouterLink, LucideAngularModule, LoadingSpinnerComponent],
   template: `
     <div class="max-w-2xl mx-auto space-y-6">
       <div class="flex items-center gap-4">
@@ -27,14 +26,23 @@ import { LoadingSpinnerComponent } from '../../../shared/components/loading-spin
         <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Create Listing</h1>
       </div>
 
-      <app-loading-spinner *ngIf="loading" size="lg" label="Loading projects..."></app-loading-spinner>
+      <app-loading-spinner
+        *ngIf="loading"
+        size="lg"
+        label="Loading projects..."
+      ></app-loading-spinner>
 
       <form *ngIf="!loading" (ngSubmit)="onSubmit()" class="space-y-6">
-        <div class="bg-white dark:bg-dark-bg-lighter rounded-xl border border-slate-200 dark:border-slate-700 p-6 space-y-4">
+        <div
+          class="bg-white dark:bg-dark-bg-lighter rounded-xl border border-slate-200 dark:border-slate-700 p-6 space-y-4"
+        >
           <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Listing Details</h2>
 
           <div class="space-y-2">
-            <label for="projectId" class="block text-sm font-medium text-slate-700 dark:text-slate-300">
+            <label
+              for="projectId"
+              class="block text-sm font-medium text-slate-700 dark:text-slate-300"
+            >
               Project <span class="text-red-500">*</span>
             </label>
             <select
@@ -50,7 +58,10 @@ import { LoadingSpinnerComponent } from '../../../shared/components/loading-spin
           </div>
 
           <div class="space-y-2">
-            <label for="amount" class="block text-sm font-medium text-slate-700 dark:text-slate-300">
+            <label
+              for="amount"
+              class="block text-sm font-medium text-slate-700 dark:text-slate-300"
+            >
               Amount (credits) <span class="text-red-500">*</span>
             </label>
             <input
@@ -84,7 +95,10 @@ import { LoadingSpinnerComponent } from '../../../shared/components/loading-spin
           </div>
 
           <div class="space-y-2">
-            <label for="expiresAt" class="block text-sm font-medium text-slate-700 dark:text-slate-300">
+            <label
+              for="expiresAt"
+              class="block text-sm font-medium text-slate-700 dark:text-slate-300"
+            >
               Expiry Date
               <span class="text-slate-400 font-normal">(optional)</span>
             </label>
@@ -98,22 +112,38 @@ import { LoadingSpinnerComponent } from '../../../shared/components/loading-spin
           </div>
         </div>
 
-        <div class="bg-white dark:bg-dark-bg-lighter rounded-xl border border-slate-200 dark:border-slate-700 p-6 space-y-4">
+        <div
+          class="bg-white dark:bg-dark-bg-lighter rounded-xl border border-slate-200 dark:border-slate-700 p-6 space-y-4"
+        >
           <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Review</h2>
           <div class="space-y-3 text-sm">
-            <div class="flex justify-between py-1 border-b border-slate-100 dark:border-slate-700/50">
+            <div
+              class="flex justify-between py-1 border-b border-slate-100 dark:border-slate-700/50"
+            >
               <span class="text-slate-500 dark:text-slate-400">Project</span>
-              <span class="font-medium text-slate-900 dark:text-white">{{ selectedProjectName || '—' }}</span>
+              <span class="font-medium text-slate-900 dark:text-white">{{
+                selectedProjectName || '—'
+              }}</span>
             </div>
-            <div class="flex justify-between py-1 border-b border-slate-100 dark:border-slate-700/50">
+            <div
+              class="flex justify-between py-1 border-b border-slate-100 dark:border-slate-700/50"
+            >
               <span class="text-slate-500 dark:text-slate-400">Amount</span>
-              <span class="font-medium text-slate-900 dark:text-white">{{ form.amount || '0' }} credits</span>
+              <span class="font-medium text-slate-900 dark:text-white"
+                >{{ form.amount || '0' }} credits</span
+              >
             </div>
-            <div class="flex justify-between py-1 border-b border-slate-100 dark:border-slate-700/50">
+            <div
+              class="flex justify-between py-1 border-b border-slate-100 dark:border-slate-700/50"
+            >
               <span class="text-slate-500 dark:text-slate-400">Price</span>
-              <span class="font-medium text-slate-900 dark:text-white">{{ form.price || '0' }} XLM per credit</span>
+              <span class="font-medium text-slate-900 dark:text-white"
+                >{{ form.price || '0' }} XLM per credit</span
+              >
             </div>
-            <div class="flex justify-between py-1 border-b border-slate-100 dark:border-slate-700/50">
+            <div
+              class="flex justify-between py-1 border-b border-slate-100 dark:border-slate-700/50"
+            >
               <span class="text-slate-500 dark:text-slate-400">Total Value</span>
               <span class="font-medium text-slate-900 dark:text-white">{{ totalValue }} XLM</span>
             </div>
@@ -126,11 +156,7 @@ import { LoadingSpinnerComponent } from '../../../shared/components/loading-spin
 
         <div class="flex justify-end gap-3">
           <a routerLink="/marketplace" class="btn btn-ghost">Cancel</a>
-          <button
-            type="submit"
-            [disabled]="!isValid || submitting"
-            class="btn btn-primary"
-          >
+          <button type="submit" [disabled]="!isValid || submitting" class="btn btn-primary">
             <lucide-angular [img]="SendIcon" class="w-4 h-4"></lucide-angular>
             {{ submitting ? 'Creating...' : 'Create Listing' }}
           </button>
@@ -171,7 +197,7 @@ export class MarketplaceCreateListingComponent implements OnInit {
   }
 
   get selectedProjectName(): string {
-    return this.projects.find(p => p.id === this.form.projectId)?.name || '';
+    return this.projects.find((p) => p.id === this.form.projectId)?.name || '';
   }
 
   get totalValue(): string {
@@ -181,7 +207,7 @@ export class MarketplaceCreateListingComponent implements OnInit {
   }
 
   get isValid(): boolean {
-    return !!this.form.projectId && parseFloat(this.form.amount) > 0 && (this.form.price) > 0;
+    return !!this.form.projectId && parseFloat(this.form.amount) > 0 && this.form.price > 0;
   }
 
   async onSubmit(): Promise<void> {

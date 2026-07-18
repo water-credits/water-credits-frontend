@@ -39,10 +39,22 @@ export const projectsReducer = createReducer(
     limit: response.limit,
     totalPages: response.totalPages,
   })),
-  on(ProjectsActions.loadProjectsFailure, (state, { error }) => ({ ...state, loading: false, error })),
+  on(ProjectsActions.loadProjectsFailure, (state, { error }) => ({
+    ...state,
+    loading: false,
+    error,
+  })),
   on(ProjectsActions.loadProject, (state) => ({ ...state, loading: true, error: null })),
-  on(ProjectsActions.loadProjectSuccess, (state, { project }) => ({ ...state, loading: false, selectedProject: project })),
-  on(ProjectsActions.loadProjectFailure, (state, { error }) => ({ ...state, loading: false, error })),
+  on(ProjectsActions.loadProjectSuccess, (state, { project }) => ({
+    ...state,
+    loading: false,
+    selectedProject: project,
+  })),
+  on(ProjectsActions.loadProjectFailure, (state, { error }) => ({
+    ...state,
+    loading: false,
+    error,
+  })),
   on(ProjectsActions.createProjectSuccess, (state, { project }) => ({
     ...state,
     projects: [project, ...state.projects],
@@ -50,7 +62,7 @@ export const projectsReducer = createReducer(
   })),
   on(ProjectsActions.updateProjectSuccess, (state, { project }) => ({
     ...state,
-    projects: state.projects.map(p => p.id === project.id ? project : p),
+    projects: state.projects.map((p) => (p.id === project.id ? project : p)),
     selectedProject: state.selectedProject?.id === project.id ? project : state.selectedProject,
   })),
   on(ProjectsActions.setProjectFilters, (state, { filters }) => ({ ...state, filters, page: 1 })),

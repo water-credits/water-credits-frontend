@@ -2,7 +2,10 @@ import { Pipe, PipeTransform } from '@angular/core';
 
 @Pipe({ name: 'dateFormat', standalone: true })
 export class DateFormatPipe implements PipeTransform {
-  transform(value: string | Date, format: 'short' | 'medium' | 'long' | 'relative' = 'medium'): string {
+  transform(
+    value: string | Date,
+    format: 'short' | 'medium' | 'long' | 'relative' = 'medium',
+  ): string {
     if (!value) return '';
     const date = typeof value === 'string' ? new Date(value) : value;
     if (isNaN(date.getTime())) return String(value);
@@ -26,7 +29,14 @@ export class DateFormatPipe implements PipeTransform {
       format === 'short'
         ? { month: 'short', day: 'numeric', year: 'numeric' }
         : format === 'long'
-          ? { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }
+          ? {
+              weekday: 'long',
+              month: 'long',
+              day: 'numeric',
+              year: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit',
+            }
           : { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' };
     return date.toLocaleDateString(navigator.language, options);
   }

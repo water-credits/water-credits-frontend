@@ -232,7 +232,7 @@ export class GovernanceDashboardComponent implements OnInit {
     { label: 'My Proposals', value: 'mine' },
   ];
 
-  protected columns: ColumnDef[] = [
+  protected columns: ColumnDef<Proposal>[] = [
     { key: 'title', label: 'Title', sortable: true },
     { key: 'status', label: 'Status', sortable: true },
     { key: 'votesFor', label: 'Votes For', sortable: true, align: 'right' },

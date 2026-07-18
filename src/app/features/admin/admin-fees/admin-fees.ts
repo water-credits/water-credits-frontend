@@ -247,7 +247,10 @@ export class AdminFeesComponent implements OnInit {
       );
       await this.loadConfig();
     } catch (error) {
-      this.notification.error('Save Failed', getErrorMessage(error, 'Could not update configuration. Please try again.'));
+      this.notification.error(
+        'Save Failed',
+        getErrorMessage(error, 'Could not update configuration. Please try again.'),
+      );
     } finally {
       this.saving = false;
     }
@@ -258,7 +261,10 @@ export class AdminFeesComponent implements OnInit {
       this.currentConfig = await this.governanceService.getConfig();
       this.resetForm();
     } catch (error) {
-      this.notification.error('Load Failed', getErrorMessage(error, 'Could not load governance configuration.'));
+      this.notification.error(
+        'Load Failed',
+        getErrorMessage(error, 'Could not load governance configuration.'),
+      );
     } finally {
       this.loading = false;
     }
