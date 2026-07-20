@@ -7,6 +7,9 @@ import { sensorsReducer, SensorsState } from './sensors/sensors.reducer';
 import { creditsReducer, CreditsState } from './credits/credits.reducer';
 import { retirementReducer, RetirementState } from './retirement/retirement.reducer';
 import { governanceReducer, GovernanceState } from './governance/governance.reducer';
+import { marketplaceReducer, MarketplaceState } from './marketplace/marketplace.reducer';
+import { farmersReducer, FarmersState } from './farmers/farmers.reducer';
+import { analyticsReducer, AnalyticsState } from './analytics/analytics.reducer';
 
 export interface AppState {
   auth: AuthState;
@@ -17,6 +20,9 @@ export interface AppState {
   credits: CreditsState;
   retirement: RetirementState;
   governance: GovernanceState;
+  marketplace: MarketplaceState;
+  farmers: FarmersState;
+  analytics: AnalyticsState;
 }
 
 export const reducers: ActionReducerMap<AppState> = {
@@ -28,4 +34,7 @@ export const reducers: ActionReducerMap<AppState> = {
   credits: creditsReducer,
   retirement: retirementReducer,
   governance: governanceReducer,
+  marketplace: marketplaceReducer,
+  farmers: farmersReducer,
+  analytics: analyticsReducer,
 };

@@ -1,21 +1,32 @@
-import { Component, OnInit } from '@angular/core';
-import { NgIf, NgFor } from '@angular/common';
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { NgIf, NgFor, AsyncPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
+import { Store } from '@ngrx/store';
+import { Actions, ofType } from '@ngrx/effects';
+import { Observable, Subject, takeUntil } from 'rxjs';
 import { LucideAngularModule, ArrowLeft, Send } from 'lucide-angular';
-import {
-  MarketplaceService,
-  CreateListingRequest,
-} from '../../../core/services/marketplace.service';
+import { CreateListingRequest } from '../../../core/services/marketplace.service';
 import { ProjectsService } from '../../../core/services/projects.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { Project } from '../../../core/models/project.model';
+import { AppState } from '../../../core/store/app.state';
+import * as MarketplaceActions from '../../../core/store/marketplace/marketplace.actions';
+import { selectMarketplaceCreating } from '../../../core/store/marketplace/marketplace.selectors';
 import { LoadingSpinnerComponent } from '../../../shared/components/loading-spinner/loading-spinner';
 
 @Component({
   selector: 'app-marketplace-create-listing',
   standalone: true,
-  imports: [NgIf, NgFor, FormsModule, RouterLink, LucideAngularModule, LoadingSpinnerComponent],
+  imports: [
+    NgIf,
+    NgFor,
+    AsyncPipe,
+    FormsModule,
+    RouterLink,
+    LucideAngularModule,
+    LoadingSpinnerComponent,
+  ],
   template: `
     <div class="max-w-2xl mx-auto space-y-6">
       <div class="flex items-center gap-4">
@@ -156,16 +167,20 @@ import { LoadingSpinnerComponent } from '../../../shared/components/loading-spin
 
         <div class="flex justify-end gap-3">
           <a routerLink="/marketplace" class="btn btn-ghost">Cancel</a>
-          <button type="submit" [disabled]="!isValid || submitting" class="btn btn-primary">
+          <button
+            type="submit"
+            [disabled]="!isValid || (submitting$ | async)"
+            class="btn btn-primary"
+          >
             <lucide-angular [img]="SendIcon" class="w-4 h-4"></lucide-angular>
-            {{ submitting ? 'Creating...' : 'Create Listing' }}
+            {{ (submitting$ | async) ? 'Creating...' : 'Create Listing' }}
           </button>
         </div>
       </form>
     </div>
   `,
 })
-export class MarketplaceCreateListingComponent implements OnInit {
+export class MarketplaceCreateListingComponent implements OnInit, OnDestroy {
   protected readonly ArrowLeftIcon = ArrowLeft;
   protected readonly SendIcon = Send;
 
@@ -176,14 +191,19 @@ export class MarketplaceCreateListingComponent implements OnInit {
   };
   projects: Project[] = [];
   loading = true;
-  submitting = false;
+  submitting$: Observable<boolean>;
+
+  private destroy$ = new Subject<void>();
 
   constructor(
-    private marketplaceService: MarketplaceService,
+    private store: Store<AppState>,
+    private actions$: Actions,
     private projectsService: ProjectsService,
     private notificationService: NotificationService,
-    private router: Router,
-  ) {}
+    protected router: Router,
+  ) {
+    this.submitting$ = this.store.select(selectMarketplaceCreating);
+  }
 
   async ngOnInit(): Promise<void> {
     try {
@@ -194,6 +214,25 @@ export class MarketplaceCreateListingComponent implements OnInit {
     } finally {
       this.loading = false;
     }
+
+    // Navigate away after successful creation (handled in effect, but we also
+    // listen here so the form resets the submitting flag correctly).
+    this.actions$
+      .pipe(ofType(MarketplaceActions.createListingSuccess), takeUntil(this.destroy$))
+      .subscribe(() => {
+        this.router.navigate(['/marketplace']);
+      });
+
+    this.actions$
+      .pipe(ofType(MarketplaceActions.createListingFailure), takeUntil(this.destroy$))
+      .subscribe(({ error }) => {
+        this.notificationService.error('Error', error);
+      });
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   get selectedProjectName(): string {
@@ -210,23 +249,17 @@ export class MarketplaceCreateListingComponent implements OnInit {
     return !!this.form.projectId && parseFloat(this.form.amount) > 0 && this.form.price > 0;
   }
 
-  async onSubmit(): Promise<void> {
-    if (!this.isValid || this.submitting) return;
-    this.submitting = true;
-    try {
-      await this.marketplaceService.createListing({
-        projectId: this.form.projectId,
-        amount: this.form.amount,
-        price: this.form.price,
-        expiresAt: this.form.expiresAt || undefined,
-      });
-      this.notificationService.success('Success', 'Listing created successfully');
-      this.router.navigate(['/marketplace']);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to create listing';
-      this.notificationService.error('Error', message);
-    } finally {
-      this.submitting = false;
-    }
+  onSubmit(): void {
+    if (!this.isValid) return;
+    this.store.dispatch(
+      MarketplaceActions.createListing({
+        data: {
+          projectId: this.form.projectId,
+          amount: this.form.amount,
+          price: this.form.price,
+          expiresAt: this.form.expiresAt || undefined,
+        },
+      }),
+    );
   }
 }

@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Store } from '@ngrx/store';
 import { Observable, Subject } from 'rxjs';
+import { map, distinctUntilChanged, takeUntil } from 'rxjs/operators';
 import { NgIf, NgFor, AsyncPipe, NgClass } from '@angular/common';
 import { StatusBadgeComponent } from '../../../shared/components/status-badge/status-badge';
 import { LoadingSpinnerComponent } from '../../../shared/components/loading-spinner/loading-spinner';
@@ -12,6 +13,11 @@ import { StellarAddressPipe } from '../../../shared/pipes/stellar-address.pipe';
 import { CreditBalance, CreditTransaction } from '../../../core/models/credit.model';
 import { AppState } from '../../../core/store/app.state';
 import * as CreditsActions from '../../../core/store/credits/credits.actions';
+import {
+  selectCreditBalances,
+  selectCreditTransactions,
+  selectCreditsLoading,
+} from '../../../core/store/credits/credits.selectors';
 import {
   LucideAngularModule,
   ArrowLeft,
@@ -301,24 +307,34 @@ export class CreditDetailComponent implements OnInit, OnDestroy {
     private route: ActivatedRoute,
     private store: Store<AppState>,
   ) {
-    this.loading$ = this.store.select((state) => state.credits.loading);
+    this.loading$ = this.store.select(selectCreditsLoading);
   }
 
   ngOnInit(): void {
-    this.projectId = this.route.snapshot.paramMap.get('id') || '';
-    if (this.projectId) {
-      this.balance$ = this.store.select(
-        (state) => state.credits.balances.find((b) => b.projectId === this.projectId) || null,
-      );
-      this.transactions$ = this.store.select((state) =>
-        state.credits.transactions.filter((t) => t.projectId === this.projectId),
-      );
-      this.store.dispatch(CreditsActions.loadPortfolio());
-      this.store.dispatch(CreditsActions.loadTransactions({ projectId: this.projectId }));
-    } else {
-      this.balance$ = this.store.select((_) => null);
-      this.transactions$ = this.store.select((_) => []);
-    }
+    // React to route param changes without full component destroy/re-create.
+    this.route.paramMap
+      .pipe(
+        map((params) => params.get('id') ?? ''),
+        distinctUntilChanged(),
+        takeUntil(this.destroy$),
+      )
+      .subscribe((id) => {
+        this.projectId = id;
+        if (id) {
+          this.balance$ = this.store
+            .select(selectCreditBalances)
+            .pipe(map((balances) => balances.find((b) => b.projectId === id) ?? null));
+          this.transactions$ = this.store
+            .select(selectCreditTransactions)
+            .pipe(map((txs) => txs.filter((t) => t.projectId === id)));
+
+          this.store.dispatch(CreditsActions.loadPortfolio());
+          this.store.dispatch(CreditsActions.loadTransactions({ projectId: id }));
+        } else {
+          this.balance$ = this.store.select(selectCreditBalances).pipe(map(() => null));
+          this.transactions$ = this.store.select(selectCreditTransactions).pipe(map(() => []));
+        }
+      });
   }
 
   ngOnDestroy(): void {

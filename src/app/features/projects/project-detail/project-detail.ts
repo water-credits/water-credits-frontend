@@ -1,7 +1,8 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Store } from '@ngrx/store';
-import { Observable, Subject, takeUntil } from 'rxjs';
+import { Observable, Subject } from 'rxjs';
+import { map, distinctUntilChanged, takeUntil } from 'rxjs/operators';
 import { NgIf, AsyncPipe } from '@angular/common';
 import { StatusBadgeComponent } from '../../../shared/components/status-badge/status-badge';
 import { LoadingSpinnerComponent } from '../../../shared/components/loading-spinner/loading-spinner';
@@ -191,18 +192,27 @@ export class ProjectDetailComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.projectId = this.route.snapshot.paramMap.get('id') || '';
-    if (this.projectId) {
-      this.store.dispatch(ProjectsActions.loadProject({ id: this.projectId }));
-    }
+    // Subscribe to the selected project from the store (set by the effect).
     this.store
       .select(selectSelectedProject)
       .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (project) => {
-          this.project = project;
-        },
-        error: () => {},
+      .subscribe((project) => {
+        this.project = project;
+      });
+
+    // React to route param changes without requiring a full component
+    // destroy/re-create cycle (e.g., navigating /projects/a → /projects/b).
+    this.route.paramMap
+      .pipe(
+        map((params) => params.get('id') ?? ''),
+        distinctUntilChanged(),
+        takeUntil(this.destroy$),
+      )
+      .subscribe((id) => {
+        this.projectId = id;
+        if (id) {
+          this.store.dispatch(ProjectsActions.loadProject({ id }));
+        }
       });
   }
 

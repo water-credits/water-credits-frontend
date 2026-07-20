@@ -1,12 +1,17 @@
-import { Component, OnInit } from '@angular/core';
-import { NgIf, NgFor } from '@angular/common';
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { NgIf, NgFor, AsyncPipe } from '@angular/common';
 import { RouterLink, ActivatedRoute } from '@angular/router';
+import { Store } from '@ngrx/store';
+import { Observable, Subject } from 'rxjs';
+import { map, distinctUntilChanged, takeUntil } from 'rxjs/operators';
 import { LucideAngularModule, ArrowLeft, TrendingUp, TrendingDown } from 'lucide-angular';
+import { OrderBook, OrderBookEntry } from '../../../core/services/marketplace.service';
+import { AppState } from '../../../core/store/app.state';
+import * as MarketplaceActions from '../../../core/store/marketplace/marketplace.actions';
 import {
-  MarketplaceService,
-  OrderBook,
-  OrderBookEntry,
-} from '../../../core/services/marketplace.service';
+  selectOrderBook,
+  selectMarketplaceLoading,
+} from '../../../core/store/marketplace/marketplace.selectors';
 import { LoadingSpinnerComponent } from '../../../shared/components/loading-spinner/loading-spinner';
 import { CreditAmountPipe } from '../../../shared/pipes/credit-amount.pipe';
 
@@ -16,6 +21,7 @@ import { CreditAmountPipe } from '../../../shared/pipes/credit-amount.pipe';
   imports: [
     NgIf,
     NgFor,
+    AsyncPipe,
     RouterLink,
     LucideAngularModule,
     LoadingSpinnerComponent,
@@ -35,18 +41,18 @@ import { CreditAmountPipe } from '../../../shared/pipes/credit-amount.pipe';
       </div>
 
       <app-loading-spinner
-        *ngIf="loading"
+        *ngIf="loading$ | async"
         size="lg"
         label="Loading order book..."
       ></app-loading-spinner>
 
-      <div *ngIf="!loading && !projectId" class="text-center py-16">
+      <div *ngIf="!(loading$ | async) && !projectId" class="text-center py-16">
         <p class="text-slate-500 dark:text-slate-400">
           No project specified. Select a project to view its order book.
         </p>
       </div>
 
-      <ng-container *ngIf="!loading && projectId && orderBook">
+      <ng-container *ngIf="!(loading$ | async) && projectId && (orderBook$ | async) as orderBook">
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div
             class="bg-white dark:bg-dark-bg-lighter rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden"
@@ -214,37 +220,44 @@ import { CreditAmountPipe } from '../../../shared/pipes/credit-amount.pipe';
     </div>
   `,
 })
-export class MarketplaceOrderBookComponent implements OnInit {
+export class MarketplaceOrderBookComponent implements OnInit, OnDestroy {
   protected readonly ArrowLeftIcon = ArrowLeft;
   protected readonly TrendingUpIcon = TrendingUp;
   protected readonly TrendingDownIcon = TrendingDown;
 
-  projectId = '';
-  orderBook: OrderBook | null = null;
-  loading = true;
+  protected projectId = '';
+  protected orderBook$: Observable<OrderBook | null>;
+  protected loading$: Observable<boolean>;
+
+  private destroy$ = new Subject<void>();
 
   constructor(
     private route: ActivatedRoute,
-    private marketplaceService: MarketplaceService,
-  ) {}
-
-  async ngOnInit(): Promise<void> {
-    this.projectId = this.route.snapshot.paramMap.get('projectId') || '';
-    if (this.projectId) {
-      await this.loadOrderBook();
-    } else {
-      this.loading = false;
-    }
+    private store: Store<AppState>,
+  ) {
+    this.orderBook$ = this.store.select(selectOrderBook);
+    this.loading$ = this.store.select(selectMarketplaceLoading);
   }
 
-  async loadOrderBook(): Promise<void> {
-    try {
-      this.orderBook = await this.marketplaceService.getOrderBook(this.projectId);
-    } catch {
-      this.orderBook = null;
-    } finally {
-      this.loading = false;
-    }
+  ngOnInit(): void {
+    // React to route param changes reactively.
+    this.route.paramMap
+      .pipe(
+        map((params) => params.get('projectId') ?? ''),
+        distinctUntilChanged(),
+        takeUntil(this.destroy$),
+      )
+      .subscribe((projectId) => {
+        this.projectId = projectId;
+        if (projectId) {
+          this.store.dispatch(MarketplaceActions.loadOrderBook({ projectId }));
+        }
+      });
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   getDepthPercent(entry: OrderBookEntry, entries: OrderBookEntry[]): number {

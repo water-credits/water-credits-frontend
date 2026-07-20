@@ -11,7 +11,6 @@ import {
 import { RouterLink } from '@angular/router';
 import { Store } from '@ngrx/store';
 import { Observable, Subject } from 'rxjs';
-import { CreditsService } from '../../../core/services/credits.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { CreditAmountPipe } from '../../../shared/pipes/credit-amount.pipe';
 import { DateFormatPipe } from '../../../shared/pipes/date-format.pipe';
@@ -31,6 +30,11 @@ import {
 } from '../../../core/models/credit.model';
 import { AppState } from '../../../core/store/app.state';
 import * as CreditsActions from '../../../core/store/credits/credits.actions';
+import {
+  selectPortfolio,
+  selectCreditsLoading,
+  selectCreditTransactions,
+} from '../../../core/store/credits/credits.selectors';
 import {
   LucideAngularModule,
   Wallet,
@@ -327,16 +331,16 @@ export class CreditsPortfolioComponent implements OnInit, OnDestroy {
 
   constructor(
     private store: Store<AppState>,
-    private creditsService: CreditsService,
     private notificationService: NotificationService,
   ) {
-    this.portfolio$ = this.store.select((state) => state.credits.portfolio);
-    this.loading$ = this.store.select((state) => state.credits.loading);
-    this.transactions$ = this.store.select((state) => state.credits.transactions);
+    this.portfolio$ = this.store.select(selectPortfolio);
+    this.loading$ = this.store.select(selectCreditsLoading);
+    this.transactions$ = this.store.select(selectCreditTransactions);
   }
 
   ngOnInit(): void {
     this.store.dispatch(CreditsActions.loadPortfolio());
+    this.store.dispatch(CreditsActions.loadTransactions({}));
   }
 
   ngOnDestroy(): void {

@@ -1,9 +1,26 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { NgIf, NgFor } from '@angular/common';
+import { NgIf, NgFor, AsyncPipe } from '@angular/common';
+import { Store } from '@ngrx/store';
+import { Observable, Subject } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { CreditAmountPipe } from '../../../shared/pipes/credit-amount.pipe';
 import { DateFormatPipe } from '../../../shared/pipes/date-format.pipe';
-import { AnalyticsService } from '../../../core/services/analytics.service';
+import { StellarAddressPipe } from '../../../shared/pipes/stellar-address.pipe';
+import { LoadingSpinnerComponent } from '../../../shared/components/loading-spinner/loading-spinner';
+import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state';
+import { CreditTransaction } from '../../../core/models/credit.model';
+import { AppState } from '../../../core/store/app.state';
+import * as FarmersActions from '../../../core/store/farmers/farmers.actions';
+import * as CreditsActions from '../../../core/store/credits/credits.actions';
+import {
+  selectFarmerOverview,
+  selectFarmerOverviewLoading,
+} from '../../../core/store/farmers/farmers.selectors';
+import {
+  selectCreditTransactions,
+  selectCreditsLoading,
+} from '../../../core/store/credits/credits.selectors';
 import {
   LucideAngularModule,
   Wallet,
@@ -15,13 +32,6 @@ import {
   Ban,
 } from 'lucide-angular';
 
-interface Payout {
-  date: string;
-  amount: string;
-  status: 'completed' | 'pending' | 'failed';
-  txHash: string;
-}
-
 interface ProjectedEarning {
   month: string;
   amount: number;
@@ -30,7 +40,18 @@ interface ProjectedEarning {
 @Component({
   selector: 'app-farmer-earnings',
   standalone: true,
-  imports: [RouterLink, NgIf, NgFor, CreditAmountPipe, DateFormatPipe, LucideAngularModule],
+  imports: [
+    RouterLink,
+    NgIf,
+    NgFor,
+    AsyncPipe,
+    CreditAmountPipe,
+    DateFormatPipe,
+    StellarAddressPipe,
+    LoadingSpinnerComponent,
+    EmptyStateComponent,
+    LucideAngularModule,
+  ],
   template: `
     <div class="space-y-6">
       <div>
@@ -58,7 +79,7 @@ interface ProjectedEarning {
             </div>
           </div>
           <p class="text-2xl font-bold text-slate-900 dark:text-white">
-            {{ totalEarned | creditAmount }}
+            {{ (overview$ | async)?.totalCreditsMinted || '0' | creditAmount }}
           </p>
           <p class="text-xs text-slate-400 mt-1">lifetime credits</p>
         </div>
@@ -75,7 +96,7 @@ interface ProjectedEarning {
             </div>
           </div>
           <p class="text-2xl font-bold text-slate-900 dark:text-white">
-            {{ pendingAmount | creditAmount }}
+            {{ (overview$ | async)?.totalCreditsRetired || '0' | creditAmount }}
           </p>
           <p class="text-xs text-slate-400 mt-1">awaiting verification</p>
         </div>
@@ -92,7 +113,7 @@ interface ProjectedEarning {
             </div>
           </div>
           <p class="text-2xl font-bold text-slate-900 dark:text-white">
-            {{ projectedAmount | creditAmount }}
+            {{ (overview$ | async)?.totalCreditsMinted || '0' | creditAmount }}
           </p>
           <p class="text-xs text-slate-400 mt-1">next 12 months</p>
         </div>
@@ -127,14 +148,27 @@ interface ProjectedEarning {
       <div class="card p-5">
         <div class="flex items-center justify-between mb-4">
           <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300">Payout History</h3>
-          <span class="text-xs text-slate-400">{{ payouts.length }} transactions</span>
+          <span class="text-xs text-slate-400"
+            >{{ (payouts$ | async)?.length || 0 }} transactions</span
+          >
         </div>
 
-        <div *ngIf="payouts.length === 0" class="text-center py-8 text-sm text-slate-400">
-          No payouts yet
-        </div>
+        <app-loading-spinner
+          *ngIf="payoutsLoading$ | async"
+          size="sm"
+          label="Loading payouts..."
+        ></app-loading-spinner>
 
-        <div *ngIf="payouts.length > 0" class="overflow-x-auto">
+        <app-empty-state
+          *ngIf="!(payoutsLoading$ | async) && (payouts$ | async)?.length === 0"
+          title="No payouts yet"
+          message="Your credit earnings and retirements will appear here."
+        ></app-empty-state>
+
+        <div
+          *ngIf="!(payoutsLoading$ | async) && ((payouts$ | async)?.length ?? 0) > 0"
+          class="overflow-x-auto"
+        >
           <table class="w-full text-sm">
             <thead>
               <tr class="border-b border-slate-200 dark:border-slate-700">
@@ -151,7 +185,7 @@ interface ProjectedEarning {
                 <th
                   class="text-center text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider pb-3"
                 >
-                  Status
+                  Type
                 </th>
                 <th
                   class="text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider pb-3"
@@ -162,42 +196,48 @@ interface ProjectedEarning {
             </thead>
             <tbody>
               <tr
-                *ngFor="let payout of payouts"
+                *ngFor="let payout of payouts$ | async"
                 class="border-b border-slate-100 dark:border-slate-700 last:border-0"
               >
                 <td class="py-3 text-slate-700 dark:text-slate-300">
-                  {{ payout.date | dateFormat: 'short' }}
+                  {{ payout.timestamp | dateFormat: 'short' }}
                 </td>
                 <td class="py-3 text-right font-medium text-slate-900 dark:text-white">
                   {{ payout.amount | creditAmount }}
                 </td>
                 <td class="py-3 text-center">
                   <span
-                    *ngIf="payout.status === 'completed'"
+                    *ngIf="payout.type === 'sale'"
                     class="inline-flex items-center gap-1 text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 px-2 py-0.5 rounded-full"
                   >
                     <lucide-angular [img]="CheckCircle" class="w-3 h-3"></lucide-angular>
-                    Completed
+                    Sale
                   </span>
                   <span
-                    *ngIf="payout.status === 'pending'"
+                    *ngIf="payout.type === 'retire'"
+                    class="inline-flex items-center gap-1 text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full"
+                  >
+                    <lucide-angular [img]="ArrowUpRight" class="w-3 h-3"></lucide-angular>
+                    Retired
+                  </span>
+                  <span
+                    *ngIf="payout.type === 'mint'"
                     class="inline-flex items-center gap-1 text-xs bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 px-2 py-0.5 rounded-full"
                   >
                     <lucide-angular [img]="Clock" class="w-3 h-3"></lucide-angular>
-                    Pending
+                    Minted
                   </span>
                   <span
-                    *ngIf="payout.status === 'failed'"
-                    class="inline-flex items-center gap-1 text-xs bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 px-2 py-0.5 rounded-full"
+                    *ngIf="payout.type === 'transfer'"
+                    class="inline-flex items-center gap-1 text-xs bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded-full"
                   >
-                    <lucide-angular [img]="Ban" class="w-3 h-3"></lucide-angular>
-                    Failed
+                    Transfer
                   </span>
                 </td>
                 <td class="py-3 text-right">
-                  <span class="text-xs font-mono text-slate-400"
-                    >{{ payout.txHash.slice(0, 10) }}...</span
-                  >
+                  <span class="text-xs font-mono text-slate-400">{{
+                    payout.txHash | stellarAddress: 8
+                  }}</span>
                 </td>
               </tr>
             </tbody>
@@ -207,13 +247,30 @@ interface ProjectedEarning {
     </div>
   `,
 })
-export class FarmerEarningsComponent implements OnInit {
-  protected totalEarned = '12500';
-  protected pendingAmount = '3200';
-  protected projectedAmount = '18000';
-  protected projectedEarnings: ProjectedEarning[] = [];
-  protected payouts: Payout[] = [];
-  private maxProjectedAmount = 0;
+export class FarmerEarningsComponent implements OnInit, OnDestroy {
+  protected overview$: Observable<any>;
+  protected loading$: Observable<boolean>;
+  /** All credit transactions for the current user — used as the payout ledger. */
+  protected payouts$: Observable<CreditTransaction[]>;
+  protected payoutsLoading$: Observable<boolean>;
+
+  protected projectedEarnings: ProjectedEarning[] = [
+    { month: 'Jan', amount: 1200 },
+    { month: 'Feb', amount: 1200 },
+    { month: 'Mar', amount: 1350 },
+    { month: 'Apr', amount: 1500 },
+    { month: 'May', amount: 1800 },
+    { month: 'Jun', amount: 2000 },
+    { month: 'Jul', amount: 2000 },
+    { month: 'Aug', amount: 1800 },
+    { month: 'Sep', amount: 1600 },
+    { month: 'Oct', amount: 1400 },
+    { month: 'Nov', amount: 1200 },
+    { month: 'Dec', amount: 1150 },
+  ];
+
+  private maxProjectedAmount = Math.max(...this.projectedEarnings.map((e) => e.amount), 1);
+  private destroy$ = new Subject<void>();
 
   protected readonly Wallet = Wallet;
   protected readonly TrendingUp = TrendingUp;
@@ -223,72 +280,30 @@ export class FarmerEarningsComponent implements OnInit {
   protected readonly CheckCircle = CheckCircle;
   protected readonly Ban = Ban;
 
-  constructor(private analyticsService: AnalyticsService) {}
+  constructor(private store: Store<AppState>) {
+    this.overview$ = this.store.select(selectFarmerOverview);
+    this.loading$ = this.store.select(selectFarmerOverviewLoading);
+    this.payoutsLoading$ = this.store.select(selectCreditsLoading);
+    // Show all credit transactions as the payout ledger; sorted newest-first.
+    this.payouts$ = this.store
+      .select(selectCreditTransactions)
+      .pipe(
+        map((txs) =>
+          [...txs].sort(
+            (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
+          ),
+        ),
+      );
+  }
 
-  async ngOnInit(): Promise<void> {
-    this.projectedEarnings = [
-      { month: 'Jan', amount: 1200 },
-      { month: 'Feb', amount: 1200 },
-      { month: 'Mar', amount: 1350 },
-      { month: 'Apr', amount: 1500 },
-      { month: 'May', amount: 1800 },
-      { month: 'Jun', amount: 2000 },
-      { month: 'Jul', amount: 2000 },
-      { month: 'Aug', amount: 1800 },
-      { month: 'Sep', amount: 1600 },
-      { month: 'Oct', amount: 1400 },
-      { month: 'Nov', amount: 1200 },
-      { month: 'Dec', amount: 1150 },
-    ];
-    this.maxProjectedAmount = Math.max(...this.projectedEarnings.map((e) => e.amount), 1);
+  ngOnInit(): void {
+    this.store.dispatch(FarmersActions.loadFarmerOverview());
+    this.store.dispatch(CreditsActions.loadTransactions({}));
+  }
 
-    this.payouts = [
-      {
-        date: '2026-05-15T00:00:00Z',
-        amount: '2500',
-        status: 'completed',
-        txHash: 'GB1234ABCD5678EFGH9012IJKL3456MNOP7890QRST',
-      },
-      {
-        date: '2026-04-01T00:00:00Z',
-        amount: '2500',
-        status: 'completed',
-        txHash: 'AB9876ZYXV5432UTSR1098QPON7654LKJH3210GFED',
-      },
-      {
-        date: '2026-02-15T00:00:00Z',
-        amount: '2000',
-        status: 'completed',
-        txHash: 'XY5678ABCD1234EFGH9012IJKL3456MNOP7890QRST',
-      },
-      {
-        date: '2026-01-10T00:00:00Z',
-        amount: '3200',
-        status: 'pending',
-        txHash: 'CD3456EFGH7890IJKL1234MNOP5678QRST9012UVWX',
-      },
-      {
-        date: '2025-12-01T00:00:00Z',
-        amount: '1800',
-        status: 'completed',
-        txHash: 'EF9012GHIJ3456KLMN7890OPQR1234STUV5678WXYZ',
-      },
-      {
-        date: '2025-11-15T00:00:00Z',
-        amount: '1500',
-        status: 'failed',
-        txHash: 'GH7890IJKL1234MNOP5678QRST9012UVWX3456YZAB',
-      },
-    ];
-
-    try {
-      const overview = await this.analyticsService.getOverview();
-      if (overview) {
-        this.totalEarned = overview.totalCreditsMinted || this.totalEarned;
-      }
-    } catch {
-      // Use defaults if analytics fail
-    }
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   getBarHeight(amount: number): number {

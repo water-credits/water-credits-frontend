@@ -1,14 +1,21 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { NgIf, NgFor, NgClass } from '@angular/common';
-import { Subject } from 'rxjs';
+import { NgIf, NgFor, NgClass, AsyncPipe } from '@angular/common';
+import { Store } from '@ngrx/store';
+import { Actions, ofType } from '@ngrx/effects';
+import { Observable, Subject, takeUntil } from 'rxjs';
 import { StatusBadgeComponent } from '../../../shared/components/status-badge/status-badge';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state';
 import { NotificationService } from '../../../core/services/notification.service';
-import { ProjectsService } from '../../../core/services/projects.service';
 import { Project, ProjectCreate } from '../../../core/models/project.model';
-import { LoggingService } from '../../../core/services/logging.service';
+import { AppState } from '../../../core/store/app.state';
+import * as FarmersActions from '../../../core/store/farmers/farmers.actions';
+import {
+  selectParcels,
+  selectParcelsLoading,
+  selectFarmerRegistering,
+} from '../../../core/store/farmers/farmers.selectors';
 import {
   LucideAngularModule,
   Plus,
@@ -31,6 +38,7 @@ import {
     NgIf,
     NgFor,
     NgClass,
+    AsyncPipe,
     StatusBadgeComponent,
     EmptyStateComponent,
     LucideAngularModule,
@@ -154,11 +162,11 @@ import {
         <div class="flex justify-end mt-4">
           <button
             (click)="saveParcel()"
-            [disabled]="saving"
+            [disabled]="saving$ | async"
             class="btn btn-primary flex items-center gap-2"
           >
             <svg
-              *ngIf="saving"
+              *ngIf="saving$ | async"
               class="animate-spin w-4 h-4"
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
@@ -178,19 +186,19 @@ import {
                 d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
               ></path>
             </svg>
-            {{ saving ? 'Registering...' : 'Register Parcel' }}
+            {{ (saving$ | async) ? 'Registering...' : 'Register Parcel' }}
           </button>
         </div>
       </div>
 
-      <div *ngIf="loading" class="flex items-center justify-center py-20">
+      <div *ngIf="loading$ | async" class="flex items-center justify-center py-20">
         <div
           class="animate-spin w-8 h-8 border-2 border-stellar-blue border-t-transparent rounded-full"
         ></div>
       </div>
 
-      <ng-container *ngIf="!loading">
-        <div *ngIf="parcels.length === 0">
+      <ng-container *ngIf="!(loading$ | async)">
+        <div *ngIf="(parcels$ | async)?.length === 0">
           <app-empty-state
             title="No parcels registered"
             message="Register your first farmland parcel to start earning water quality credits."
@@ -200,11 +208,11 @@ import {
         </div>
 
         <div
-          *ngIf="parcels.length > 0"
+          *ngIf="(parcels$ | async)?.length"
           class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"
         >
           <div
-            *ngFor="let parcel of parcels; trackBy: trackByParcel"
+            *ngFor="let parcel of parcels$ | async; trackBy: trackByParcel"
             (click)="goToParcel(parcel)"
             class="card p-5 cursor-pointer hover:shadow-lg transition-shadow"
           >
@@ -263,10 +271,10 @@ import {
   `,
 })
 export class FarmerParcelsComponent implements OnInit, OnDestroy {
-  protected loading = true;
-  protected saving = false;
+  protected loading$: Observable<boolean>;
+  protected saving$: Observable<boolean>;
+  protected parcels$: Observable<Project[]>;
   protected showForm = false;
-  protected parcels: Project[] = [];
   protected selectedCrop = '';
   private destroy$ = new Subject<void>();
 
@@ -292,30 +300,30 @@ export class FarmerParcelsComponent implements OnInit, OnDestroy {
   protected readonly Globe = Globe;
 
   constructor(
-    private projectsService: ProjectsService,
+    private store: Store<AppState>,
+    private actions$: Actions,
     private notificationService: NotificationService,
-    private loggingService: LoggingService,
     private router: Router,
-  ) {}
+  ) {
+    this.loading$ = this.store.select(selectParcelsLoading);
+    this.saving$ = this.store.select(selectFarmerRegistering);
+    this.parcels$ = this.store.select(selectParcels);
+  }
 
-  async ngOnInit(): Promise<void> {
-    await this.loadParcels();
+  ngOnInit(): void {
+    this.store.dispatch(FarmersActions.loadParcels());
+
+    this.actions$
+      .pipe(ofType(FarmersActions.registerParcelSuccess), takeUntil(this.destroy$))
+      .subscribe(() => {
+        this.showForm = false;
+        this.resetForm();
+      });
   }
 
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
-  }
-
-  private async loadParcels(): Promise<void> {
-    try {
-      const result = await this.projectsService.getProjects({ limit: 100 });
-      this.parcels = result.data || [];
-    } catch (error) {
-      this.loggingService.error('Failed to load parcels:', error);
-    } finally {
-      this.loading = false;
-    }
   }
 
   goToParcel(parcel: Project): void {
@@ -326,7 +334,7 @@ export class FarmerParcelsComponent implements OnInit, OnDestroy {
     return parcel.id;
   }
 
-  async saveParcel(): Promise<void> {
+  saveParcel(): void {
     if (
       !this.form.name ||
       !this.form.description ||
@@ -338,31 +346,20 @@ export class FarmerParcelsComponent implements OnInit, OnDestroy {
       this.notificationService.warning('Incomplete form', 'Please fill in all required fields');
       return;
     }
-    this.saving = true;
-    try {
-      const project = await this.projectsService.createProject(this.form);
-      this.notificationService.success(
-        'Parcel registered',
-        `${project.name} has been registered successfully`,
-      );
-      this.parcels.unshift(project);
-      this.showForm = false;
-      this.form = {
-        name: '',
-        description: '',
-        latitude: 0,
-        longitude: 0,
-        methodology: '',
-        areaHectares: 0,
-        baselineStart: '',
-        baselineEnd: '',
-      };
-      this.selectedCrop = '';
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'An error occurred';
-      this.notificationService.error('Failed to register parcel', message);
-    } finally {
-      this.saving = false;
-    }
+    this.store.dispatch(FarmersActions.registerParcel({ data: this.form }));
+  }
+
+  private resetForm(): void {
+    this.form = {
+      name: '',
+      description: '',
+      latitude: 0,
+      longitude: 0,
+      methodology: '',
+      areaHectares: 0,
+      baselineStart: '',
+      baselineEnd: '',
+    };
+    this.selectedCrop = '';
   }
 }

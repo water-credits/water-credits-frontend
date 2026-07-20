@@ -1,8 +1,10 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { NgIf, NgFor, NgSwitch, NgSwitchCase } from '@angular/common';
 import { Store } from '@ngrx/store';
+import { Actions, ofType } from '@ngrx/effects';
+import { Subject, takeUntil } from 'rxjs';
 import { NotificationService } from '../../../core/services/notification.service';
 import { ProjectsService } from '../../../core/services/projects.service';
 import { ProjectCreate } from '../../../core/models/project.model';
@@ -244,7 +246,7 @@ import { FormStep } from '../../../core/models/shared-interfaces.model';
     </div>
   `,
 })
-export class ProjectFormComponent implements OnInit {
+export class ProjectFormComponent implements OnInit, OnDestroy {
   protected currentStep = 0;
   protected saving = false;
   protected isEdit = false;
@@ -281,10 +283,13 @@ export class ProjectFormComponent implements OnInit {
   protected readonly FileText = FileText;
   protected readonly ClipboardList = ClipboardList;
 
+  private destroy$ = new Subject<void>();
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private store: Store,
+    private actions$: Actions,
     private projectsService: ProjectsService,
     private notificationService: NotificationService,
   ) {}
@@ -293,18 +298,48 @@ export class ProjectFormComponent implements OnInit {
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
       this.isEdit = true;
-      const project = await this.projectsService.getProject(id);
-      this.form = {
-        name: project.name,
-        description: project.description,
-        latitude: project.latitude,
-        longitude: project.longitude,
-        methodology: project.methodology,
-        areaHectares: project.areaHectares,
-        baselineStart: project.baselineStart?.split('T')[0] || '',
-        baselineEnd: project.baselineEnd?.split('T')[0] || '',
-      };
+      try {
+        const project = await this.projectsService.getProject(id);
+        this.form = {
+          name: project.name,
+          description: project.description,
+          latitude: project.latitude,
+          longitude: project.longitude,
+          methodology: project.methodology,
+          areaHectares: project.areaHectares,
+          baselineStart: project.baselineStart?.split('T')[0] || '',
+          baselineEnd: project.baselineEnd?.split('T')[0] || '',
+        };
+      } catch {
+        this.notificationService.error('Error', 'Failed to load project for editing');
+        this.router.navigate(['/projects']);
+      }
     }
+
+    // Navigate to the new project page after a successful create dispatched via the store.
+    this.actions$
+      .pipe(ofType(ProjectsActions.createProjectSuccess), takeUntil(this.destroy$))
+      .subscribe(({ project }) => {
+        this.notificationService.success(
+          'Project created',
+          `${project.name} has been registered successfully`,
+        );
+        this.saving = false;
+        this.router.navigate(['/projects', project.id]);
+      });
+
+    // Surface field-level API errors back to the form.
+    this.actions$
+      .pipe(ofType(ProjectsActions.createProjectFailure), takeUntil(this.destroy$))
+      .subscribe(({ error }) => {
+        this.notificationService.error('Failed to create project', error);
+        this.saving = false;
+      });
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   get canProceed(): boolean {
@@ -332,21 +367,10 @@ export class ProjectFormComponent implements OnInit {
     this.router.navigate(['/projects']);
   }
 
-  async save(): Promise<void> {
+  save(): void {
+    if (this.saving) return;
     this.saving = true;
-    try {
-      const project = await this.projectsService.createProject(this.form);
-      this.store.dispatch(ProjectsActions.createProjectSuccess({ project }));
-      this.notificationService.success(
-        'Project created',
-        `${project.name} has been registered successfully`,
-      );
-      this.router.navigate(['/projects', project.id]);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'An error occurred';
-      this.notificationService.error('Failed to create project', message);
-    } finally {
-      this.saving = false;
-    }
+    // Dispatch through the store; success/failure are handled via Actions stream above.
+    this.store.dispatch(ProjectsActions.createProject({ data: this.form }));
   }
 }

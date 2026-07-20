@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { AsyncPipe, NgIf, NgFor, NgClass, NgSwitch, NgSwitchCase } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { Store } from '@ngrx/store';
-import { Observable, combineLatest } from 'rxjs';
+import { Observable, BehaviorSubject, combineLatest } from 'rxjs';
 import { map } from 'rxjs/operators';
 import {
   LucideAngularModule,
@@ -226,6 +226,9 @@ export class GovernanceDashboardComponent implements OnInit {
   protected filteredProposals$: Observable<Proposal[]>;
   protected selectedTabValue = 'all';
 
+  /** BehaviorSubject drives reactive tab filtering without re-dispatching. */
+  private readonly selectedTab$ = new BehaviorSubject<string>('all');
+
   protected readonly filterTabs = [
     { label: 'All', value: 'all' },
     { label: 'Active', value: 'active' },
@@ -248,15 +251,17 @@ export class GovernanceDashboardComponent implements OnInit {
     this.loadingConfig$ = this.store.select(selectGovernanceConfigLoading);
     this.loadingProposals$ = this.store.select(selectProposalsLoading);
 
-    // Combine proposals and active user to compute reactive filtered list
+    // Filtering is purely client-side; no re-fetch needed on tab change.
     this.filteredProposals$ = combineLatest([
       this.store.select(selectProposals),
       this.store.select(selectCurrentUser),
+      this.selectedTab$,
     ]).pipe(
-      map(([proposals, user]) => {
-        if (this.selectedTabValue === 'active') {
+      map(([proposals, user, tab]) => {
+        if (tab === 'active') {
           return proposals.filter((p) => p.status === ProposalStatus.ACTIVE);
-        } else if (this.selectedTabValue === 'mine') {
+        }
+        if (tab === 'mine') {
           return proposals.filter(
             (p) => p.proposerId === user?.id || p.proposerId === user?.wallet,
           );
@@ -273,8 +278,8 @@ export class GovernanceDashboardComponent implements OnInit {
 
   selectTab(tabValue: string): void {
     this.selectedTabValue = tabValue;
-    // Dispatch loadProposals to sync store with API
-    this.store.dispatch(GovernanceActions.loadProposals({ params: { limit: 50 } }));
+    // Push new value into the subject — filteredProposals$ reacts automatically.
+    this.selectedTab$.next(tabValue);
   }
 
   goToProposal(proposal: object): void {

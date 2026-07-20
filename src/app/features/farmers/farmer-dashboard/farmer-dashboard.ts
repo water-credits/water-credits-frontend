@@ -1,14 +1,22 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { NgIf, NgFor, NgClass, AsyncPipe } from '@angular/common';
-import { Subject } from 'rxjs';
+import { Store } from '@ngrx/store';
+import { Observable, Subject } from 'rxjs';
 import { CreditAmountPipe } from '../../../shared/pipes/credit-amount.pipe';
 import { NumberAbbreviatePipe } from '../../../shared/pipes/number-abbreviate.pipe';
 import { StatusBadgeComponent } from '../../../shared/components/status-badge/status-badge';
-import { AnalyticsService } from '../../../core/services/analytics.service';
-import { ProjectsService } from '../../../core/services/projects.service';
 import { AnalyticsOverview } from '../../../core/models/analytics.model';
 import { Project } from '../../../core/models/project.model';
+import { AppState } from '../../../core/store/app.state';
+import * as FarmersActions from '../../../core/store/farmers/farmers.actions';
+import {
+  selectParcels,
+  selectFarmerOverview,
+  selectParcelsLoading,
+  selectActiveParcelsCount,
+  selectTotalAreaHectares,
+} from '../../../core/store/farmers/farmers.selectors';
 import {
   LucideAngularModule,
   Droplets,
@@ -21,7 +29,6 @@ import {
   Wheat,
   Trees,
 } from 'lucide-angular';
-import { LoggingService } from '../../../core/services/logging.service';
 
 @Component({
   selector: 'app-farmer-dashboard',
@@ -48,13 +55,13 @@ import { LoggingService } from '../../../core/services/logging.service';
         </div>
       </div>
 
-      <div *ngIf="loading" class="flex items-center justify-center py-20">
+      <div *ngIf="loading$ | async" class="flex items-center justify-center py-20">
         <div
           class="animate-spin w-8 h-8 border-2 border-stellar-blue border-t-transparent rounded-full"
         ></div>
       </div>
 
-      <ng-container *ngIf="!loading">
+      <ng-container *ngIf="!(loading$ | async)">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div class="card p-5">
             <div class="flex items-center justify-between mb-3">
@@ -67,8 +74,10 @@ import { LoggingService } from '../../../core/services/logging.service';
                 <lucide-angular [img]="MapPin" class="w-4 h-4 text-stellar-blue"></lucide-angular>
               </div>
             </div>
-            <p class="text-2xl font-bold text-slate-900 dark:text-white">{{ parcels.length }}</p>
-            <p class="text-xs text-green-600 mt-1">{{ activeParcels }} active</p>
+            <p class="text-2xl font-bold text-slate-900 dark:text-white">
+              {{ (parcels$ | async)?.length || 0 }}
+            </p>
+            <p class="text-xs text-green-600 mt-1">{{ activeParcelsCount$ | async }} active</p>
           </div>
 
           <div class="card p-5">
@@ -88,7 +97,7 @@ import { LoggingService } from '../../../core/services/logging.service';
               </div>
             </div>
             <p class="text-2xl font-bold text-slate-900 dark:text-white">
-              {{ totalAreaHectares | numberAbbreviate }}
+              {{ (totalAreaHectares$ | async) ?? 0 | numberAbbreviate }}
             </p>
             <p class="text-xs text-slate-400 mt-1">hectares</p>
           </div>
@@ -105,7 +114,7 @@ import { LoggingService } from '../../../core/services/logging.service';
               </div>
             </div>
             <p class="text-2xl font-bold text-slate-900 dark:text-white">
-              {{ overview?.totalCreditsMinted || '0' | creditAmount }}
+              {{ (overview$ | async)?.totalCreditsMinted || '0' | creditAmount }}
             </p>
             <p class="text-xs text-slate-400 mt-1">lifetime credits</p>
           </div>
@@ -131,11 +140,14 @@ import { LoggingService } from '../../../core/services/logging.service';
             <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-4">
               Recent Parcels
             </h3>
-            <div *ngIf="parcels.length === 0" class="text-center py-8 text-sm text-slate-400">
+            <div
+              *ngIf="(parcels$ | async)?.length === 0"
+              class="text-center py-8 text-sm text-slate-400"
+            >
               No parcels registered yet
             </div>
             <div
-              *ngFor="let parcel of parcels.slice(0, 4)"
+              *ngFor="let parcel of (parcels$ | async)?.slice(0, 4)"
               class="flex items-center justify-between py-2 border-b border-slate-100 dark:border-slate-700 last:border-0"
             >
               <div class="flex items-center gap-3">
@@ -156,7 +168,7 @@ import { LoggingService } from '../../../core/services/logging.service';
               <app-status-badge [status]="parcel.status"></app-status-badge>
             </div>
             <a
-              *ngIf="parcels.length > 0"
+              *ngIf="(parcels$ | async)?.length"
               routerLink="/farmers/parcels"
               class="inline-flex items-center gap-1 text-sm text-stellar-blue hover:text-stellar-blue-light mt-3"
             >
@@ -272,10 +284,20 @@ import { LoggingService } from '../../../core/services/logging.service';
   `,
 })
 export class FarmerDashboardComponent implements OnInit, OnDestroy {
-  protected loading = true;
-  protected overview: AnalyticsOverview | null = null;
-  protected parcels: Project[] = [];
-  protected bmps: { name: string; enrolled: boolean; estimatedCredits: number }[] = [];
+  protected loading$: Observable<boolean>;
+  protected overview$: Observable<AnalyticsOverview | null>;
+  protected parcels$: Observable<Project[]>;
+  protected activeParcelsCount$: Observable<number>;
+  protected totalAreaHectares$: Observable<number>;
+
+  protected bmps: { name: string; enrolled: boolean; estimatedCredits: number }[] = [
+    { name: 'Cover Crops', enrolled: true, estimatedCredits: 120 },
+    { name: 'No-Till Farming', enrolled: true, estimatedCredits: 85 },
+    { name: 'Buffer Strips', enrolled: false, estimatedCredits: 200 },
+    { name: 'Managed Grazing', enrolled: false, estimatedCredits: 150 },
+    { name: 'Compost Application', enrolled: false, estimatedCredits: 95 },
+  ];
+
   private destroy$ = new Subject<void>();
 
   protected readonly Droplets = Droplets;
@@ -288,14 +310,17 @@ export class FarmerDashboardComponent implements OnInit, OnDestroy {
   protected readonly Wheat = Wheat;
   protected readonly Trees = Trees;
 
-  constructor(
-    private analyticsService: AnalyticsService,
-    private projectsService: ProjectsService,
-    private loggingService: LoggingService,
-  ) {}
+  constructor(private store: Store<AppState>) {
+    this.loading$ = this.store.select(selectParcelsLoading);
+    this.overview$ = this.store.select(selectFarmerOverview);
+    this.parcels$ = this.store.select(selectParcels);
+    this.activeParcelsCount$ = this.store.select(selectActiveParcelsCount);
+    this.totalAreaHectares$ = this.store.select(selectTotalAreaHectares);
+  }
 
-  async ngOnInit(): Promise<void> {
-    await this.loadData();
+  ngOnInit(): void {
+    this.store.dispatch(FarmersActions.loadParcels());
+    this.store.dispatch(FarmersActions.loadFarmerOverview());
   }
 
   ngOnDestroy(): void {
@@ -303,37 +328,7 @@ export class FarmerDashboardComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  get activeParcels(): number {
-    return this.parcels.filter((p) => p.status === 'active' || p.status === 'baseline').length;
-  }
-
-  get totalAreaHectares(): number {
-    return this.parcels.reduce((sum, p) => sum + p.areaHectares, 0);
-  }
-
   get enrolledBmps(): number {
     return this.bmps.filter((b) => b.enrolled).length;
-  }
-
-  private async loadData(): Promise<void> {
-    try {
-      const [overview, projectsResult] = await Promise.all([
-        this.analyticsService.getOverview(),
-        this.projectsService.getProjects({ limit: 100 }),
-      ]);
-      this.overview = overview;
-      this.parcels = projectsResult.data || [];
-      this.bmps = [
-        { name: 'Cover Crops', enrolled: true, estimatedCredits: 120 },
-        { name: 'No-Till Farming', enrolled: true, estimatedCredits: 85 },
-        { name: 'Buffer Strips', enrolled: false, estimatedCredits: 200 },
-        { name: 'Managed Grazing', enrolled: false, estimatedCredits: 150 },
-        { name: 'Compost Application', enrolled: false, estimatedCredits: 95 },
-      ];
-    } catch (error) {
-      this.loggingService.error('Failed to load farmer dashboard data:', error);
-    } finally {
-      this.loading = false;
-    }
   }
 }

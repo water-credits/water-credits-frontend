@@ -1,7 +1,8 @@
-import { Component, OnInit } from '@angular/core';
-import { NgIf, NgFor, NgSwitch, NgSwitchCase, NgSwitchDefault } from '@angular/common';
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { NgIf, NgFor, NgSwitch, NgSwitchCase, NgSwitchDefault, AsyncPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { AnalyticsService } from '../../../core/services/analytics.service';
+import { Store } from '@ngrx/store';
+import { Observable, Subject } from 'rxjs';
 import { OracleService } from '../../../core/services/oracle.service';
 import { NumberAbbreviatePipe } from '../../../shared/pipes/number-abbreviate.pipe';
 import { DateFormatPipe } from '../../../shared/pipes/date-format.pipe';
@@ -11,8 +12,17 @@ import {
   ColumnDef,
 } from '../../../shared/components/data-table/data-table.component';
 import { StatusBadgeComponent } from '../../../shared/components/status-badge/status-badge';
+import { LoadingSpinnerComponent } from '../../../shared/components/loading-spinner/loading-spinner';
+import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state';
 import { AnalyticsOverview } from '../../../core/models/analytics.model';
 import { OracleSubmission } from '../../../core/models/oracle.model';
+import { AppState } from '../../../core/store/app.state';
+import * as AnalyticsActions from '../../../core/store/analytics/analytics.actions';
+import {
+  selectAnalyticsOverview,
+  selectAnalyticsOverviewLoading,
+  selectAnalyticsError,
+} from '../../../core/store/analytics/analytics.selectors';
 import {
   LucideAngularModule,
   Users,
@@ -36,12 +46,15 @@ import { LoggingService } from '../../../core/services/logging.service';
     NgSwitch,
     NgSwitchCase,
     NgSwitchDefault,
+    AsyncPipe,
     RouterLink,
     NumberAbbreviatePipe,
     DateFormatPipe,
     StellarAddressPipe,
     DataTableComponent,
     StatusBadgeComponent,
+    LoadingSpinnerComponent,
+    EmptyStateComponent,
     LucideAngularModule,
   ],
   template: `
@@ -53,15 +66,27 @@ import { LoggingService } from '../../../core/services/logging.service';
             System overview and management
           </p>
         </div>
+        <button (click)="refresh()" class="btn btn-outline text-sm flex items-center gap-2">
+          <lucide-angular [img]="RefreshCwIcon" class="w-4 h-4"></lucide-angular>
+          Refresh
+        </button>
       </div>
 
-      <div *ngIf="loading" class="flex items-center justify-center py-20">
-        <div
-          class="animate-spin w-8 h-8 border-2 border-stellar-blue border-t-transparent rounded-full"
-        ></div>
+      <app-loading-spinner
+        *ngIf="loading$ | async"
+        size="lg"
+        label="Loading admin overview..."
+      ></app-loading-spinner>
+
+      <div
+        *ngIf="(error$ | async) && !(loading$ | async)"
+        class="card p-5 border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/10"
+      >
+        <p class="text-sm text-red-600 dark:text-red-400">{{ error$ | async }}</p>
+        <button (click)="refresh()" class="btn btn-sm btn-outline mt-2">Retry</button>
       </div>
 
-      <ng-container *ngIf="!loading">
+      <ng-container *ngIf="!(loading$ | async)">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div class="card p-5">
             <div class="flex items-center justify-between mb-3">
@@ -78,7 +103,7 @@ import { LoggingService } from '../../../core/services/logging.service';
               </div>
             </div>
             <p class="text-2xl font-bold text-slate-900 dark:text-white">
-              {{ overview?.totalUsers ?? 0 | numberAbbreviate }}
+              {{ (overview$ | async)?.totalUsers ?? 0 | numberAbbreviate }}
             </p>
           </div>
 
@@ -93,15 +118,17 @@ import { LoggingService } from '../../../core/services/logging.service';
                 class="w-9 h-9 rounded-lg bg-environmental-green/10 flex items-center justify-center"
               >
                 <lucide-angular
-                  [img]="Building2"
+                  [img]="Building2Icon"
                   class="w-4 h-4 text-environmental-green"
                 ></lucide-angular>
               </div>
             </div>
             <p class="text-2xl font-bold text-slate-900 dark:text-white">
-              {{ overview?.totalProjects ?? 0 | numberAbbreviate }}
+              {{ (overview$ | async)?.totalProjects ?? 0 | numberAbbreviate }}
             </p>
-            <p class="text-xs text-green-600 mt-1">{{ overview?.activeProjects ?? 0 }} active</p>
+            <p class="text-xs text-green-600 mt-1">
+              {{ (overview$ | async)?.activeProjects ?? 0 }} active
+            </p>
           </div>
 
           <div class="card p-5">
@@ -113,13 +140,13 @@ import { LoggingService } from '../../../core/services/logging.service';
               </p>
               <div class="w-9 h-9 rounded-lg bg-credit-gold/10 flex items-center justify-center">
                 <lucide-angular
-                  [img]="ShieldCheck"
+                  [img]="ShieldCheckIcon"
                   class="w-4 h-4 text-credit-gold"
                 ></lucide-angular>
               </div>
             </div>
             <p class="text-2xl font-bold text-slate-900 dark:text-white">
-              {{ overview?.verifiedOracles ?? 0 | numberAbbreviate }}
+              {{ (overview$ | async)?.verifiedOracles ?? 0 | numberAbbreviate }}
             </p>
           </div>
 
@@ -132,13 +159,13 @@ import { LoggingService } from '../../../core/services/logging.service';
               </p>
               <div class="w-9 h-9 rounded-lg bg-retirement-red/10 flex items-center justify-center">
                 <lucide-angular
-                  [img]="RefreshCw"
+                  [img]="RefreshCwIcon"
                   class="w-4 h-4 text-retirement-red"
                 ></lucide-angular>
               </div>
             </div>
             <p class="text-2xl font-bold text-slate-900 dark:text-white">
-              {{ overview?.totalRetirements ?? 0 | numberAbbreviate }}
+              {{ (overview$ | async)?.totalRetirements ?? 0 | numberAbbreviate }}
             </p>
           </div>
         </div>
@@ -148,7 +175,7 @@ import { LoggingService } from '../../../core/services/logging.service';
             <h3
               class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-4 flex items-center gap-2"
             >
-              <lucide-angular [img]="Clock" class="w-4 h-4 text-slate-400"></lucide-angular>
+              <lucide-angular [img]="ClockIcon" class="w-4 h-4 text-slate-400"></lucide-angular>
               Queue Depths
             </h3>
             <div class="space-y-3">
@@ -163,17 +190,17 @@ import { LoggingService } from '../../../core/services/logging.service';
               <div
                 class="flex items-center justify-between py-2 border-b border-slate-100 dark:border-slate-700"
               >
-                <span class="text-sm text-slate-600 dark:text-slate-400">Active Retirements</span>
+                <span class="text-sm text-slate-600 dark:text-slate-400"
+                  >Confirmed Submissions</span
+                >
                 <span class="text-sm font-semibold text-stellar-blue">{{
-                  queueDepths.activeRetirements
+                  queueDepths.confirmedSubmissions
                 }}</span>
               </div>
               <div class="flex items-center justify-between py-2">
-                <span class="text-sm text-slate-600 dark:text-slate-400"
-                  >Pending Verifications</span
-                >
+                <span class="text-sm text-slate-600 dark:text-slate-400">Failed Submissions</span>
                 <span class="text-sm font-semibold text-environmental-green">{{
-                  queueDepths.pendingVerifications
+                  queueDepths.failedSubmissions
                 }}</span>
               </div>
             </div>
@@ -183,7 +210,7 @@ import { LoggingService } from '../../../core/services/logging.service';
             <h3
               class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-4 flex items-center gap-2"
             >
-              <lucide-angular [img]="Activity" class="w-4 h-4 text-slate-400"></lucide-angular>
+              <lucide-angular [img]="ActivityIcon" class="w-4 h-4 text-slate-400"></lucide-angular>
               Quick Links
             </h3>
             <div class="space-y-2">
@@ -196,7 +223,7 @@ import { LoggingService } from '../../../core/services/logging.service';
                     class="w-8 h-8 rounded-lg bg-credit-gold/10 flex items-center justify-center"
                   >
                     <lucide-angular
-                      [img]="HardDrive"
+                      [img]="HardDriveIcon"
                       class="w-4 h-4 text-credit-gold"
                     ></lucide-angular>
                   </div>
@@ -208,7 +235,7 @@ import { LoggingService } from '../../../core/services/logging.service';
                   </div>
                 </div>
                 <lucide-angular
-                  [img]="ArrowRight"
+                  [img]="ArrowRightIcon"
                   class="w-4 h-4 text-slate-300 group-hover:text-slate-500 transition-colors"
                 ></lucide-angular>
               </a>
@@ -221,7 +248,7 @@ import { LoggingService } from '../../../core/services/logging.service';
                     class="w-8 h-8 rounded-lg bg-stellar-blue/10 flex items-center justify-center"
                   >
                     <lucide-angular
-                      [img]="Settings"
+                      [img]="SettingsIcon"
                       class="w-4 h-4 text-stellar-blue"
                     ></lucide-angular>
                   </div>
@@ -233,7 +260,7 @@ import { LoggingService } from '../../../core/services/logging.service';
                   </div>
                 </div>
                 <lucide-angular
-                  [img]="ArrowRight"
+                  [img]="ArrowRightIcon"
                   class="w-4 h-4 text-slate-300 group-hover:text-slate-500 transition-colors"
                 ></lucide-angular>
               </a>
@@ -258,7 +285,7 @@ import { LoggingService } from '../../../core/services/logging.service';
                   </div>
                 </div>
                 <lucide-angular
-                  [img]="ArrowRight"
+                  [img]="ArrowRightIcon"
                   class="w-4 h-4 text-slate-300 group-hover:text-slate-500 transition-colors"
                 ></lucide-angular>
               </a>
@@ -297,27 +324,33 @@ import { LoggingService } from '../../../core/services/logging.service';
     </div>
   `,
 })
-export class AdminDashboardComponent implements OnInit {
-  protected loading = true;
+export class AdminDashboardComponent implements OnInit, OnDestroy {
+  /** Overview stats from the analytics store slice — no async/await in component. */
+  protected overview$: Observable<AnalyticsOverview | null>;
+  protected loading$: Observable<boolean>;
+  protected error$: Observable<string | null>;
+
+  /** Oracle submissions are not yet in a store slice; fetched directly.
+   *  This is intentional: the admin store slice is out of scope for this issue.
+   *  The overview (main KPI cards) is fully store-driven. */
   protected submissionsLoading = false;
-  protected overview: AnalyticsOverview | null = null;
   protected recentSubmissions: OracleSubmission[] = [];
 
   protected queueDepths = {
-    pendingSubmissions: 3,
-    activeRetirements: 1,
-    pendingVerifications: 5,
+    pendingSubmissions: 0,
+    confirmedSubmissions: 0,
+    failedSubmissions: 0,
   };
 
   protected readonly UsersIcon = Users;
-  protected readonly Building2 = Building2;
-  protected readonly HardDrive = HardDrive;
-  protected readonly RefreshCw = RefreshCw;
-  protected readonly Activity = Activity;
-  protected readonly ArrowRight = ArrowRight;
-  protected readonly Clock = Clock;
-  protected readonly ShieldCheck = ShieldCheck;
-  protected readonly Settings = Settings;
+  protected readonly Building2Icon = Building2;
+  protected readonly HardDriveIcon = HardDrive;
+  protected readonly RefreshCwIcon = RefreshCw;
+  protected readonly ActivityIcon = Activity;
+  protected readonly ArrowRightIcon = ArrowRight;
+  protected readonly ClockIcon = Clock;
+  protected readonly ShieldCheckIcon = ShieldCheck;
+  protected readonly SettingsIcon = Settings;
 
   protected submissionColumns: ColumnDef<OracleSubmission>[] = [
     { key: 'projectId', label: 'Project ID' },
@@ -326,23 +359,33 @@ export class AdminDashboardComponent implements OnInit {
     { key: 'createdAt', label: 'Submitted', align: 'right' },
   ];
 
+  private destroy$ = new Subject<void>();
+
   constructor(
-    private analyticsService: AnalyticsService,
+    private store: Store<AppState>,
     private oracleService: OracleService,
     private loggingService: LoggingService,
-  ) {}
-
-  async ngOnInit(): Promise<void> {
-    await Promise.all([this.loadOverview(), this.loadSubmissions()]);
-    this.loading = false;
+  ) {
+    this.overview$ = this.store.select(selectAnalyticsOverview);
+    this.loading$ = this.store.select(selectAnalyticsOverviewLoading);
+    this.error$ = this.store.select(selectAnalyticsError);
   }
 
-  private async loadOverview(): Promise<void> {
-    try {
-      this.overview = await this.analyticsService.getOverview();
-    } catch (error) {
-      this.loggingService.error('Failed to load analytics overview:', error);
-    }
+  ngOnInit(): void {
+    // Dispatch analytics overview through the store; AnalyticsEffects handles the HTTP call.
+    this.store.dispatch(AnalyticsActions.loadAnalyticsOverview());
+    // Oracle submissions have no store slice — call the service directly.
+    this.loadSubmissions();
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  protected refresh(): void {
+    this.store.dispatch(AnalyticsActions.loadAnalyticsOverview());
+    this.loadSubmissions();
   }
 
   private async loadSubmissions(): Promise<void> {
@@ -350,6 +393,11 @@ export class AdminDashboardComponent implements OnInit {
       this.submissionsLoading = true;
       const res = await this.oracleService.getSubmissions({ limit: 5 });
       this.recentSubmissions = res.data;
+      this.queueDepths = {
+        pendingSubmissions: res.data.filter((s) => s.status === 'pending').length,
+        confirmedSubmissions: res.data.filter((s) => s.status === 'confirmed').length,
+        failedSubmissions: res.data.filter((s) => s.status === 'failed').length,
+      };
     } catch (error) {
       this.loggingService.error('Failed to load submissions:', error);
     } finally {

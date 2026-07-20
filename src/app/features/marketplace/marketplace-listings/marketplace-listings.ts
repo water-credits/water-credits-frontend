@@ -1,10 +1,19 @@
-import { Component, OnInit } from '@angular/core';
-import { NgIf, NgFor, NgClass, NgSwitch, NgSwitchCase } from '@angular/common';
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { NgIf, NgFor, NgClass, NgSwitch, NgSwitchCase, AsyncPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
+import { Store } from '@ngrx/store';
+import { Observable, Subject } from 'rxjs';
 import { LucideAngularModule, Plus, BarChart3 } from 'lucide-angular';
-import { MarketplaceService, MarketplaceListing } from '../../../core/services/marketplace.service';
-import { ProjectsService } from '../../../core/services/projects.service';
+import { MarketplaceListing } from '../../../core/services/marketplace.service';
+import { AppState } from '../../../core/store/app.state';
+import * as MarketplaceActions from '../../../core/store/marketplace/marketplace.actions';
+import {
+  selectListings,
+  selectMarketplaceLoading,
+  selectMarketplaceError,
+  selectMarketplacePagination,
+} from '../../../core/store/marketplace/marketplace.selectors';
 import {
   DataTableComponent,
   ColumnDef,
@@ -27,6 +36,7 @@ import { NumberAbbreviatePipe } from '../../../shared/pipes/number-abbreviate.pi
     NgClass,
     NgSwitch,
     NgSwitchCase,
+    AsyncPipe,
     FormsModule,
     RouterLink,
     LucideAngularModule,
@@ -67,10 +77,10 @@ import { NumberAbbreviatePipe } from '../../../shared/pipes/number-abbreviate.pi
             <app-search-input
               [value]="searchQuery"
               placeholder="Search listings..."
-              (search)="searchQuery = $event; page = 1; loadListings()"
+              (search)="onSearch($event)"
             />
           </div>
-          <select [(ngModel)]="statusFilter" (change)="page = 1; loadListings()" class="input">
+          <select [(ngModel)]="statusFilter" (change)="filterByStatus(statusFilter)" class="input">
             <option value="">All statuses</option>
             <option value="active">Active</option>
             <option value="sold">Sold</option>
@@ -80,13 +90,21 @@ import { NumberAbbreviatePipe } from '../../../shared/pipes/number-abbreviate.pi
       </div>
 
       <app-loading-spinner
-        *ngIf="loading"
+        *ngIf="loading$ | async"
         size="lg"
         label="Loading listings..."
       ></app-loading-spinner>
 
+      <div
+        *ngIf="(error$ | async) && !(loading$ | async)"
+        class="card p-5 border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/10"
+      >
+        <p class="text-sm text-red-600 dark:text-red-400">{{ error$ | async }}</p>
+        <button (click)="reload()" class="btn btn-sm btn-outline mt-2">Retry</button>
+      </div>
+
       <app-empty-state
-        *ngIf="!loading && listings.length === 0"
+        *ngIf="!(loading$ | async) && !(error$ | async) && (listings$ | async)?.length === 0"
         title="No listings found"
         message="There are no marketplace listings matching your criteria."
         actionLabel="Create Listing"
@@ -94,11 +112,11 @@ import { NumberAbbreviatePipe } from '../../../shared/pipes/number-abbreviate.pi
       ></app-empty-state>
 
       <app-data-table
-        *ngIf="!loading && listings.length > 0"
+        *ngIf="!(loading$ | async) && (listings$ | async)?.length"
         [columns]="columns"
-        [data]="listings"
+        [data]="(listings$ | async) || []"
         [loading]="false"
-        [pagination]="pagination"
+        [pagination]="pagination$ | async"
         (page)="onPageChange($event)"
       >
         <ng-template #row let-row let-col="column">
@@ -152,21 +170,27 @@ import { NumberAbbreviatePipe } from '../../../shared/pipes/number-abbreviate.pi
     </div>
   `,
 })
-export class MarketplaceListingsComponent implements OnInit {
+export class MarketplaceListingsComponent implements OnInit, OnDestroy {
   protected readonly PlusIcon = Plus;
   protected readonly BarChart3Icon = BarChart3;
 
-  listings: MarketplaceListing[] = [];
-  loading = true;
-  page = 1;
-  limit = 10;
-  pagination: { page: number; limit: number; total: number; totalPages: number } | null = null;
-  statusFilter = '';
-  projectFilter = '';
-  searchQuery = '';
-  projects: { id: string; name: string }[] = [];
+  protected listings$: Observable<MarketplaceListing[]>;
+  protected loading$: Observable<boolean>;
+  protected error$: Observable<string | null>;
+  protected pagination$: Observable<{
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  }>;
 
-  columns: ColumnDef<MarketplaceListing>[] = [
+  protected statusFilter = '';
+  protected searchQuery = '';
+
+  private page = 1;
+  private destroy$ = new Subject<void>();
+
+  protected columns: ColumnDef<MarketplaceListing>[] = [
     { key: 'projectName', label: 'Project', sortable: true },
     { key: 'sellerName', label: 'Seller' },
     { key: 'amount', label: 'Amount', align: 'right' },
@@ -178,71 +202,54 @@ export class MarketplaceListingsComponent implements OnInit {
   ];
 
   constructor(
-    private marketplaceService: MarketplaceService,
-    private projectsService: ProjectsService,
+    private store: Store<AppState>,
     protected router: Router,
-  ) {}
-
-  async ngOnInit(): Promise<void> {
-    await Promise.all([this.loadListings(), this.loadProjects()]);
+  ) {
+    this.listings$ = this.store.select(selectListings);
+    this.loading$ = this.store.select(selectMarketplaceLoading);
+    this.error$ = this.store.select(selectMarketplaceError);
+    this.pagination$ = this.store.select(selectMarketplacePagination);
   }
 
-  async loadListings(): Promise<void> {
-    this.loading = true;
-    try {
-      const params: Record<string, any> = { page: this.page, limit: this.limit };
-      if (this.statusFilter) params['status'] = this.statusFilter;
-      if (this.projectFilter) params['projectId'] = this.projectFilter;
-      if (this.searchQuery) params['search'] = this.searchQuery;
-      const response = await this.marketplaceService.getListings(params);
-      this.listings = response.data;
-      this.pagination = {
-        page: response.page,
-        limit: this.limit,
-        total: response.total,
-        totalPages: response.totalPages,
-      };
-    } catch {
-      this.listings = [];
-      this.pagination = null;
-    } finally {
-      this.loading = false;
-    }
+  ngOnInit(): void {
+    this.dispatchLoad();
   }
 
-  async loadProjects(): Promise<void> {
-    try {
-      const response = await this.projectsService.getProjects({ limit: 100 });
-      this.projects = response.data.map((p) => ({ id: p.id, name: p.name }));
-    } catch {
-      this.projects = [];
-    }
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
-  onPageChange(page: number): void {
+  private dispatchLoad(): void {
+    const params: Record<string, any> = { page: this.page, limit: 10 };
+    if (this.statusFilter) params['status'] = this.statusFilter;
+    if (this.searchQuery) params['search'] = this.searchQuery;
+    this.store.dispatch(MarketplaceActions.loadListings({ params }));
+  }
+
+  protected reload(): void {
+    this.dispatchLoad();
+  }
+
+  protected onPageChange(page: number): void {
     this.page = page;
-    this.loadListings();
+    this.store.dispatch(MarketplaceActions.setListingsPage({ page }));
+    this.dispatchLoad();
   }
 
-  filterByStatus(status: string): void {
+  protected filterByStatus(status: string): void {
     this.statusFilter = status;
     this.page = 1;
-    this.loadListings();
+    this.dispatchLoad();
   }
 
-  filterByProject(projectId: string): void {
-    this.projectFilter = projectId;
-    this.page = 1;
-    this.loadListings();
-  }
-
-  onSearch(term: string): void {
+  protected onSearch(term: string): void {
     this.searchQuery = term;
     this.page = 1;
-    this.loadListings();
+    this.dispatchLoad();
   }
 
-  buyListing(listing: MarketplaceListing): void {
+  protected buyListing(listing: MarketplaceListing): void {
     this.router.navigate(['/marketplace', listing.id, 'buy']);
   }
 }

@@ -12,6 +12,9 @@ import { CreditsEffects } from './core/store/credits/credits.effects';
 import { RetirementEffects } from './core/store/retirement/retirement.effects';
 import { GovernanceEffects } from './core/store/governance/governance.effects';
 import { SensorsEffects } from './core/store/sensors/sensors.effects';
+import { MarketplaceEffects } from './core/store/marketplace/marketplace.effects';
+import { FarmersEffects } from './core/store/farmers/farmers.effects';
+import { AnalyticsEffects } from './core/store/analytics/analytics.effects';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -25,6 +28,9 @@ export const appConfig: ApplicationConfig = {
       RetirementEffects,
       GovernanceEffects,
       SensorsEffects,
+      MarketplaceEffects,
+      FarmersEffects,
+      AnalyticsEffects,
     ]),
     provideStoreDevtools({ maxAge: 25, logOnly: !isDevMode() }),
   ],
