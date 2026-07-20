@@ -2,11 +2,12 @@ import { Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { HeaderComponent } from '../header/header';
 import { SidebarComponent } from '../sidebar/sidebar';
+import { ToastContainerComponent } from '../../components/toast-container/toast-container.component';
 
 @Component({
   selector: 'app-default-layout',
   standalone: true,
-  imports: [RouterOutlet, HeaderComponent, SidebarComponent],
+  imports: [RouterOutlet, HeaderComponent, SidebarComponent, ToastContainerComponent],
   template: `
     <div class="min-h-screen flex flex-col">
       <app-header></app-header>
@@ -17,6 +18,8 @@ import { SidebarComponent } from '../sidebar/sidebar';
         </main>
       </div>
     </div>
+    <!-- Global toast layer — rendered outside the scrollable content area -->
+    <app-toast-container></app-toast-container>
   `,
   styles: [],
 })

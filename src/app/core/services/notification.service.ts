@@ -1,55 +1,66 @@
-import { Injectable } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
+import { Injectable, inject } from '@angular/core';
+import { Store } from '@ngrx/store';
+import { addNotification, removeNotification } from '../store/ui/ui.actions';
+import { AppState } from '../store/app.state';
 
-export interface ToastNotification {
-  id: string;
-  type: 'success' | 'error' | 'info' | 'warning';
-  title: string;
-  message: string;
-  duration?: number;
-}
+export type NotificationType = 'success' | 'error' | 'warning' | 'info';
 
-@Injectable({
-  providedIn: 'root',
-})
+/**
+ * NotificationService — the single entry point for showing user feedback.
+ *
+ * All callers (effects, components) simply call `success()`, `error()`, etc.
+ * The service dispatches `addNotification` to the UI store slice, which:
+ *   - appends the item to `UIState.notifications` (capped at 50)
+ *   - increments `unreadNotificationCount`
+ *
+ * ToastContainerComponent subscribes to the store and handles rendering +
+ * auto-dismissal via `removeNotification`.  The service itself starts the
+ * auto-dismiss timer so that even if the toast component is not yet in the
+ * DOM the removal action fires correctly.
+ *
+ * Duration rules:
+ *   - success / info / warning: 4 000 ms default
+ *   - error: 0 (persists until the user dismisses)
+ *   - callers may override via the optional `duration` parameter
+ */
+@Injectable({ providedIn: 'root' })
 export class NotificationService {
-  private notificationsSubject = new BehaviorSubject<ToastNotification[]>([]);
-  public notifications$ = this.notificationsSubject.asObservable();
+  private readonly store = inject(Store<AppState>);
 
-  constructor() {}
+  // ── Public helpers ──────────────────────────────────────────────────────────
 
-  show(notification: Omit<ToastNotification, 'id'>) {
-    const id = Math.random().toString(36).substring(2, 11);
-    const newNotification = { ...notification, id };
-
-    const current = this.notificationsSubject.value;
-    this.notificationsSubject.next([...current, newNotification]);
-
-    if (notification.duration !== 0) {
-      setTimeout(() => {
-        this.remove(id);
-      }, notification.duration || 5000);
-    }
+  success(title: string, message: string, duration?: number): void {
+    this.show('success', title, message, duration ?? 4000);
   }
 
-  success(title: string, message: string) {
-    this.show({ type: 'success', title, message });
+  error(title: string, message: string, duration?: number): void {
+    // Errors default to 0 (persistent) — caller may pass a positive ms to override
+    this.show('error', title, message, duration ?? 0);
   }
 
-  error(title: string, message: string) {
-    this.show({ type: 'error', title, message });
+  info(title: string, message: string, duration?: number): void {
+    this.show('info', title, message, duration ?? 4000);
   }
 
-  info(title: string, message: string) {
-    this.show({ type: 'info', title, message });
+  warning(title: string, message: string, duration?: number): void {
+    this.show('warning', title, message, duration ?? 4000);
   }
 
-  warning(title: string, message: string) {
-    this.show({ type: 'warning', title, message });
+  /**
+   * @deprecated Use `success()`, `error()`, `info()`, or `warning()` directly.
+   * Kept for backward-compat with any call-sites that use the old `show()` API.
+   */
+  show(
+    type: NotificationType,
+    title: string,
+    message: string,
+    duration?: number,
+  ): void {
+    this.store.dispatch(addNotification({ notification: { type, title, message, duration } }));
   }
 
-  remove(id: string) {
-    const current = this.notificationsSubject.value;
-    this.notificationsSubject.next(current.filter((n) => n.id !== id));
+  /** Programmatically dismiss a specific notification by ID. */
+  dismiss(id: string): void {
+    this.store.dispatch(removeNotification({ id }));
   }
 }
