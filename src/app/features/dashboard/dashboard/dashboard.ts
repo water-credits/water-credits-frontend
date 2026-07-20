@@ -1,5 +1,6 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { NgIf, NgFor, SlicePipe } from '@angular/common';
+import { Store } from '@ngrx/store';
 import { Subject, takeUntil } from 'rxjs';
 import { CreditAmountPipe } from '../../../shared/pipes/credit-amount.pipe';
 import { DateFormatPipe } from '../../../shared/pipes/date-format.pipe';
@@ -7,6 +8,10 @@ import { AnalyticsService } from '../../../core/services/analytics.service';
 import { WebsocketService } from '../../../core/services/websocket.service';
 import { AnalyticsOverview, CreditsOverTimePoint } from '../../../core/models/analytics.model';
 import { RecentRetirement } from '../../../core/models/retirement.model';
+import { SensorChartComponent } from '../../../shared/components/sensor-chart/sensor-chart';
+import { SensorParameter, TimeRange } from '../../../shared/components/sensor-chart/sensor-parameter.model';
+import { SensorReading } from '../../../core/models/sensor-reading.model';
+import { selectRecentReadings } from '../../../core/store/sensors/sensors.selectors';
 import {
   LucideAngularModule,
   Droplets,
@@ -18,10 +23,29 @@ import {
 } from 'lucide-angular';
 import { LoggingService } from '../../../core/services/logging.service';
 
+/** Parameters shown in the sensor summary widget on the main dashboard */
+const SENSOR_SUMMARY_PARAMS: SensorParameter[] = [
+  { key: 'ph', label: 'pH', unit: '', color: '#7B2FBE', decimals: 2 },
+  { key: 'turbidity', label: 'Turbidity', unit: 'NTU', color: '#F59E0B', decimals: 1 },
+  { key: 'dissolvedOxygen', label: 'Dissolved O₂', unit: 'mg/L', color: '#3B82F6', decimals: 1 },
+];
+
+const SENSOR_THRESHOLDS: Record<string, { low?: number; high?: number }> = {
+  ph: { low: 6.5, high: 8.5 },
+};
+
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [NgIf, NgFor, SlicePipe, CreditAmountPipe, DateFormatPipe, LucideAngularModule],
+  imports: [
+    NgIf,
+    NgFor,
+    SlicePipe,
+    CreditAmountPipe,
+    DateFormatPipe,
+    LucideAngularModule,
+    SensorChartComponent,
+  ],
   template: `
     <div class="space-y-6">
       <div class="flex items-center justify-between">
@@ -170,6 +194,17 @@ import { LoggingService } from '../../../core/services/logging.service';
           </div>
         </div>
 
+        <!-- Sensor Summary Widget -->
+        <app-sensor-chart
+          title="Water Quality Summary"
+          [data]="latestSensorReadings"
+          [parameters]="sensorSummaryParams"
+          [timeRange]="sensorTimeRange"
+          [thresholds]="sensorThresholds"
+          (rangeChange)="onSensorRangeChange($event)"
+          [height]="260"
+        />
+
         <div class="card p-5">
           <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-4">
             Credits Over Time
@@ -208,6 +243,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
   protected creditsOverTime: CreditsOverTimePoint[] = [];
   protected recentRetirements: RecentRetirement[] = [];
   protected wsConnected = false;
+  protected latestSensorReadings: SensorReading[] = [];
+  protected sensorSummaryParams = SENSOR_SUMMARY_PARAMS;
+  protected sensorThresholds = SENSOR_THRESHOLDS;
+  protected sensorTimeRange: TimeRange = '24h';
   private destroy$ = new Subject<void>();
 
   protected readonly Leaf = Leaf;
@@ -221,6 +260,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     private analyticsService: AnalyticsService,
     private wsService: WebsocketService,
     private loggingService: LoggingService,
+    private store: Store,
   ) {}
 
   async ngOnInit(): Promise<void> {
@@ -230,12 +270,30 @@ export class DashboardComponent implements OnInit, OnDestroy {
       },
       error: () => {},
     });
+
+    // Subscribe to the global recent-readings buffer from NgRx store
+    this.store
+      .select(selectRecentReadings)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (readings) => {
+          this.latestSensorReadings = readings;
+        },
+        error: () => {},
+      });
+
     await this.loadData();
   }
 
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  protected onSensorRangeChange(range: TimeRange): void {
+    this.sensorTimeRange = range;
+    // The store buffer is refreshed by the sensors-dashboard;
+    // for the dashboard widget we just update the displayed range label.
   }
 
   private async loadData(): Promise<void> {
