@@ -1,352 +1,621 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { FormsModule } from '@angular/forms';
-import { NgIf, NgFor, NgSwitch, NgSwitchCase } from '@angular/common';
+import {
+  ReactiveFormsModule,
+  FormBuilder,
+  FormGroup,
+  Validators,
+} from '@angular/forms';
+import { NgIf, NgFor, NgClass } from '@angular/common';
 import { Store } from '@ngrx/store';
+import { Subject, takeUntil } from 'rxjs';
 import { NotificationService } from '../../../core/services/notification.service';
-import { ProjectsService } from '../../../core/services/projects.service';
-import { ProjectCreate } from '../../../core/models/project.model';
+import { ApiService } from '../../../core/services/api.service';
+import { MapViewComponent, MapLocation } from '../../../shared/components/map-view/map-view';
+import { PendingChanges } from '../../../core/guards/pending-changes.guard';
 import * as ProjectsActions from '../../../core/store/projects/projects.actions';
+import {
+  selectProjectsLoading,
+  selectProjectsError,
+} from '../../../core/store/projects/projects.selectors';
 import {
   LucideAngularModule,
   ChevronLeft,
+  ChevronRight,
   Check,
-  Droplets,
   MapPin,
   FileText,
   ClipboardList,
+  Settings,
+  Upload,
+  X,
+  AlertCircle,
 } from 'lucide-angular';
-import { FormStep } from '../../../core/models/shared-interfaces.model';
+
+export interface UploadedDoc {
+  fileId: string;
+  filename: string;
+  size: number;
+  uploading: boolean;
+  error?: string;
+}
+
+const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
+const MAX_FILES = 5;
+const ALLOWED_MIME = [
+  'application/pdf',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+];
 
 @Component({
   selector: 'app-project-form',
   standalone: true,
-  imports: [RouterLink, FormsModule, NgIf, NgFor, NgSwitch, NgSwitchCase, LucideAngularModule],
+  imports: [
+    RouterLink,
+    ReactiveFormsModule,
+    NgIf,
+    NgFor,
+    NgClass,
+    LucideAngularModule,
+    MapViewComponent,
+  ],
   template: `
     <div class="max-w-3xl mx-auto">
-      <a
-        routerLink="/projects"
-        class="inline-flex items-center gap-1 text-sm text-stellar-blue hover:text-stellar-blue-light mb-6"
-      >
+      <a routerLink="/projects"
+         class="inline-flex items-center gap-1 text-sm text-stellar-blue hover:text-stellar-blue-light mb-6">
         <lucide-angular [img]="ChevronLeft" class="w-4 h-4"></lucide-angular>
         Back to Projects
       </a>
-
       <div class="card p-6">
-        <h1 class="text-2xl font-bold text-slate-900 dark:text-white mb-2">
-          {{ isEdit ? 'Edit Project' : 'New Project' }}
-        </h1>
+        <h1 class="text-2xl font-bold text-slate-900 dark:text-white mb-1">New Project</h1>
         <p class="text-sm text-slate-500 dark:text-slate-400 mb-6">
-          Fill in the details to {{ isEdit ? 'update your' : 'register a new' }} water credit
-          project.
+          Register a new water credit project.
         </p>
-
-        <div class="flex items-center justify-between mb-8">
-          <div *ngFor="let step of steps; let i = index" class="flex items-center">
-            <div
-              [class]="{
-                'bg-stellar-blue text-white': i <= currentStep,
-                'bg-slate-200 dark:bg-slate-700 text-slate-500': i > currentStep,
+        <!-- Stepper -->
+        <div class="flex items-center mb-8 overflow-x-auto pb-1">
+          <ng-container *ngFor="let label of stepLabels; let i = index">
+            <button type="button" (click)="goToStep(i)"
+              [disabled]="i > maxVisitedStep"
+              class="flex flex-col items-center gap-1 min-w-[56px] focus:outline-none">
+              <div [ngClass]="{
+                'bg-stellar-blue text-white': i === currentStep,
                 'bg-environmental-green text-white': i < currentStep,
-              }"
-              class="w-10 h-10 rounded-full flex items-center justify-center transition-colors"
-            >
-              <lucide-angular
-                *ngIf="i < currentStep"
-                [img]="Check"
-                class="w-5 h-5"
-              ></lucide-angular>
-              <lucide-angular
-                *ngIf="i >= currentStep"
-                [img]="step.icon"
-                class="w-5 h-5"
-              ></lucide-angular>
+                'bg-slate-200 dark:bg-slate-700 text-slate-400': i > currentStep
+              }" class="w-9 h-9 rounded-full flex items-center justify-center transition-colors shrink-0">
+                <lucide-angular *ngIf="i < currentStep" [img]="CheckIcon" class="w-4 h-4"></lucide-angular>
+                <lucide-angular *ngIf="i >= currentStep" [img]="stepIcons[i]" class="w-4 h-4"></lucide-angular>
+              </div>
+              <span class="text-[10px] text-slate-500 hidden sm:block">{{ label }}</span>
+            </button>
+            <div *ngIf="i < stepLabels.length - 1"
+              [ngClass]="i < currentStep ? 'bg-environmental-green' : 'bg-slate-200 dark:bg-slate-700'"
+              class="h-0.5 flex-1 mx-1 transition-colors min-w-[12px]">
             </div>
-            <div
-              *ngIf="i < steps.length - 1"
-              [class]="{
-                'bg-stellar-blue': i < currentStep,
-                'bg-slate-200 dark:bg-slate-700': i >= currentStep,
-              }"
-              class="w-16 h-0.5 mx-2 transition-colors"
-            ></div>
-          </div>
+          </ng-container>
         </div>
-
-        <div class="mb-6">
-          <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-1">
-            {{ steps[currentStep].label }}
-          </h2>
-          <p class="text-sm text-slate-500">{{ steps[currentStep].description }}</p>
+        <div class="mb-5">
+          <h2 class="text-lg font-semibold text-slate-900 dark:text-white">{{ stepLabels[currentStep] }}</h2>
+          <p class="text-sm text-slate-500 dark:text-slate-400">{{ stepDescriptions[currentStep] }}</p>
         </div>
-
-        <ng-container [ngSwitch]="currentStep">
-          <div *ngSwitchCase="0" class="space-y-4">
+        <div *ngIf="storeError"
+          class="mb-4 flex items-center gap-2 p-3 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-600 text-sm">
+          <lucide-angular [img]="AlertCircleIcon" class="w-4 h-4 shrink-0"></lucide-angular>
+          {{ storeError }}
+        </div>
+        <!-- Step 0: Basic Info -->
+        <ng-container *ngIf="currentStep === 0">
+          <form [formGroup]="step0" class="space-y-4">
             <div>
-              <label class="label">Project Name *</label>
-              <input
-                type="text"
-                [(ngModel)]="form.name"
-                class="input"
-                placeholder="e.g., Clear Water Valley Restoration"
-                required
-              />
+              <label class="label">Project Name <span class="text-red-400">*</span></label>
+              <input formControlName="name" type="text" class="input"
+                placeholder="e.g., Clear Water Valley Restoration" maxlength="120"/>
+              <p *ngIf="f0['name'].touched && f0['name'].errors?.['required']"
+                class="mt-1 text-xs text-red-500">Name is required.</p>
+              <p *ngIf="f0['name'].touched && f0['name'].errors?.['maxlength']"
+                class="mt-1 text-xs text-red-500">Max 120 characters.</p>
+              <p class="mt-1 text-xs text-slate-400">{{ f0['name'].value?.length || 0 }}/120</p>
             </div>
             <div>
-              <label class="label">Description *</label>
-              <textarea
-                [(ngModel)]="form.description"
-                class="input min-h-[100px]"
+              <label class="label">Description <span class="text-red-400">*</span></label>
+              <textarea formControlName="description" class="input min-h-[100px]"
                 placeholder="Describe the project location, methods, and expected impact..."
-                required
-              ></textarea>
+                maxlength="1000"></textarea>
+              <p *ngIf="f0['description'].touched && f0['description'].errors?.['required']"
+                class="mt-1 text-xs text-red-500">Description is required.</p>
+              <p class="mt-1 text-xs text-slate-400">{{ f0['description'].value?.length || 0 }}/1000</p>
             </div>
             <div>
-              <label class="label">Methodology *</label>
-              <select [(ngModel)]="form.methodology" class="input">
+              <label class="label">Methodology <span class="text-red-400">*</span></label>
+              <select formControlName="methodology" class="input">
                 <option value="">Select methodology...</option>
-                <option value="water-quality-credits-v1">Water Quality Credits v1</option>
-                <option value="nutrient-reduction-v1">Nutrient Reduction v1</option>
-                <option value="sediment-reduction-v1">Sediment Reduction v1</option>
+                <option *ngFor="let m of methodologies" [value]="m.value">{{ m.label }}</option>
               </select>
+              <p *ngIf="f0['methodology'].touched && f0['methodology'].errors?.['required']"
+                class="mt-1 text-xs text-red-500">Methodology is required.</p>
             </div>
-          </div>
+          </form>
+        </ng-container>
 
-          <div *ngSwitchCase="1" class="space-y-4">
+        <!-- Step 1: Location -->
+        <ng-container *ngIf="currentStep === 1">
+          <div class="space-y-4">
+            <app-map-view
+              drawMode="pin+polygon"
+              [height]="380"
+              [centerLat]="20"
+              [centerLng]="0"
+              [zoom]="2"
+              (locationPicked)="onLocationPicked($event)"
+            />
+            <div *ngIf="step1.get('latitude')?.value" class="grid grid-cols-2 gap-3 text-sm">
+              <div class="bg-slate-50 dark:bg-dark-bg rounded-lg p-3">
+                <p class="text-xs text-slate-400 mb-0.5">Latitude</p>
+                <p class="font-medium">{{ step1.get('latitude')?.value | number:'1.5-5' }}</p>
+              </div>
+              <div class="bg-slate-50 dark:bg-dark-bg rounded-lg p-3">
+                <p class="text-xs text-slate-400 mb-0.5">Longitude</p>
+                <p class="font-medium">{{ step1.get('longitude')?.value | number:'1.5-5' }}</p>
+              </div>
+            </div>
+            <p *ngIf="!locationComplete" class="text-xs text-amber-500">
+              Both a pin and a polygon boundary are required to proceed.
+            </p>
+          </div>
+        </ng-container>
+
+        <!-- Step 2: Details -->
+        <ng-container *ngIf="currentStep === 2">
+          <form [formGroup]="step2" class="space-y-4">
+            <div>
+              <label class="label">Area (hectares) <span class="text-red-400">*</span></label>
+              <input formControlName="areaHectares" type="number" class="input"
+                placeholder="e.g., 100" min="0.01" step="0.01"/>
+              <p class="mt-1 text-xs text-slate-400">Auto-calculated from polygon boundary, editable.</p>
+              <p *ngIf="f2['areaHectares'].touched && f2['areaHectares'].errors?.['required']"
+                class="mt-1 text-xs text-red-500">Area is required.</p>
+              <p *ngIf="f2['areaHectares'].touched && f2['areaHectares'].errors?.['min']"
+                class="mt-1 text-xs text-red-500">Must be greater than 0.</p>
+            </div>
+            <div>
+              <label class="label">Expected Annual Credits <span class="text-red-400">*</span></label>
+              <input formControlName="expectedAnnualCredits" type="number" class="input"
+                placeholder="e.g., 500" min="1" step="1"/>
+              <p *ngIf="f2['expectedAnnualCredits'].touched && f2['expectedAnnualCredits'].errors?.['required']"
+                class="mt-1 text-xs text-red-500">Expected credits is required.</p>
+            </div>
+            <div>
+              <label class="label">Verifier Organisation</label>
+              <input formControlName="verifierOrg" type="text" class="input"
+                placeholder="e.g., Verra, Gold Standard"/>
+            </div>
             <div class="grid grid-cols-2 gap-4">
               <div>
-                <label class="label">Latitude *</label>
-                <input
-                  type="number"
-                  [(ngModel)]="form.latitude"
-                  class="input"
-                  placeholder="e.g., 41.403"
-                  step="any"
-                />
+                <label class="label">Baseline Start <span class="text-red-400">*</span></label>
+                <input formControlName="baselineStart" type="date" class="input"/>
+                <p *ngIf="f2['baselineStart'].touched && f2['baselineStart'].errors?.['required']"
+                  class="mt-1 text-xs text-red-500">Start date is required.</p>
               </div>
               <div>
-                <label class="label">Longitude *</label>
-                <input
-                  type="number"
-                  [(ngModel)]="form.longitude"
-                  class="input"
-                  placeholder="e.g., 2.174"
-                  step="any"
-                />
+                <label class="label">Project Start Date <span class="text-red-400">*</span></label>
+                <input formControlName="projectStartDate" type="date" class="input"/>
+                <p *ngIf="f2['projectStartDate'].touched && f2['projectStartDate'].errors?.['required']"
+                  class="mt-1 text-xs text-red-500">Start date is required.</p>
               </div>
             </div>
-            <div>
-              <label class="label">Area (hectares) *</label>
-              <input
-                type="number"
-                [(ngModel)]="form.areaHectares"
-                class="input"
-                placeholder="e.g., 100"
-                min="0"
-                step="0.01"
-              />
-            </div>
-          </div>
+            <p *ngIf="step2.errors?.['dateOrder']" class="text-xs text-red-500">
+              Baseline start must be before project start date.
+            </p>
+          </form>
+        </ng-container>
 
-          <div *ngSwitchCase="2" class="space-y-4">
-            <div>
-              <label class="label">Baseline Start Date *</label>
-              <input type="date" [(ngModel)]="form.baselineStart" class="input" />
+        <!-- Step 3: Documents -->
+        <ng-container *ngIf="currentStep === 3">
+          <div class="space-y-4">
+            <div
+              class="border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-xl p-8 text-center transition-colors"
+              [ngClass]="{'border-stellar-blue bg-stellar-blue/5': dragOver}"
+              (dragover)="onDragOver($event)"
+              (dragleave)="dragOver = false"
+              (drop)="onDrop($event)">
+              <lucide-angular [img]="UploadIcon" class="w-10 h-10 mx-auto mb-3 text-slate-400"></lucide-angular>
+              <p class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                Drag &amp; drop files here, or
+                <label class="text-stellar-blue cursor-pointer hover:underline">
+                  browse
+                  <input type="file" multiple accept=".pdf,.docx" class="sr-only"
+                    (change)="onFileInput($event)"/>
+                </label>
+              </p>
+              <p class="text-xs text-slate-400">PDF or DOCX · max {{ maxFileSizeMb }} MB each · up to {{ maxFiles }} files</p>
             </div>
-            <div>
-              <label class="label">Baseline End Date *</label>
-              <input type="date" [(ngModel)]="form.baselineEnd" class="input" />
-            </div>
-          </div>
 
-          <div *ngSwitchCase="3" class="space-y-3">
+            <div *ngIf="docs.length > 0" class="space-y-2">
+              <div *ngFor="let doc of docs; let i = index"
+                class="flex items-center justify-between p-3 bg-slate-50 dark:bg-dark-bg rounded-lg text-sm">
+                <div class="flex items-center gap-2 min-w-0">
+                  <lucide-angular [img]="FileTextIcon" class="w-4 h-4 text-stellar-blue shrink-0"></lucide-angular>
+                  <span class="truncate text-slate-700 dark:text-slate-300">{{ doc.filename }}</span>
+                  <span class="text-xs text-slate-400 shrink-0">{{ (doc.size / 1024 / 1024).toFixed(1) }} MB</span>
+                </div>
+                <div class="flex items-center gap-2 shrink-0 ml-2">
+                  <span *ngIf="doc.uploading"
+                    class="text-xs text-stellar-blue animate-pulse">Uploading...</span>
+                  <span *ngIf="!doc.uploading && !doc.error"
+                    class="text-xs text-environmental-green">✓ Uploaded</span>
+                  <span *ngIf="doc.error" class="text-xs text-red-500">{{ doc.error }}</span>
+                  <button type="button" (click)="removeDoc(i)"
+                    class="text-slate-400 hover:text-red-500 transition-colors">
+                    <lucide-angular [img]="XIcon" class="w-4 h-4"></lucide-angular>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <p class="text-xs text-slate-400">Documents are optional but recommended for verification.</p>
+          </div>
+        </ng-container>
+
+        <!-- Step 4: Review -->
+        <ng-container *ngIf="currentStep === 4">
+          <div class="space-y-4">
             <div class="bg-slate-50 dark:bg-dark-bg rounded-lg p-4 space-y-3">
-              <h3 class="font-medium text-slate-900 dark:text-white">Review Project Details</h3>
-              <div class="grid grid-cols-2 gap-3 text-sm">
-                <div>
-                  <span class="text-slate-400">Name:</span>
-                  <span class="font-medium">{{ form.name }}</span>
-                </div>
-                <div>
-                  <span class="text-slate-400">Methodology:</span>
-                  <span class="font-medium">{{ form.methodology }}</span>
-                </div>
-                <div>
-                  <span class="text-slate-400">Area:</span>
-                  <span class="font-medium">{{ form.areaHectares }} ha</span>
-                </div>
-                <div>
-                  <span class="text-slate-400">Location:</span>
-                  <span class="font-medium"
-                    >{{ form.latitude.toFixed(4) }}, {{ form.longitude.toFixed(4) }}</span
-                  >
-                </div>
-                <div>
-                  <span class="text-slate-400">Baseline:</span>
-                  <span class="font-medium"
-                    >{{ form.baselineStart }} to {{ form.baselineEnd }}</span
-                  >
-                </div>
+              <h3 class="font-semibold text-slate-900 dark:text-white text-sm uppercase tracking-wider">Basic Info</h3>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                <div><span class="text-slate-400">Name: </span><span class="font-medium">{{ step0.get('name')?.value }}</span></div>
+                <div><span class="text-slate-400">Methodology: </span><span class="font-medium">{{ step0.get('methodology')?.value }}</span></div>
+                <div class="col-span-2"><span class="text-slate-400">Description: </span><span>{{ step0.get('description')?.value }}</span></div>
               </div>
-              <p class="text-sm text-slate-500 mt-2">{{ form.description }}</p>
+            </div>
+            <div class="bg-slate-50 dark:bg-dark-bg rounded-lg p-4 space-y-3">
+              <h3 class="font-semibold text-slate-900 dark:text-white text-sm uppercase tracking-wider">Location</h3>
+              <div class="grid grid-cols-2 gap-3 text-sm">
+                <div><span class="text-slate-400">Lat: </span><span class="font-medium">{{ step1.get('latitude')?.value | number:'1.5-5' }}</span></div>
+                <div><span class="text-slate-400">Lng: </span><span class="font-medium">{{ step1.get('longitude')?.value | number:'1.5-5' }}</span></div>
+                <div><span class="text-slate-400">Boundary: </span><span class="font-medium">{{ boundaryVertices }} vertices</span></div>
+              </div>
+            </div>
+            <div class="bg-slate-50 dark:bg-dark-bg rounded-lg p-4 space-y-3">
+              <h3 class="font-semibold text-slate-900 dark:text-white text-sm uppercase tracking-wider">Details</h3>
+              <div class="grid grid-cols-2 gap-3 text-sm">
+                <div><span class="text-slate-400">Area: </span><span class="font-medium">{{ step2.get('areaHectares')?.value }} ha</span></div>
+                <div><span class="text-slate-400">Annual Credits: </span><span class="font-medium">{{ step2.get('expectedAnnualCredits')?.value }}</span></div>
+                <div><span class="text-slate-400">Verifier: </span><span class="font-medium">{{ step2.get('verifierOrg')?.value || '—' }}</span></div>
+                <div><span class="text-slate-400">Baseline Start: </span><span class="font-medium">{{ step2.get('baselineStart')?.value }}</span></div>
+                <div><span class="text-slate-400">Project Start: </span><span class="font-medium">{{ step2.get('projectStartDate')?.value }}</span></div>
+              </div>
+            </div>
+            <div class="bg-slate-50 dark:bg-dark-bg rounded-lg p-4 space-y-2">
+              <h3 class="font-semibold text-slate-900 dark:text-white text-sm uppercase tracking-wider">Documents</h3>
+              <p *ngIf="docs.length === 0" class="text-sm text-slate-400">No documents attached.</p>
+              <div *ngFor="let doc of docs" class="flex items-center gap-2 text-sm">
+                <lucide-angular [img]="FileTextIcon" class="w-4 h-4 text-stellar-blue"></lucide-angular>
+                <span class="truncate">{{ doc.filename }}</span>
+                <span *ngIf="doc.error" class="text-xs text-red-500">(upload failed)</span>
+              </div>
             </div>
           </div>
         </ng-container>
 
+        <!-- Navigation buttons -->
         <div class="flex justify-between mt-8 pt-6 border-t border-slate-200 dark:border-slate-700">
-          <button *ngIf="currentStep > 0" (click)="prevStep()" class="btn btn-outline">
-            Previous
+          <button *ngIf="currentStep > 0" type="button" (click)="prevStep()" class="btn btn-outline">
+            <lucide-angular [img]="ChevronLeft" class="w-4 h-4 mr-1"></lucide-angular> Previous
           </button>
-          <button *ngIf="currentStep === 0" (click)="cancel()" class="btn btn-outline">
-            Cancel
-          </button>
+          <button *ngIf="currentStep === 0" type="button" (click)="cancel()" class="btn btn-outline">Cancel</button>
+
           <div class="flex gap-3 ml-auto">
-            <button
-              *ngIf="currentStep < 3"
+            <button *ngIf="currentStep < 4" type="button"
               (click)="nextStep()"
               [disabled]="!canProceed"
-              class="btn btn-primary"
-            >
-              Next
+              class="btn btn-primary flex items-center gap-1">
+              Next <lucide-angular [img]="ChevronRight" class="w-4 h-4"></lucide-angular>
             </button>
-            <button
-              *ngIf="currentStep === 3"
-              (click)="save()"
-              [disabled]="saving"
-              class="btn btn-primary flex items-center gap-2"
-            >
-              <svg
-                *ngIf="saving"
-                class="animate-spin w-4 h-4"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <circle
-                  class="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  stroke-width="4"
-                ></circle>
-                <path
-                  class="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                ></path>
+            <button *ngIf="currentStep === 4" type="button"
+              (click)="submit()"
+              [disabled]="saving || hasFailedUploads"
+              class="btn btn-primary flex items-center gap-2">
+              <svg *ngIf="saving" class="animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
               </svg>
-              {{ saving ? 'Creating...' : isEdit ? 'Update Project' : 'Create Project' }}
+              {{ saving ? 'Submitting...' : 'Submit for Approval' }}
             </button>
           </div>
         </div>
-      </div>
-    </div>
+
+      </div><!-- /card -->
+    </div><!-- /max-w -->
   `,
 })
-export class ProjectFormComponent implements OnInit {
+export class ProjectFormComponent implements OnInit, OnDestroy, PendingChanges {
+  // ── step state ──────────────────────────────────────────────────────────
   protected currentStep = 0;
+  protected maxVisitedStep = 0;
   protected saving = false;
-  protected isEdit = false;
-  protected form: ProjectCreate = {
-    name: '',
-    description: '',
-    latitude: 0,
-    longitude: 0,
-    methodology: '',
-    areaHectares: 0,
-    baselineStart: '',
-    baselineEnd: '',
-  };
+  protected submitted = false;
+  protected storeError: string | null = null;
+  protected dragOver = false;
+  protected docs: UploadedDoc[] = [];
+  protected locationComplete = false;
+  protected boundaryVertices = 0;
+  private drawnBoundary: GeoJSON.Polygon | null = null;
 
-  protected steps: FormStep[] = [
-    {
-      label: 'Basic Info',
-      icon: ClipboardList,
-      description: 'Provide the basic information about your project.',
-    },
-    {
-      label: 'Location',
-      icon: MapPin,
-      description: 'Set the geographic location and size of your project.',
-    },
-    { label: 'Timeline', icon: FileText, description: 'Define the baseline monitoring period.' },
-    { label: 'Review', icon: Check, description: 'Review your project details before submitting.' },
+  readonly stepLabels = ['Basic Info', 'Location', 'Details', 'Documents', 'Review'];
+  readonly stepDescriptions = [
+    'Name, description and methodology.',
+    'Drop a pin and draw the project boundary on the map.',
+    'Area, expected annual credits and timeline.',
+    'Upload methodology docs and permits (optional).',
+    'Review all details before submitting.',
+  ];
+  readonly stepIcons = [ClipboardList, MapPin, Settings, Upload, Check];
+  readonly maxFileSizeMb = 10;
+  readonly maxFiles = MAX_FILES;
+  readonly methodologies = [
+    { value: 'water-quality-credits-v1', label: 'Water Quality Credits v1' },
+    { value: 'nutrient-reduction-v1', label: 'Nutrient Reduction v1' },
+    { value: 'sediment-reduction-v1', label: 'Sediment Reduction v1' },
   ];
 
-  protected readonly ChevronLeft = ChevronLeft;
-  protected readonly Check = Check;
-  protected readonly Droplets = Droplets;
-  protected readonly MapPin = MapPin;
-  protected readonly FileText = FileText;
-  protected readonly ClipboardList = ClipboardList;
+  // ── icon refs ───────────────────────────────────────────────────────────
+  readonly ChevronLeft = ChevronLeft;
+  readonly ChevronRight = ChevronRight;
+  readonly CheckIcon = Check;
+  readonly FileTextIcon = FileText;
+  readonly UploadIcon = Upload;
+  readonly XIcon = X;
+  readonly AlertCircleIcon = AlertCircle;
+
+  // ── reactive forms ──────────────────────────────────────────────────────
+  step0: FormGroup = this.fb.group({
+    name:        ['', [Validators.required, Validators.maxLength(120)]],
+    description: ['', [Validators.required, Validators.maxLength(1000)]],
+    methodology: ['', Validators.required],
+  });
+
+  step1: FormGroup = this.fb.group({
+    latitude:  [null as number | null, Validators.required],
+    longitude: [null as number | null, Validators.required],
+  });
+
+  step2: FormGroup = this.fb.group(
+    {
+      areaHectares:          [null as number | null, [Validators.required, Validators.min(0.001)]],
+      expectedAnnualCredits: [null as number | null, [Validators.required, Validators.min(1)]],
+      verifierOrg:           [''],
+      baselineStart:         ['', Validators.required],
+      projectStartDate:      ['', Validators.required],
+    },
+    { validators: this.dateOrderValidator },
+  );
+
+  get f0() { return this.step0.controls; }
+  get f2() { return this.step2.controls; }
+
+  get hasFailedUploads(): boolean {
+    return this.docs.some((d) => !!d.error);
+  }
+
+  // ── lifecycle ───────────────────────────────────────────────────────────
+  private destroy$ = new Subject<void>();
 
   constructor(
+    private fb: FormBuilder,
     private route: ActivatedRoute,
     private router: Router,
     private store: Store,
-    private projectsService: ProjectsService,
+    private apiService: ApiService,
     private notificationService: NotificationService,
   ) {}
 
-  async ngOnInit(): Promise<void> {
-    const id = this.route.snapshot.paramMap.get('id');
-    if (id) {
-      this.isEdit = true;
-      const project = await this.projectsService.getProject(id);
-      this.form = {
-        name: project.name,
-        description: project.description,
-        latitude: project.latitude,
-        longitude: project.longitude,
-        methodology: project.methodology,
-        areaHectares: project.areaHectares,
-        baselineStart: project.baselineStart?.split('T')[0] || '',
-        baselineEnd: project.baselineEnd?.split('T')[0] || '',
-      };
-    }
+  ngOnInit(): void {
+    this.store
+      .select(selectProjectsError)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({ next: (err) => { this.storeError = err; } });
   }
 
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  // ── PendingChanges interface ────────────────────────────────────────────
+  canDeactivate(): boolean | Promise<boolean> {
+    if (this.submitted) return true;
+    const dirty = this.step0.dirty || this.step1.dirty || this.step2.dirty || this.docs.length > 0;
+    if (!dirty) return true;
+    return window.confirm(
+      'You have unsaved changes. Leave this page and discard them?',
+    );
+  }
+
+  // ── step navigation ─────────────────────────────────────────────────────
   get canProceed(): boolean {
     switch (this.currentStep) {
-      case 0:
-        return !!this.form.name && !!this.form.description && !!this.form.methodology;
-      case 1:
-        return !!this.form.latitude && !!this.form.longitude && this.form.areaHectares > 0;
-      case 2:
-        return !!this.form.baselineStart && !!this.form.baselineEnd;
-      default:
-        return true;
+      case 0: return this.step0.valid;
+      case 1: return this.locationComplete;
+      case 2: return this.step2.valid;
+      case 3: return true;   // documents are optional
+      default: return true;
     }
   }
 
   nextStep(): void {
-    if (this.canProceed) this.currentStep++;
+    if (!this.canProceed) {
+      // Touch all controls on current step so errors show
+      if (this.currentStep === 0) this.step0.markAllAsTouched();
+      if (this.currentStep === 2) this.step2.markAllAsTouched();
+      return;
+    }
+    this.currentStep++;
+    if (this.currentStep > this.maxVisitedStep) {
+      this.maxVisitedStep = this.currentStep;
+    }
   }
 
   prevStep(): void {
     if (this.currentStep > 0) this.currentStep--;
   }
 
+  goToStep(i: number): void {
+    if (i <= this.maxVisitedStep) this.currentStep = i;
+  }
+
   cancel(): void {
     this.router.navigate(['/projects']);
   }
 
-  async save(): Promise<void> {
-    this.saving = true;
-    try {
-      const project = await this.projectsService.createProject(this.form);
-      this.store.dispatch(ProjectsActions.createProjectSuccess({ project }));
-      this.notificationService.success(
-        'Project created',
-        `${project.name} has been registered successfully`,
-      );
-      this.router.navigate(['/projects', project.id]);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'An error occurred';
-      this.notificationService.error('Failed to create project', message);
-    } finally {
-      this.saving = false;
+  // ── map callback ────────────────────────────────────────────────────────
+  onLocationPicked(loc: MapLocation): void {
+    this.step1.patchValue({ latitude: loc.center.lat, longitude: loc.center.lng });
+    this.step1.markAsDirty();
+    this.drawnBoundary = loc.boundary;
+    this.locationComplete = !!loc.boundary; // both pin+polygon required
+    this.boundaryVertices = loc.boundary?.coordinates[0]?.length
+      ? loc.boundary.coordinates[0].length - 1   // -1 because first === last
+      : 0;
+
+    // Auto-calculate area from polygon (rough spherical-excess approximation)
+    if (loc.boundary) {
+      const ha = this.calcPolygonAreaHa(loc.boundary);
+      if (ha > 0) {
+        this.step2.patchValue({ areaHectares: parseFloat(ha.toFixed(2)) });
+      }
     }
+  }
+
+  /** Approximate polygon area in hectares using the shoelace formula on lat/lng.
+   *  Good enough for reasonable project sizes; exact area would need a proper
+   *  geodesic library. */
+  private calcPolygonAreaHa(poly: GeoJSON.Polygon): number {
+    const ring = poly.coordinates[0];
+    if (!ring || ring.length < 4) return 0;
+    let area = 0;
+    const R = 6371000; // Earth radius in metres
+    for (let i = 0; i < ring.length - 1; i++) {
+      const [lng1, lat1] = ring[i];
+      const [lng2, lat2] = ring[i + 1];
+      area +=
+        ((lng2 - lng1) * (Math.PI / 180)) *
+        (2 + Math.sin((lat1 * Math.PI) / 180) + Math.sin((lat2 * Math.PI) / 180));
+    }
+    area = Math.abs((area * R * R) / 2);
+    return area / 10000; // m² → ha
+  }
+
+  // ── document upload ─────────────────────────────────────────────────────
+  onDragOver(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.dragOver = true;
+  }
+
+  onDrop(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.dragOver = false;
+    const files = Array.from(event.dataTransfer?.files ?? []);
+    this.handleFiles(files);
+  }
+
+  onFileInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const files = Array.from(input.files ?? []);
+    this.handleFiles(files);
+    input.value = '';
+  }
+
+  private handleFiles(files: File[]): void {
+    for (const file of files) {
+      if (this.docs.length >= MAX_FILES) {
+        this.notificationService.warning(
+          'File limit reached',
+          `Maximum ${MAX_FILES} files allowed.`,
+        );
+        break;
+      }
+      if (file.size > MAX_FILE_SIZE_BYTES) {
+        this.notificationService.error(
+          'File too large',
+          `${file.name} exceeds 10 MB.`,
+        );
+        continue;
+      }
+      if (!ALLOWED_MIME.includes(file.type)) {
+        this.notificationService.error(
+          'Unsupported file type',
+          `${file.name} must be PDF or DOCX.`,
+        );
+        continue;
+      }
+      this.uploadFile(file);
+    }
+  }
+
+  private uploadFile(file: File): void {
+    const entry: UploadedDoc = {
+      fileId: '',
+      filename: file.name,
+      size: file.size,
+      uploading: true,
+    };
+    this.docs.push(entry);
+    const idx = this.docs.length - 1;
+
+    this.apiService
+      .uploadFile(file)
+      .then((res) => {
+        this.docs[idx].fileId = res.fileId;
+        this.docs[idx].uploading = false;
+      })
+      .catch(() => {
+        this.docs[idx].uploading = false;
+        this.docs[idx].error = 'Upload failed';
+      });
+  }
+
+  removeDoc(index: number): void {
+    this.docs.splice(index, 1);
+  }
+
+  // ── submission ──────────────────────────────────────────────────────────
+  submit(): void {
+    if (this.saving) return;
+    this.saving = true;
+    this.storeError = null;
+
+    const payload = {
+      name:        this.step0.get('name')!.value as string,
+      description: this.step0.get('description')!.value as string,
+      methodology: this.step0.get('methodology')!.value as string,
+      latitude:    this.step1.get('latitude')!.value as number,
+      longitude:   this.step1.get('longitude')!.value as number,
+      areaHectares:  this.step2.get('areaHectares')!.value as number,
+      baselineStart: this.step2.get('baselineStart')!.value as string,
+      baselineEnd:   this.step2.get('projectStartDate')!.value as string,
+      // fileIds passed as extra field; backend may ignore if unsupported
+      ...(this.docs.filter((d) => d.fileId).length > 0
+        ? { documentFileIds: this.docs.filter((d) => d.fileId).map((d) => d.fileId) }
+        : {}),
+    };
+
+    // Subscribe once to createProjectSuccess to mark submitted and stop saving
+    this.store
+      .select(selectProjectsLoading)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({ next: (loading) => { if (!loading) this.saving = false; } });
+
+    this.submitted = true;
+    this.store.dispatch(ProjectsActions.createProject({ data: payload }));
+  }
+
+  // ── validators ──────────────────────────────────────────────────────────
+  private dateOrderValidator(group: FormGroup) {
+    const start = group.get('baselineStart')?.value as string;
+    const end   = group.get('projectStartDate')?.value as string;
+    if (start && end && start >= end) {
+      return { dateOrder: true };
+    }
+    return null;
   }
 }
