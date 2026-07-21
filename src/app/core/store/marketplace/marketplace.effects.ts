@@ -78,6 +78,85 @@ export class MarketplaceEffects {
     ),
   );
 
+  // Purchase listing: build/sign/submit flow
+  purchaseListing$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(MarketplaceActions.purchaseListing),
+      exhaustMap(({ listingId, quantity }) =>
+        from(this.marketplaceService.buyListing(listingId, quantity)).pipe(
+          map(() => MarketplaceActions.purchaseListingSuccess()),
+          catchError((err) =>
+            of(
+              MarketplaceActions.purchaseListingFailure({
+                error: err instanceof Error ? err.message : 'Failed to purchase listing',
+              }),
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+
+  purchaseListingSuccess$ = createEffect(
+    () =>
+      this.actions$.pipe(
+        ofType(MarketplaceActions.purchaseListingSuccess),
+        tap(() => {
+          this.notificationService.success('Purchase submitted', 'Your buy order was submitted');
+          // refresh listings and user's portfolio
+          this.router.navigate(['/marketplace']);
+        }),
+      ),
+    { dispatch: false },
+  );
+
+  purchaseListingFailure$ = createEffect(
+    () =>
+      this.actions$.pipe(
+        ofType(MarketplaceActions.purchaseListingFailure),
+        tap(({ error }) => this.notificationService.error('Failed to purchase', error)),
+      ),
+    { dispatch: false },
+  );
+
+  // Load my orders
+  loadMyOrders$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(MarketplaceActions.loadMyOrders),
+      switchMap(() =>
+        from(this.marketplaceService.getMyOrders()).pipe(
+          map((response) => MarketplaceActions.loadMyOrdersSuccess({ response })),
+          catchError((err) =>
+            of(
+              MarketplaceActions.loadMyOrdersFailure({
+                error: err instanceof Error ? err.message : 'Failed to load orders',
+              }),
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+
+  // Load price history
+  loadPriceHistory$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(MarketplaceActions.loadPriceHistory),
+      switchMap(({ projectId }) =>
+        from(this.marketplaceService.getPriceHistory(projectId)).pipe(
+          map((data) => MarketplaceActions.loadPriceHistorySuccess({ data })),
+          catchError((err) =>
+            of(
+              MarketplaceActions.loadPriceHistoryFailure({
+                error: err instanceof Error ? err.message : 'Failed to load price history',
+              }),
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+
   createListingSuccess$ = createEffect(
     () =>
       this.actions$.pipe(

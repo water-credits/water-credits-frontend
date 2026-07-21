@@ -13,6 +13,12 @@ import {
   selectMarketplaceLoading,
 } from '../../../core/store/marketplace/marketplace.selectors';
 import { LoadingSpinnerComponent } from '../../../shared/components/loading-spinner/loading-spinner';
+import {
+  SensorChartComponent,
+  ChartSeries,
+} from '../../../shared/components/sensor-chart/sensor-chart';
+import { selectPriceHistory } from '../../../core/store/marketplace/marketplace.selectors';
+import * as MarketplaceActions from '../../../core/store/marketplace/marketplace.actions';
 import { CreditAmountPipe } from '../../../shared/pipes/credit-amount.pipe';
 
 @Component({
@@ -25,6 +31,7 @@ import { CreditAmountPipe } from '../../../shared/pipes/credit-amount.pipe';
     RouterLink,
     LucideAngularModule,
     LoadingSpinnerComponent,
+    SensorChartComponent,
     CreditAmountPipe,
   ],
   template: `
@@ -217,6 +224,13 @@ import { CreditAmountPipe } from '../../../shared/pipes/credit-amount.pipe';
           </div>
         </div>
       </ng-container>
+      <ng-container *ngIf="priceSeries.length">
+        <app-sensor-chart
+          [title]="'30 Day Price'"
+          [series]="priceSeries"
+          [height]="250"
+        ></app-sensor-chart>
+      </ng-container>
     </div>
   `,
 })
@@ -228,6 +242,9 @@ export class MarketplaceOrderBookComponent implements OnInit, OnDestroy {
   protected projectId = '';
   protected orderBook$: Observable<OrderBook | null>;
   protected loading$: Observable<boolean>;
+  protected priceSeries: ChartSeries[] = [];
+
+  private priceHistory$ = this.store.select(selectPriceHistory);
 
   private destroy$ = new Subject<void>();
 
@@ -251,8 +268,19 @@ export class MarketplaceOrderBookComponent implements OnInit, OnDestroy {
         this.projectId = projectId;
         if (projectId) {
           this.store.dispatch(MarketplaceActions.loadOrderBook({ projectId }));
+          this.store.dispatch(MarketplaceActions.loadPriceHistory({ projectId }));
         }
       });
+
+    // Transform price history into ChartSeries
+    this.priceHistory$.pipe(takeUntil(this.destroy$)).subscribe((data) => {
+      if (!data || !Array.isArray(data)) {
+        this.priceSeries = [];
+        return;
+      }
+      const series = data.map((pt: any) => ({ x: new Date(pt.timestamp).getTime(), y: pt.close }));
+      this.priceSeries = [{ label: 'Close', data: series, color: '#7B2FBE' }];
+    });
   }
 
   ngOnDestroy(): void {

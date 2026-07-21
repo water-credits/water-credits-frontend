@@ -13,6 +13,7 @@ import {
   selectMarketplaceLoading,
   selectMarketplaceError,
   selectMarketplacePagination,
+  selectMyOrders,
 } from '../../../core/store/marketplace/marketplace.selectors';
 import {
   DataTableComponent,
@@ -71,6 +72,21 @@ import { NumberAbbreviatePipe } from '../../../shared/pipes/number-abbreviate.pi
         </div>
       </div>
 
+      <div class="flex items-center gap-3">
+        <button
+          (click)="viewMode = 'all'"
+          [class]="viewMode === 'all' ? 'btn btn-sm btn-outline' : 'btn btn-sm'"
+        >
+          Listings
+        </button>
+        <button
+          (click)="showMyOrders()"
+          [class]="viewMode === 'mine' ? 'btn btn-sm btn-outline' : 'btn btn-sm'"
+        >
+          My Orders
+        </button>
+      </div>
+
       <div class="card p-5">
         <div class="flex items-center gap-3">
           <div class="flex-1">
@@ -112,13 +128,17 @@ import { NumberAbbreviatePipe } from '../../../shared/pipes/number-abbreviate.pi
       ></app-empty-state>
 
       <app-data-table
-        *ngIf="!(loading$ | async) && (listings$ | async)?.length"
+        *ngIf="
+          !(loading$ | async) &&
+          (viewMode === 'all' ? (listings$ | async)?.length : (myOrders$ | async)?.length)
+        "
         [columns]="columns"
-        [data]="(listings$ | async) || []"
+        [data]="(viewMode === 'all' ? (listings$ | async) : (myOrders$ | async)) || []"
         [loading]="false"
         [pagination]="pagination$ | async"
         (page)="onPageChange($event)"
       >
+        >
         <ng-template #row let-row let-col="column">
           <ng-container [ngSwitch]="col.key">
             <ng-template ngSwitchCase="projectName">
@@ -175,6 +195,7 @@ export class MarketplaceListingsComponent implements OnInit, OnDestroy {
   protected readonly BarChart3Icon = BarChart3;
 
   protected listings$: Observable<MarketplaceListing[]>;
+  protected myOrders$: Observable<MarketplaceListing[]>;
   protected loading$: Observable<boolean>;
   protected error$: Observable<string | null>;
   protected pagination$: Observable<{
@@ -186,6 +207,7 @@ export class MarketplaceListingsComponent implements OnInit, OnDestroy {
 
   protected statusFilter = '';
   protected searchQuery = '';
+  protected viewMode: 'all' | 'mine' = 'all';
 
   private page = 1;
   private destroy$ = new Subject<void>();
@@ -206,6 +228,7 @@ export class MarketplaceListingsComponent implements OnInit, OnDestroy {
     protected router: Router,
   ) {
     this.listings$ = this.store.select(selectListings);
+    this.myOrders$ = this.store.select(selectMyOrders);
     this.loading$ = this.store.select(selectMarketplaceLoading);
     this.error$ = this.store.select(selectMarketplaceError);
     this.pagination$ = this.store.select(selectMarketplacePagination);
@@ -225,6 +248,11 @@ export class MarketplaceListingsComponent implements OnInit, OnDestroy {
     if (this.statusFilter) params['status'] = this.statusFilter;
     if (this.searchQuery) params['search'] = this.searchQuery;
     this.store.dispatch(MarketplaceActions.loadListings({ params }));
+  }
+
+  protected showMyOrders(): void {
+    this.viewMode = 'mine';
+    this.store.dispatch(MarketplaceActions.loadMyOrders());
   }
 
   protected reload(): void {
@@ -250,6 +278,9 @@ export class MarketplaceListingsComponent implements OnInit, OnDestroy {
   }
 
   protected buyListing(listing: MarketplaceListing): void {
-    this.router.navigate(['/marketplace', listing.id, 'buy']);
+    // Dispatch a purchase for the full available amount by default.
+    this.store.dispatch(
+      MarketplaceActions.purchaseListing({ listingId: listing.id, quantity: listing.amount }),
+    );
   }
 }

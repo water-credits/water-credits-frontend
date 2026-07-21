@@ -33,3 +33,15 @@ export const selectMarketplaceFilters = createSelector(
 );
 
 export const selectOrderBook = createSelector(selectMarketplaceState, (state) => state.orderBook);
+
+export const selectMarketplacePurchasing = createSelector(
+  selectMarketplaceState,
+  (state) => state.purchasing,
+);
+
+export const selectMyOrders = createSelector(selectMarketplaceState, (state) => state.myOrders);
+
+export const selectPriceHistory = createSelector(
+  selectMarketplaceState,
+  (state) => state.priceHistory,
+);
