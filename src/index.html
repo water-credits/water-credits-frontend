@@ -6,6 +6,25 @@
     <base href="/" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" type="image/x-icon" href="favicon.ico" />
+    <!-- Theme initialization: applied before first paint to prevent flash of wrong theme.
+         Reads localStorage 'theme' key; defaults to 'dark' if not set. -->
+    <script>
+      (function () {
+        try {
+          var stored = localStorage.getItem('theme');
+          // Default to dark mode when no preference is stored
+          var isDark = stored !== null ? stored === 'dark' : true;
+          if (isDark) {
+            document.documentElement.classList.add('dark');
+          } else {
+            document.documentElement.classList.remove('dark');
+          }
+        } catch (e) {
+          // localStorage may be unavailable in some environments; default to dark
+          document.documentElement.classList.add('dark');
+        }
+      })();
+    </script>
   </head>
   <body>
     <app-root></app-root>

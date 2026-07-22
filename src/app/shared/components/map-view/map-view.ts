@@ -1,5 +1,18 @@
-import { Component, Input, OnDestroy, AfterViewInit, ViewChild, ElementRef } from '@angular/core';
+import {
+  Component,
+  Input,
+  OnDestroy,
+  AfterViewInit,
+  ViewChild,
+  ElementRef,
+  inject,
+  DestroyRef,
+} from '@angular/core';
+import { Store } from '@ngrx/store';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import * as L from 'leaflet';
+import { AppState } from '../../../core/store/app.state';
+import { selectIsDarkMode } from '../../../core/store/ui/ui.selectors';
 
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -7,6 +20,23 @@ L.Icon.Default.mergeOptions({
   iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
 });
+
+/** Tile layer configurations for each theme. */
+const TILE_LAYERS = {
+  /** Light: OpenStreetMap standard tiles */
+  light: {
+    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    attribution: '&copy; <a href="https://openstreetmap.org">OpenStreetMap</a> contributors',
+    maxZoom: 19,
+  },
+  /** Dark: CartoDB Dark Matter – no labels variant for a clean dark aesthetic */
+  dark: {
+    url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+    attribution:
+      '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+    maxZoom: 19,
+  },
+} as const;
 
 export interface MapMarker {
   id: string;
@@ -39,7 +69,27 @@ export class MapViewComponent implements AfterViewInit, OnDestroy {
   @Input() clickable = false;
 
   @ViewChild('mapContainer') mapContainer!: ElementRef<HTMLDivElement>;
+
+  private readonly store = inject(Store<AppState>);
+  private readonly destroyRef = inject(DestroyRef);
+
   private map: L.Map | null = null;
+  private tileLayer: L.TileLayer | null = null;
+  private isDark = true;
+
+  constructor() {
+    // Subscribe to theme changes and swap tile layers accordingly.
+    this.store
+      .select(selectIsDarkMode)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((dark) => {
+        this.isDark = dark;
+        // Swap tiles if the map has already been initialised.
+        if (this.map) {
+          this.swapTileLayer(dark);
+        }
+      });
+  }
 
   ngAfterViewInit(): void {
     this.initMap();
@@ -57,12 +107,29 @@ export class MapViewComponent implements AfterViewInit, OnDestroy {
       scrollWheelZoom: true,
     });
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; OpenStreetMap contributors',
-      maxZoom: 19,
+    const tileConfig = this.isDark ? TILE_LAYERS.dark : TILE_LAYERS.light;
+    this.tileLayer = L.tileLayer(tileConfig.url, {
+      attribution: tileConfig.attribution,
+      maxZoom: tileConfig.maxZoom,
     }).addTo(this.map);
 
     this.addMarkers();
+  }
+
+  /**
+   * Removes the current tile layer and adds the correct one for the new theme.
+   * Called at runtime when the user toggles the theme.
+   */
+  private swapTileLayer(isDark: boolean): void {
+    if (!this.map) return;
+    if (this.tileLayer) {
+      this.map.removeLayer(this.tileLayer);
+    }
+    const tileConfig = isDark ? TILE_LAYERS.dark : TILE_LAYERS.light;
+    this.tileLayer = L.tileLayer(tileConfig.url, {
+      attribution: tileConfig.attribution,
+      maxZoom: tileConfig.maxZoom,
+    }).addTo(this.map);
   }
 
   private addMarkers(): void {

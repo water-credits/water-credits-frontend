@@ -43,14 +43,21 @@ import { WalletService } from '../../../core/services/wallet.service';
       </div>
 
       <div class="flex items-center gap-3">
+        <!--
+          Theme toggle: sun icon = currently dark (click to go light),
+          moon icon = currently light (click to go dark).
+          DOM class management and localStorage persistence are handled by
+          ThemeService, which reacts to the store change dispatched here.
+        -->
         <button
           (click)="toggleDarkMode()"
-          class="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700"
+          class="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
           [attr.aria-label]="isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'"
+          [attr.aria-pressed]="isDarkMode"
         >
           <lucide-angular
             [img]="isDarkMode ? SunIcon : MoonIcon"
-            class="w-4 h-4 text-slate-500"
+            class="w-4 h-4 text-slate-500 dark:text-slate-400"
           ></lucide-angular>
         </button>
         <button
@@ -80,7 +87,9 @@ export class HeaderComponent implements OnInit, OnDestroy {
   /** The connected wallet address from the store (wallet slice). */
   protected readonly walletAddress$ = this.store.select(selectWalletAddress);
 
+  /** Reflects the current theme from the store. Updated via the subscription below. */
   protected isDarkMode = true;
+
   protected readonly MenuIcon = Menu;
   protected readonly DropletsIcon = Droplets;
   protected readonly BellIcon = Bell;
@@ -90,12 +99,14 @@ export class HeaderComponent implements OnInit, OnDestroy {
   private readonly destroy$ = new Subject<void>();
 
   ngOnInit(): void {
+    // Mirror the store value locally so the template can read it synchronously.
+    // DOM class management and localStorage writes are handled by ThemeService —
+    // the header only reads the store state and dispatches toggle actions.
     this.store
       .select(selectIsDarkMode)
       .pipe(takeUntil(this.destroy$))
       .subscribe((dark) => {
         this.isDarkMode = dark;
-        document.documentElement.classList.toggle('dark', dark);
       });
   }
 
@@ -120,6 +131,11 @@ export class HeaderComponent implements OnInit, OnDestroy {
     this.store.dispatch(AuthActions.logout());
   }
 
+  /**
+   * Dispatches a setDarkMode action with the toggled value.
+   * ThemeService, which subscribes to selectIsDarkMode, will apply the
+   * `dark` class to <html> and persist the preference to localStorage.
+   */
   toggleDarkMode(): void {
     this.store.dispatch(setDarkMode({ isDark: !this.isDarkMode }));
   }

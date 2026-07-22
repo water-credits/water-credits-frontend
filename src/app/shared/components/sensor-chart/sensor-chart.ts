@@ -1,6 +1,21 @@
-import { Component, Input, OnDestroy, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
+import {
+  Component,
+  Input,
+  OnDestroy,
+  OnChanges,
+  SimpleChanges,
+  ViewChild,
+  ElementRef,
+  AfterViewInit,
+  inject,
+} from '@angular/core';
 import { NgFor } from '@angular/common';
+import { Store } from '@ngrx/store';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { DestroyRef } from '@angular/core';
 import { Chart, ChartConfiguration, registerables } from 'chart.js';
+import { AppState } from '../../../core/store/app.state';
+import { selectIsDarkMode } from '../../../core/store/ui/ui.selectors';
 
 Chart.register(...registerables);
 
@@ -8,6 +23,20 @@ export interface ChartSeries {
   label: string;
   data: { x: number; y: number }[];
   color?: string;
+}
+
+/**
+ * Chart.js color tokens that adapt to the active theme.
+ * Values mirror the CSS custom properties defined in styles.scss.
+ */
+function getChartColors(isDark: boolean): {
+  grid: string;
+  tick: string;
+  legend: string;
+} {
+  return isDark
+    ? { grid: '#334155', tick: '#94a3b8', legend: '#cbd5e1' }
+    : { grid: '#e2e8f0', tick: '#64748b', legend: '#475569' };
 }
 
 @Component({
@@ -40,18 +69,45 @@ export interface ChartSeries {
     </div>
   `,
 })
-export class SensorChartComponent implements AfterViewInit, OnDestroy {
+export class SensorChartComponent implements AfterViewInit, OnChanges, OnDestroy {
   @Input() title = 'Sensor Readings';
   @Input() series: ChartSeries[] = [];
   @Input() height = 300;
   @Input() timeRanges: string[] = ['1H', '6H', '24H', '7D', '30D'];
 
   @ViewChild('chartCanvas') canvas!: ElementRef<HTMLCanvasElement>;
+
+  private readonly store = inject(Store<AppState>);
+  private readonly destroyRef = inject(DestroyRef);
+
   private chart: Chart | null = null;
+  private isDark = true;
+
   protected selectedRange = '24H';
+
+  constructor() {
+    // Subscribe to theme changes and rebuild the chart with updated colors.
+    this.store
+      .select(selectIsDarkMode)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((dark) => {
+        this.isDark = dark;
+        // Rebuild if the chart has already been created (theme changed at runtime).
+        if (this.chart) {
+          this.createChart();
+        }
+      });
+  }
 
   ngAfterViewInit(): void {
     this.createChart();
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    // Re-render when series data changes (but only after the canvas is ready).
+    if (changes['series'] && this.chart) {
+      this.createChart();
+    }
   }
 
   ngOnDestroy(): void {
@@ -65,8 +121,10 @@ export class SensorChartComponent implements AfterViewInit, OnDestroy {
 
   private createChart(): void {
     this.chart?.destroy();
-    const ctx = this.canvas.nativeElement.getContext('2d');
+    const ctx = this.canvas?.nativeElement.getContext('2d');
     if (!ctx) return;
+
+    const colors = getChartColors(this.isDark);
 
     const config: ChartConfiguration<'line'> = {
       type: 'line',
@@ -90,18 +148,23 @@ export class SensorChartComponent implements AfterViewInit, OnDestroy {
           legend: {
             display: this.series.length > 1,
             position: 'bottom',
-            labels: { boxWidth: 12, padding: 16, usePointStyle: true },
+            labels: {
+              boxWidth: 12,
+              padding: 16,
+              usePointStyle: true,
+              color: colors.legend,
+            },
           },
         },
         scales: {
           x: {
             grid: { display: false },
-            ticks: { color: '#94A3B8', maxTicksLimit: 10 },
+            ticks: { color: colors.tick, maxTicksLimit: 10 },
           },
           y: {
             beginAtZero: true,
-            grid: { color: '#F1F5F9' },
-            ticks: { color: '#94A3B8' },
+            grid: { color: colors.grid },
+            ticks: { color: colors.tick },
           },
         },
       },

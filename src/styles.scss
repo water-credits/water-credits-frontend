@@ -6,8 +6,45 @@
 @import './theme/mixins';
 @import './theme/utilities';
 
+/* ─── CSS Custom Properties ──────────────────────────────────────────────────
+   Dark mode is the default (matches isDarkMode: true in the store).
+   Light mode values activate when the .dark class is absent from <html>.
+   The inline script in index.html applies the class before first paint to
+   prevent a flash of wrong theme (FOUC).
+ ─────────────────────────────────────────────────────────────────────────── */
+
 :root {
   --font-family-sans: 'Inter', system-ui, -apple-system, sans-serif;
+
+  /* Light mode token values (applied when no `.dark` class is on <html>) */
+  --bg-primary: #ffffff;
+  --bg-secondary: #f5f5f7;
+  --bg-tertiary: #e8e8ed;
+  --text-primary: #1d1d1f;
+  --text-secondary: #6e6e73;
+  --border-color: #d2d2d7;
+  --shadow-color: rgba(0, 0, 0, 0.1);
+
+  /* Chart.js theme tokens – light */
+  --chart-grid: #e2e8f0;
+  --chart-tick: #64748b;
+  --chart-legend: #475569;
+}
+
+/* Dark mode token values – activated by the `.dark` class on <html> */
+.dark {
+  --bg-primary: #000000;
+  --bg-secondary: #1c1c1e;
+  --bg-tertiary: #2c2c2e;
+  --text-primary: #f5f5f7;
+  --text-secondary: #86868b;
+  --border-color: #38383a;
+  --shadow-color: rgba(0, 0, 0, 0.3);
+
+  /* Chart.js theme tokens – dark */
+  --chart-grid: #334155;
+  --chart-tick: #94a3b8;
+  --chart-legend: #cbd5e1;
 }
 
 body {
