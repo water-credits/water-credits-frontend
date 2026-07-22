@@ -12,6 +12,7 @@ import { Actions, ofType } from '@ngrx/effects';
 import { Subject, takeUntil } from 'rxjs';
 import { NotificationService } from '../../../core/services/notification.service';
 import { ApiService } from '../../../core/services/api.service';
+import { ProjectsService } from '../../../core/services/projects.service';
 import { MapViewComponent, MapLocation } from '../../../shared/components/map-view/map-view';
 import { PendingChanges } from '../../../core/guards/pending-changes.guard';
 import * as ProjectsActions from '../../../core/store/projects/projects.actions';
@@ -401,6 +402,7 @@ export class ProjectFormComponent implements OnInit, OnDestroy {
     private store: Store,
     private actions$: Actions,
     private apiService: ApiService,
+    private projectsService: ProjectsService,
     private notificationService: NotificationService,
   ) {}
 
@@ -409,16 +411,10 @@ export class ProjectFormComponent implements OnInit, OnDestroy {
     if (id) {
       try {
         const project = await this.projectsService.getProject(id);
-        this.form = {
-          name: project.name,
-          description: project.description,
-          latitude: project.latitude,
-          longitude: project.longitude,
-          methodology: project.methodology,
-          areaHectares: project.areaHectares,
-          baselineStart: project.baselineStart?.split('T')[0] || '',
-          baselineEnd: project.baselineEnd?.split('T')[0] || '',
-        };
+        this.step0.patchValue({ name: project.name, description: project.description, methodology: project.methodology });
+        this.step1.patchValue({ latitude: project.latitude, longitude: project.longitude });
+        this.step2.patchValue({ areaHectares: project.areaHectares, baselineStart: project.baselineStart?.split('T')[0] ?? '', projectStartDate: project.baselineEnd?.split('T')[0] ?? '' });
+        this.locationComplete = true;
       } catch {
         this.notificationService.error('Error', 'Failed to load project for editing');
         this.router.navigate(['/projects']);
