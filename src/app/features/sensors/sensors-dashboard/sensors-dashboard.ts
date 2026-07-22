@@ -349,6 +349,7 @@ export class SensorsDashboardComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (sensors) => {
+          if (!sensors) return;
           this.devices = sensors.devices;
           this.recentReadings = sensors.recentReadings;
           this.updateDerivedData();
