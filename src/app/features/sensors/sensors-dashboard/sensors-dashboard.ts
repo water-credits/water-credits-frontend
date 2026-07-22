@@ -17,15 +17,12 @@ import {
   DataTableComponent,
   ColumnDef,
 } from '../../../shared/components/data-table/data-table.component';
-import { StatusBadgeComponent } from '../../../shared/components/status-badge/status-badge';
-import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state';
 import { LoadingSpinnerComponent } from '../../../shared/components/loading-spinner/loading-spinner';
 import {
   SensorChartComponent,
   ChartSeries,
 } from '../../../shared/components/sensor-chart/sensor-chart';
 import { DateFormatPipe } from '../../../shared/pipes/date-format.pipe';
-import { NumberAbbreviatePipe } from '../../../shared/pipes/number-abbreviate.pipe';
 import * as SensorsActions from '../../../core/store/sensors/sensors.actions';
 import {
   LucideAngularModule,
@@ -103,12 +100,9 @@ const STATUS_THRESHOLDS: Record<
     DecimalPipe,
     RouterLink,
     DataTableComponent,
-    StatusBadgeComponent,
-    EmptyStateComponent,
     LoadingSpinnerComponent,
     SensorChartComponent,
     DateFormatPipe,
-    NumberAbbreviatePipe,
     LucideAngularModule,
   ],
   template: `

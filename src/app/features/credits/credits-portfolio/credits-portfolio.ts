@@ -1,13 +1,5 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import {
-  NgIf,
-  NgFor,
-  AsyncPipe,
-  NgClass,
-  NgSwitch,
-  NgSwitchCase,
-  NgSwitchDefault,
-} from '@angular/common';
+import { NgIf, NgFor, AsyncPipe, NgSwitch, NgSwitchCase } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { Store } from '@ngrx/store';
 import { Observable, Subject } from 'rxjs';
@@ -55,10 +47,8 @@ import {
     NgIf,
     NgFor,
     AsyncPipe,
-    NgClass,
     NgSwitch,
     NgSwitchCase,
-    NgSwitchDefault,
     RouterLink,
     CreditAmountPipe,
     DateFormatPipe,
@@ -110,7 +100,7 @@ import {
                 {{ portfolio.totalBalance | creditAmount }}
               </p>
               <p class="text-xs text-slate-400 mt-1">
-                Across {{ portfolio.holdings?.length || 0 }} projects
+                Across {{ portfolio.holdings.length || 0 }} projects
               </p>
             </div>
             <div class="card p-5">
@@ -148,7 +138,7 @@ import {
                 </div>
               </div>
               <p class="text-2xl font-bold text-slate-900 dark:text-white">
-                {{ portfolio.holdings?.length || 0 }}
+                {{ portfolio.holdings.length || 0 }}
               </p>
               <p class="text-xs text-slate-400 mt-1">Active projects</p>
             </div>

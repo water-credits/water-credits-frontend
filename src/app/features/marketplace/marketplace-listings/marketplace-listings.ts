@@ -1,5 +1,5 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { NgIf, NgFor, NgClass, NgSwitch, NgSwitchCase, AsyncPipe } from '@angular/common';
+import { NgIf, NgSwitch, NgSwitchCase, AsyncPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { Store } from '@ngrx/store';
@@ -32,8 +32,6 @@ import { NumberAbbreviatePipe } from '../../../shared/pipes/number-abbreviate.pi
   standalone: true,
   imports: [
     NgIf,
-    NgFor,
-    NgClass,
     NgSwitch,
     NgSwitchCase,
     AsyncPipe,
