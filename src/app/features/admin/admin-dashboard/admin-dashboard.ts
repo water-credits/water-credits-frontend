@@ -1,5 +1,5 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { NgIf, NgFor, NgSwitch, NgSwitchCase, NgSwitchDefault, AsyncPipe } from '@angular/common';
+import { NgIf, NgSwitch, NgSwitchCase, NgSwitchDefault, AsyncPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { Store } from '@ngrx/store';
 import { Observable, Subject } from 'rxjs';
@@ -13,7 +13,6 @@ import {
 } from '../../../shared/components/data-table/data-table.component';
 import { StatusBadgeComponent } from '../../../shared/components/status-badge/status-badge';
 import { LoadingSpinnerComponent } from '../../../shared/components/loading-spinner/loading-spinner';
-import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state';
 import { AnalyticsOverview } from '../../../core/models/analytics.model';
 import { OracleSubmission } from '../../../core/models/oracle.model';
 import { AppState } from '../../../core/store/app.state';
@@ -42,7 +41,6 @@ import { LoggingService } from '../../../core/services/logging.service';
   standalone: true,
   imports: [
     NgIf,
-    NgFor,
     NgSwitch,
     NgSwitchCase,
     NgSwitchDefault,
@@ -54,7 +52,6 @@ import { LoggingService } from '../../../core/services/logging.service';
     DataTableComponent,
     StatusBadgeComponent,
     LoadingSpinnerComponent,
-    EmptyStateComponent,
     LucideAngularModule,
   ],
   template: `
