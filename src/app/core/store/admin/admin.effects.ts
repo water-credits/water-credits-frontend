@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
-import { of } from 'rxjs';
+import { of, from } from 'rxjs';
 import { catchError, map, mergeMap } from 'rxjs/operators';
 import { UsersService } from '../../services/users.service';
 import * as AdminActions from './admin.actions';
@@ -11,7 +11,7 @@ export class AdminEffects {
     this.actions.pipe(
       ofType(AdminActions.loadAdminStats),
       mergeMap(() =>
-        this.usersService.getUsers({ page: 1, limit: 1 }).pipe(
+        from(this.usersService.getUsers({ page: 1, limit: 1 })).pipe(
           map((res) =>
             AdminActions.loadAdminStatsSuccess({
               totalUsers: res.total,
@@ -30,7 +30,7 @@ export class AdminEffects {
     this.actions.pipe(
       ofType(AdminActions.loadUsers),
       mergeMap(({ page, limit }) =>
-        this.usersService.getUsers({ page, limit }).pipe(
+        from(this.usersService.getUsers({ page, limit })).pipe(
           map((res) =>
             AdminActions.loadUsersSuccess({
               users: res.data,
@@ -49,7 +49,7 @@ export class AdminEffects {
     this.actions.pipe(
       ofType(AdminActions.updateUserRole),
       mergeMap(({ userId, role }) =>
-        this.usersService.updateUserRole(userId, role).pipe(
+        from(this.usersService.updateUserRole(userId, role)).pipe(
           map(() => AdminActions.updateUserRoleSuccess()),
           catchError((error) => of(AdminActions.updateUserRoleFailure({ error: error.message }))),
         ),
@@ -57,5 +57,8 @@ export class AdminEffects {
     ),
   );
 
-  constructor(private actions: Actions, private usersService: UsersService) {}
+  constructor(
+    private actions: Actions,
+    private usersService: UsersService,
+  ) {}
 }
