@@ -16,9 +16,19 @@ export class NotificationService {
   private notificationsSubject = new BehaviorSubject<ToastNotification[]>([]);
   public notifications$ = this.notificationsSubject.asObservable();
 
+  private recentErrors = new Set<string>();
+
   constructor() {}
 
   show(notification: Omit<ToastNotification, 'id'>) {
+    if (notification.type === 'error') {
+      const key = `${notification.title}:${notification.message}`;
+      if (this.recentErrors.has(key)) return;
+      
+      this.recentErrors.add(key);
+      setTimeout(() => this.recentErrors.delete(key), 5000);
+    }
+
     const id = Math.random().toString(36).substring(2, 11);
     const newNotification = { ...notification, id };
 
