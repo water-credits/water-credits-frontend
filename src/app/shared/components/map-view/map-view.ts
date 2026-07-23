@@ -57,12 +57,12 @@ export type MapDrawMode = 'none' | 'pin' | 'polygon' | 'pin+polygon';
           Click the map to drop the project pin.
         </ng-container>
         <ng-container *ngIf="drawMode === 'polygon'">
-          Click to add polygon vertices · double-click to close the shape.
+          Click to add polygon vertices &middot; double-click to close the shape.
         </ng-container>
         <ng-container *ngIf="drawMode === 'pin+polygon'">
           <span *ngIf="!pinPlaced">Step 1: Click to drop the project headquarters pin.</span>
           <span *ngIf="pinPlaced && !polygonClosed">
-            Step 2: Click to draw the project boundary · double-click to close.
+            Step 2: Click to draw the project boundary &middot; double-click to close.
             <button
               type="button"
               (click)="resetDraw()"
@@ -99,11 +99,14 @@ export class MapViewComponent implements AfterViewInit, OnChanges, OnDestroy {
   /** Emitted once the user has completed the required draw gesture. */
   @Output() locationPicked = new EventEmitter<MapLocation>();
 
+  /** Emitted when a read-only marker is clicked (requires clickable=true). */
+  @Output() markerClick = new EventEmitter<MapMarker>();
+
   @ViewChild('mapContainer') mapContainer!: ElementRef<HTMLDivElement>;
 
   private map: L.Map | null = null;
 
-  // ── draw state ────────────────────────────────────────────────────────────
+  // ── draw state ──────────────────────────────────────────────
   protected pinPlaced = false;
   protected polygonClosed = false;
 
@@ -132,7 +135,7 @@ export class MapViewComponent implements AfterViewInit, OnChanges, OnDestroy {
     this.map?.remove();
   }
 
-  // ── public reset ─────────────────────────────────────────────────────────
+  // ── public reset ──────────────────────────────────────────────
 
   resetDraw(): void {
     this.pinPlaced = false;
@@ -146,7 +149,7 @@ export class MapViewComponent implements AfterViewInit, OnChanges, OnDestroy {
     this.polygonLayer = null;
   }
 
-  // ── init ─────────────────────────────────────────────────────────────────
+  // ── init ──────────────────────────────────────────────
 
   private initMap(): void {
     this.map = L.map(this.mapContainer.nativeElement, {
@@ -168,7 +171,7 @@ export class MapViewComponent implements AfterViewInit, OnChanges, OnDestroy {
     }
   }
 
-  // ── marker rendering ─────────────────────────────────────────────────────
+  // ── marker rendering ──────────────────────────────────────────────
 
   private _readOnlyMarkerLayers: L.Marker[] = [];
 
@@ -188,7 +191,15 @@ export class MapViewComponent implements AfterViewInit, OnChanges, OnDestroy {
       });
 
       const m = L.marker([marker.latitude, marker.longitude], { icon }).addTo(this.map!);
-      if (marker.popupContent) m.bindPopup(marker.popupContent);
+
+      if (marker.popupContent) {
+        m.bindPopup(marker.popupContent);
+      }
+
+      if (this.clickable) {
+        m.on('click', () => this.markerClick.emit(marker));
+      }
+
       this._readOnlyMarkerLayers.push(m);
     });
 
@@ -200,7 +211,7 @@ export class MapViewComponent implements AfterViewInit, OnChanges, OnDestroy {
     }
   }
 
-  // ── draw interaction ─────────────────────────────────────────────────────
+  // ── draw interaction ──────────────────────────────────────────────
 
   private boundClickHandler: ((e: L.LeafletMouseEvent) => void) | null = null;
   private boundDblClickHandler: ((e: L.LeafletMouseEvent) => void) | null = null;
@@ -329,7 +340,7 @@ export class MapViewComponent implements AfterViewInit, OnChanges, OnDestroy {
     }
   }
 
-  // ── helpers ───────────────────────────────────────────────────────────────
+  // ── helpers ──────────────────────────────────────────────
 
   private getStatusColor(status?: string): string {
     switch (status) {
