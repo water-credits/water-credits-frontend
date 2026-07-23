@@ -250,8 +250,8 @@ export class MapViewComponent implements AfterViewInit, OnChanges, OnDestroy {
 
   private onMapDblClick(e: L.LeafletMouseEvent): void {
     // Prevent Leaflet's default double-click zoom
-    L.DomEvent.stopPropagation(e);
-    L.DomEvent.preventDefault(e);
+    L.DomEvent.stopPropagation(e.originalEvent);
+    L.DomEvent.preventDefault(e.originalEvent);
 
     if (this.drawMode === 'polygon' || this.drawMode === 'pin+polygon') {
       if (!this.polygonClosed && this.polyVertices.length >= 3) {
@@ -316,8 +316,7 @@ export class MapViewComponent implements AfterViewInit, OnChanges, OnDestroy {
 
     const readyPin = this.drawMode === 'pin' || (this.drawMode === 'pin+polygon' && this.pinPlaced);
     const readyPoly =
-      this.drawMode === 'polygon' ||
-      (this.drawMode === 'pin+polygon' && this.polygonClosed);
+      this.drawMode === 'polygon' || (this.drawMode === 'pin+polygon' && this.polygonClosed);
     const readyNone = this.drawMode === 'none';
 
     if (readyNone) return;
@@ -334,12 +333,18 @@ export class MapViewComponent implements AfterViewInit, OnChanges, OnDestroy {
 
   private getStatusColor(status?: string): string {
     switch (status) {
-      case 'active': return '#10B981';
-      case 'baseline': return '#3B82F6';
-      case 'registered': return '#7B2FBE';
-      case 'completed': return '#059669';
-      case 'closed': return '#EF4444';
-      default: return '#94A3B8';
+      case 'active':
+        return '#10B981';
+      case 'baseline':
+        return '#3B82F6';
+      case 'registered':
+        return '#7B2FBE';
+      case 'completed':
+        return '#059669';
+      case 'closed':
+        return '#EF4444';
+      default:
+        return '#94A3B8';
     }
   }
 }
