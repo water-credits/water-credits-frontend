@@ -10,6 +10,7 @@ import {
   ViewChild,
   ElementRef,
 } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import * as L from 'leaflet';
 
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -41,7 +42,7 @@ export type MapDrawMode = 'none' | 'pin' | 'polygon' | 'pin+polygon';
 @Component({
   selector: 'app-map-view',
   standalone: true,
-  imports: [],
+  imports: [CommonModule],
   template: `
     <div class="space-y-2">
       <div
@@ -106,7 +107,7 @@ export class MapViewComponent implements AfterViewInit, OnChanges, OnDestroy {
 
   private map: L.Map | null = null;
 
-  // ── draw state ──────────────────────────────────────────────
+  // â”€â”€ draw state â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   protected pinPlaced = false;
   protected polygonClosed = false;
 
@@ -135,7 +136,7 @@ export class MapViewComponent implements AfterViewInit, OnChanges, OnDestroy {
     this.map?.remove();
   }
 
-  // ── public reset ──────────────────────────────────────────────
+  // â”€â”€ public reset â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   resetDraw(): void {
     this.pinPlaced = false;
@@ -149,7 +150,7 @@ export class MapViewComponent implements AfterViewInit, OnChanges, OnDestroy {
     this.polygonLayer = null;
   }
 
-  // ── init ──────────────────────────────────────────────
+  // â”€â”€ init â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   private initMap(): void {
     this.map = L.map(this.mapContainer.nativeElement, {
@@ -171,7 +172,7 @@ export class MapViewComponent implements AfterViewInit, OnChanges, OnDestroy {
     }
   }
 
-  // ── marker rendering ──────────────────────────────────────────────
+  // â”€â”€ marker rendering â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   private _readOnlyMarkerLayers: L.Marker[] = [];
 
@@ -211,7 +212,7 @@ export class MapViewComponent implements AfterViewInit, OnChanges, OnDestroy {
     }
   }
 
-  // ── draw interaction ──────────────────────────────────────────────
+  // â”€â”€ draw interaction â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   private boundClickHandler: ((e: L.LeafletMouseEvent) => void) | null = null;
   private boundDblClickHandler: ((e: L.LeafletMouseEvent) => void) | null = null;
@@ -340,7 +341,7 @@ export class MapViewComponent implements AfterViewInit, OnChanges, OnDestroy {
     }
   }
 
-  // ── helpers ──────────────────────────────────────────────
+  // â”€â”€ helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   private getStatusColor(status?: string): string {
     switch (status) {
