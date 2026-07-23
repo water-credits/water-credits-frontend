@@ -18,10 +18,11 @@ import {
   ColumnDef,
 } from '../../../shared/components/data-table/data-table.component';
 import { LoadingSpinnerComponent } from '../../../shared/components/loading-spinner/loading-spinner';
+import { SensorChartComponent } from '../../../shared/components/sensor-chart/sensor-chart';
 import {
-  SensorChartComponent,
-  ChartSeries,
-} from '../../../shared/components/sensor-chart/sensor-chart';
+  SensorParameter,
+  TimeRange,
+} from '../../../shared/components/sensor-chart/sensor-parameter.model';
 import { DateFormatPipe } from '../../../shared/pipes/date-format.pipe';
 import * as SensorsActions from '../../../core/store/sensors/sensors.actions';
 import {
@@ -89,6 +90,11 @@ const STATUS_THRESHOLDS: Record<
   nitrogen: { good: [0, 2], warning: [0, 5] },
   phosphorus: { good: [0, 0.5], warning: [0, 1.0] },
   temperature: { good: [15, 25], warning: [10, 30] },
+};
+
+/** pH thresholds shown as annotation lines per acceptance criteria */
+const CHART_THRESHOLDS: Record<string, { low?: number; high?: number }> = {
+  ph: { low: 6.5, high: 8.5 },
 };
 
 @Component({
@@ -208,14 +214,15 @@ const STATUS_THRESHOLDS: Record<
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div>
-            <app-sensor-chart
-              [title]="'Recent Readings'"
-              [series]="mainChartSeries"
-              [height]="280"
-              [timeRanges]="['1H', '6H', '24H', '7D', '30D']"
-            />
-          </div>
+          <app-sensor-chart
+            [title]="'Recent Readings'"
+            [data]="recentReadings"
+            [parameters]="chartParameters"
+            [timeRange]="selectedTimeRange"
+            [thresholds]="chartThresholds"
+            (rangeChange)="onRangeChange($event)"
+            [height]="280"
+          />
           <div class="card p-5">
             <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-4">
               Latest Values
@@ -285,10 +292,21 @@ export class SensorsDashboardComponent implements OnInit, OnDestroy {
   protected latestReading: SensorReading | null = null;
   protected wsConnected = false;
   protected autoRefresh = false;
-  protected mainChartSeries: ChartSeries[] = [];
   protected sparklineData: Partial<Record<SensorParameterKey, number[]>> = {};
   protected sparklineMax: Partial<Record<SensorParameterKey, number>> = {};
   protected parameterConfigs = PARAMETER_CONFIGS;
+  protected selectedTimeRange: TimeRange = '24h';
+  protected chartThresholds = CHART_THRESHOLDS;
+
+  /** SensorParameter[] built from PARAMETER_CONFIGS for the new chart API */
+  protected chartParameters: SensorParameter[] = PARAMETER_CONFIGS.map((p) => ({
+    key: p.key,
+    label: p.label,
+    unit: p.unit,
+    color: p.color,
+    decimals: p.decimals,
+  }));
+
   private refreshInterval = 30000;
   private destroy$ = new Subject<void>();
 
@@ -359,6 +377,11 @@ export class SensorsDashboardComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
+  protected onRangeChange(range: TimeRange): void {
+    this.selectedTimeRange = range;
+    this.loadData();
+  }
+
   private async loadData(): Promise<void> {
     this.loading = true;
     try {
@@ -375,33 +398,23 @@ export class SensorsDashboardComponent implements OnInit, OnDestroy {
   private updateDerivedData(): void {
     this.latestReading = this.recentReadings.length > 0 ? this.recentReadings[0] : null;
 
-    const chartData: Record<string, { x: number; y: number }[]> = {};
     const sparklines: Record<string, number[]> = {};
 
     for (const param of this.parameterConfigs) {
       const values: number[] = [];
-      const points: { x: number; y: number }[] = [];
 
       for (const r of this.recentReadings) {
         const val = getSensorValue(r, param.key);
         if (val != null) {
           values.push(val);
-          points.push({ x: new Date(r.timestamp).getTime(), y: val });
         }
       }
 
       sparklines[param.key] = values.slice(0, 20).reverse();
       this.sparklineMax[param.key] = values.length > 0 ? Math.max(...values, 0.001) : 1;
-
-      if (points.length > 0) {
-        chartData[param.key] = points.slice(0, 60).reverse();
-      }
     }
 
     this.sparklineData = sparklines;
-    this.mainChartSeries = this.parameterConfigs
-      .filter((p) => chartData[p.key]?.length)
-      .map((p) => ({ label: p.label, data: chartData[p.key]!, color: p.color }));
   }
 
   protected toggleAutoRefresh(): void {

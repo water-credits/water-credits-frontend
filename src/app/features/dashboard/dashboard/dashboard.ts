@@ -8,7 +8,13 @@ import { DateFormatPipe } from '../../../shared/pipes/date-format.pipe';
 import { WebsocketService } from '../../../core/services/websocket.service';
 import { AnalyticsOverview, CreditsOverTimePoint } from '../../../core/models/analytics.model';
 import { RecentRetirement } from '../../../core/models/retirement.model';
-import { SensorAlert } from '../../../core/models/sensor-reading.model';
+import { SensorChartComponent } from '../../../shared/components/sensor-chart/sensor-chart';
+import {
+  SensorParameter,
+  TimeRange,
+} from '../../../shared/components/sensor-chart/sensor-parameter.model';
+import { SensorReading, SensorAlert } from '../../../core/models/sensor-reading.model';
+import { selectRecentReadings } from '../../../core/store/sensors/sensors.selectors';
 import * as AnalyticsActions from '../../../core/store/analytics/analytics.actions';
 import {
   selectAnalyticsOverview,
@@ -29,6 +35,23 @@ import {
   RefreshCw,
 } from 'lucide-angular';
 
+/** Parameters shown in the sensor summary widget on the main dashboard */
+const SENSOR_SUMMARY_PARAMS: SensorParameter[] = [
+  { key: 'ph', label: 'pH', unit: '', color: '#7B2FBE', decimals: 2 },
+  { key: 'turbidity', label: 'Turbidity', unit: 'NTU', color: '#F59E0B', decimals: 1 },
+  {
+    key: 'dissolvedOxygen',
+    label: 'Dissolved O₂',
+    unit: 'mg/L',
+    color: '#3B82F6',
+    decimals: 1,
+  },
+];
+
+const SENSOR_THRESHOLDS: Record<string, { low?: number; high?: number }> = {
+  ph: { low: 6.5, high: 8.5 },
+};
+
 @Component({
   selector: 'app-dashboard',
   standalone: true,
@@ -40,6 +63,7 @@ import {
     CreditAmountPipe,
     DateFormatPipe,
     LucideAngularModule,
+    SensorChartComponent,
   ],
   template: `
     @if (updateAvailable()) {
@@ -218,6 +242,17 @@ import {
           </div>
         </div>
 
+        <!-- Sensor Summary Widget -->
+        <app-sensor-chart
+          title="Water Quality Summary"
+          [data]="latestSensorReadings"
+          [parameters]="sensorSummaryParams"
+          [timeRange]="sensorTimeRange"
+          [thresholds]="sensorThresholds"
+          (rangeChange)="onSensorRangeChange($event)"
+          [height]="260"
+        />
+
         <div class="card p-5">
           <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-4">
             Credits Over Time
@@ -261,6 +296,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
   /** Accumulates live WebSocket alerts into an array (max 5); reset on destroy. */
   protected sensorAlerts$!: Observable<SensorAlert[]>;
   protected wsConnected = false;
+  protected latestSensorReadings: SensorReading[] = [];
+  protected sensorSummaryParams = SENSOR_SUMMARY_PARAMS;
+  protected sensorThresholds = SENSOR_THRESHOLDS;
+  protected sensorTimeRange: TimeRange = '24h';
   protected readonly updateAvailable = signal<boolean>(false);
 
   private destroy$ = new Subject<void>();
@@ -321,11 +360,28 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.creditsOverTime$.pipe(takeUntil(this.destroy$)).subscribe((points) => {
       this.chartMax = Math.max(...points.map((p) => Math.max(p.minted, p.retired)), 1);
     });
+
+    // Subscribe to the global recent-readings buffer from NgRx store
+    this.store
+      .select(selectRecentReadings)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (readings) => {
+          this.latestSensorReadings = readings;
+        },
+        error: () => {},
+      });
   }
 
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  protected onSensorRangeChange(range: TimeRange): void {
+    this.sensorTimeRange = range;
+    // The store buffer is refreshed by the sensors-dashboard;
+    // for the dashboard widget we just update the displayed range label.
   }
 
   getMintedHeight(point: CreditsOverTimePoint): number {
