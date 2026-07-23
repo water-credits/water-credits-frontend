@@ -131,16 +131,16 @@ export const routes: Routes = [
           {
             path: 'new',
             loadComponent: () =>
-              import(
-                './features/marketplace/marketplace-create-listing/marketplace-create-listing'
-              ).then((m) => m.MarketplaceCreateListingComponent),
+              import('./features/marketplace/marketplace-create-listing/marketplace-create-listing').then(
+                (m) => m.MarketplaceCreateListingComponent,
+              ),
           },
           {
             path: 'orderbook/:projectId',
             loadComponent: () =>
-              import(
-                './features/marketplace/marketplace-order-book/marketplace-order-book'
-              ).then((m) => m.MarketplaceOrderBookComponent),
+              import('./features/marketplace/marketplace-order-book/marketplace-order-book').then(
+                (m) => m.MarketplaceOrderBookComponent,
+              ),
           },
         ],
       },
@@ -164,9 +164,9 @@ export const routes: Routes = [
           {
             path: ':id/certificate',
             loadComponent: () =>
-              import(
-                './features/retirement/retirement-certificate/retirement-certificate'
-              ).then((m) => m.RetirementCertificateComponent),
+              import('./features/retirement/retirement-certificate/retirement-certificate').then(
+                (m) => m.RetirementCertificateComponent,
+              ),
           },
         ],
       },
@@ -258,9 +258,7 @@ export const routes: Routes = [
           {
             path: 'users',
             loadComponent: () =>
-              import('./features/admin/admin-users/admin-users').then(
-                (m) => m.AdminUsersComponent,
-              ),
+              import('./features/admin/admin-users/admin-users').then((m) => m.AdminUsersComponent),
           },
         ],
       },

@@ -110,10 +110,7 @@ export class ApiService {
    * @param fieldName The multipart field name expected by the server (default: "file").
    * @returns         The server-assigned file ID.
    */
-  async uploadFile(
-    file: File,
-    fieldName = 'file',
-  ): Promise<{ fileId: string }> {
+  async uploadFile(file: File, fieldName = 'file'): Promise<{ fileId: string }> {
     const formData = new FormData();
     formData.append(fieldName, file, file.name);
 
