@@ -1,4 +1,4 @@
-import { ApplicationConfig, provideZoneChangeDetection, isDevMode } from '@angular/core';
+import { ApplicationConfig, provideZoneChangeDetection, isDevMode, ErrorHandler } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { provideServiceWorker } from '@angular/service-worker';
 
@@ -16,6 +16,8 @@ import { SensorsEffects } from './core/store/sensors/sensors.effects';
 import { MarketplaceEffects } from './core/store/marketplace/marketplace.effects';
 import { FarmersEffects } from './core/store/farmers/farmers.effects';
 import { AnalyticsEffects } from './core/store/analytics/analytics.effects';
+import { WebsocketEffects } from './core/store/websocket/websocket.effects';
+import { GlobalErrorHandler } from './core/services/error-handler.service';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -32,11 +34,13 @@ export const appConfig: ApplicationConfig = {
       MarketplaceEffects,
       FarmersEffects,
       AnalyticsEffects,
+      WebsocketEffects,
     ]),
     provideStoreDevtools({ maxAge: 25, logOnly: !isDevMode() }),
     provideServiceWorker('ngsw-worker.js', {
       enabled: !isDevMode(),
       registrationStrategy: 'registerWhenStable:30000',
     }),
+    { provide: ErrorHandler, useClass: GlobalErrorHandler },
   ],
 };

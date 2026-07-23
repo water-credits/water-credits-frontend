@@ -50,11 +50,32 @@ export class ApiService {
     // ── Response interceptor: map errors, handle 401 ──────────────────────
     this.axiosInstance.interceptors.response.use(
       (response) => response,
-      (error: AxiosError) => {
+      async (error: AxiosError) => {
+        const config = error.config as any;
+
         if (error.response?.status === 401) {
           // Do NOT touch localStorage here — the effects own that.
           this.sessionBus.notifyUnauthorized();
         }
+
+        const status = error.response?.status;
+        const transientStatuses = [429, 502, 503, 504];
+
+        if (
+          status &&
+          transientStatuses.includes(status) &&
+          config &&
+          config.method?.toLowerCase() === 'get'
+        ) {
+          config._retryCount = config._retryCount || 0;
+          if (config._retryCount < 2) {
+            config._retryCount++;
+            const delay = config._retryCount === 1 ? 1000 : 2000;
+            await new Promise((resolve) => setTimeout(resolve, delay));
+            return this.axiosInstance.request(config);
+          }
+        }
+
         return Promise.reject(this.mapError(error));
       },
     );
