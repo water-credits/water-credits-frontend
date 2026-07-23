@@ -115,6 +115,8 @@ import { NumberAbbreviatePipe } from '../../../shared/pipes/number-abbreviate.pi
         [data]="(listings$ | async) || []"
         [loading]="false"
         [pagination]="pagination$ | async"
+        [virtualScroll]="true"
+        [rowHeight]="56"
         (page)="onPageChange($event)"
       >
         <ng-template #row let-row let-col="column">
