@@ -61,6 +61,49 @@ export const createListingFailure = createAction(
   props<{ error: string }>(),
 );
 
+// ─── Purchase Listing ───────────────────────────────────────────────────────
+
+export const purchaseListing = createAction(
+  '[Marketplace] Purchase Listing',
+  props<{ listingId: string; quantity: string }>(),
+);
+
+export const purchaseListingSuccess = createAction('[Marketplace] Purchase Listing Success');
+
+export const purchaseListingFailure = createAction(
+  '[Marketplace] Purchase Listing Failure',
+  props<{ error: string }>(),
+);
+
+// ─── My Orders / Price History ───────────────────────────────────────────────
+
+export const loadMyOrders = createAction('[Marketplace] Load My Orders');
+
+export const loadMyOrdersSuccess = createAction(
+  '[Marketplace] Load My Orders Success',
+  props<{ response: PaginatedResponse<MarketplaceListing> }>(),
+);
+
+export const loadMyOrdersFailure = createAction(
+  '[Marketplace] Load My Orders Failure',
+  props<{ error: string }>(),
+);
+
+export const loadPriceHistory = createAction(
+  '[Marketplace] Load Price History',
+  props<{ projectId: string }>(),
+);
+
+export const loadPriceHistorySuccess = createAction(
+  '[Marketplace] Load Price History Success',
+  props<{ data: any }>(),
+);
+
+export const loadPriceHistoryFailure = createAction(
+  '[Marketplace] Load Price History Failure',
+  props<{ error: string }>(),
+);
+
 // ─── Set Filters ──────────────────────────────────────────────────────────────
 
 export const setListingsFilters = createAction(

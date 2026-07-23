@@ -15,6 +15,11 @@ export interface MarketplaceState {
   loading: boolean;
   /** True while create-listing mutation is in flight. */
   creating: boolean;
+  /** True while a purchase transaction is being submitted. */
+  purchasing: boolean;
+  /** My orders (active/filled) */
+  myOrders: MarketplaceListing[];
+  priceHistory: any | null;
   error: string | null;
 }
 
@@ -28,6 +33,9 @@ const initialState: MarketplaceState = {
   orderBook: null,
   loading: false,
   creating: false,
+  purchasing: false,
+  myOrders: [],
+  priceHistory: null,
   error: null,
 };
 
@@ -91,6 +99,22 @@ export const marketplaceReducer = createReducer(
     error,
   })),
 
+  // ── Purchase Listing ─────────────────────────────────────────────────────
+  on(MarketplaceActions.purchaseListing, (state) => ({
+    ...state,
+    purchasing: true,
+    error: null,
+  })),
+  on(MarketplaceActions.purchaseListingSuccess, (state) => ({
+    ...state,
+    purchasing: false,
+  })),
+  on(MarketplaceActions.purchaseListingFailure, (state, { error }) => ({
+    ...state,
+    purchasing: false,
+    error,
+  })),
+
   // ── Filters / Pagination ────────────────────────────────────────────────────
   on(MarketplaceActions.setListingsFilters, (state, { status, projectId, search }) => ({
     ...state,
@@ -100,5 +124,38 @@ export const marketplaceReducer = createReducer(
   on(MarketplaceActions.setListingsPage, (state, { page }) => ({
     ...state,
     page,
+  })),
+
+  // ── My Orders / Price History ────────────────────────────────────────────
+  on(MarketplaceActions.loadMyOrders, (state) => ({
+    ...state,
+    loading: true,
+    error: null,
+  })),
+  on(MarketplaceActions.loadMyOrdersSuccess, (state, { response }) => ({
+    ...state,
+    loading: false,
+    myOrders: response.data,
+  })),
+  on(MarketplaceActions.loadMyOrdersFailure, (state, { error }) => ({
+    ...state,
+    loading: false,
+    error,
+  })),
+
+  on(MarketplaceActions.loadPriceHistory, (state) => ({
+    ...state,
+    loading: true,
+    error: null,
+  })),
+  on(MarketplaceActions.loadPriceHistorySuccess, (state, { data }) => ({
+    ...state,
+    loading: false,
+    priceHistory: data,
+  })),
+  on(MarketplaceActions.loadPriceHistoryFailure, (state, { error }) => ({
+    ...state,
+    loading: false,
+    error,
   })),
 );
