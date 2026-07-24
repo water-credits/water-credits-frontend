@@ -5,7 +5,6 @@ import { Store } from '@ngrx/store';
 import { Actions, ofType } from '@ngrx/effects';
 import { Observable, Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
-import { NotificationService } from '../../../core/services/notification.service';
 import { CreditAmountPipe } from '../../../shared/pipes/credit-amount.pipe';
 import { DateFormatPipe } from '../../../shared/pipes/date-format.pipe';
 import { StellarAddressPipe } from '../../../shared/pipes/stellar-address.pipe';
@@ -329,7 +328,6 @@ export class CreditsPortfolioComponent implements OnInit, OnDestroy {
   constructor(
     private store: Store<AppState>,
     private actions$: Actions,
-    private notificationService: NotificationService,
   ) {
     this.portfolio$ = this.store.select(selectPortfolio);
     this.loading$ = this.store.select(selectCreditsLoading);

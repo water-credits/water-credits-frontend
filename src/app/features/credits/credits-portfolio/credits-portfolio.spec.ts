@@ -1,22 +1,19 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { provideStore, Store } from '@ngrx/store';
-import { provideMockStore, MockStore } from '@ngrx/store/testing';
-import { provideEffects } from '@ngrx/effects';
+import { MockStore, provideMockStore } from '@ngrx/store/testing';
 import { provideMockActions } from '@ngrx/effects/testing';
 import { Subject } from 'rxjs';
 import { Action } from '@ngrx/store';
 
 import { CreditsPortfolioComponent } from './credits-portfolio';
-import { reducers } from '../../../core/store/app.state';
 import * as RetirementActions from '../../../core/store/retirement/retirement.actions';
-import * as CreditsActions from '../../../core/store/credits/credits.actions';
 import { selectIsRetirementInProgress } from '../../../core/store/retirement/retirement.selectors';
 
 describe('CreditsPortfolioComponent', () => {
   let component: CreditsPortfolioComponent;
   let fixture: ComponentFixture<CreditsPortfolioComponent>;
   let store: MockStore;
+  let actions$: Subject<Action>;
 
   const initialState = {
     retirement: {
@@ -39,12 +36,14 @@ describe('CreditsPortfolioComponent', () => {
   };
 
   beforeEach(async () => {
+    actions$ = new Subject<Action>();
+
     await TestBed.configureTestingModule({
       imports: [CreditsPortfolioComponent],
       providers: [
         provideRouter([]),
         provideMockStore({ initialState }),
-        provideEffects([]),
+        provideMockActions(() => actions$),
       ],
     }).compileComponents();
 
@@ -111,10 +110,10 @@ describe('CreditsPortfolioComponent', () => {
   });
 
   describe('modal close on retirementConfirmed', () => {
-    it('closes the modal when retirementConfirmed action is dispatched', () => {
+    it('closes the modal when retirementConfirmed is emitted through the Actions stream', () => {
       (component as any).showRetireModal = true;
 
-      store.dispatch(
+      actions$.next(
         RetirementActions.retirementConfirmed({
           retirement: {
             id: 'ret-1',
