@@ -29,3 +29,14 @@
 .label {
   @apply block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1;
 }
+
+/* Safe area for notched devices */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Touch-friendly tap targets */
+.touch-manipulation {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}

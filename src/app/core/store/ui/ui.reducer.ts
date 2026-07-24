@@ -12,6 +12,7 @@ export interface Notification {
 
 export interface UIState {
   sidebarOpen: boolean;
+  sidebarMobileOpen: boolean;
   isDarkMode: boolean;
   isLoading: boolean;
   notifications: Notification[];
@@ -20,6 +21,7 @@ export interface UIState {
 
 export const initialState: UIState = {
   sidebarOpen: true,
+  sidebarMobileOpen: false,
   isDarkMode: true,
   isLoading: false,
   notifications: [],
@@ -31,6 +33,10 @@ const MAX_NOTIFICATIONS = 50;
 export const uiReducer = createReducer(
   initialState,
   on(UIActions.toggleSidebar, (state) => ({ ...state, sidebarOpen: !state.sidebarOpen })),
+  on(UIActions.setSidebarMobileOpen, (state, { open }) => ({
+    ...state,
+    sidebarMobileOpen: open,
+  })),
   on(UIActions.setDarkMode, (state, { isDark }) => ({ ...state, isDarkMode: isDark })),
   on(UIActions.setLoading, (state, { isLoading }) => ({ ...state, isLoading })),
   on(UIActions.addNotification, (state, { id, notificationType, title, message }) => {

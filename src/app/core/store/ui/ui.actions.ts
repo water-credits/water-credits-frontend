@@ -1,6 +1,10 @@
 import { createAction, props } from '@ngrx/store';
 
 export const toggleSidebar = createAction('[UI] Toggle Sidebar');
+export const setSidebarMobileOpen = createAction(
+  '[UI] Set Sidebar Mobile Open',
+  props<{ open: boolean }>(),
+);
 export const setDarkMode = createAction('[UI] Set Dark Mode', props<{ isDark: boolean }>());
 export const setLoading = createAction('[UI] Set Loading', props<{ isLoading: boolean }>());
 
