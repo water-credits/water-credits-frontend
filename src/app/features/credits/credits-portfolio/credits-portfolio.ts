@@ -3,7 +3,7 @@ import { NgIf, NgFor, AsyncPipe, NgSwitch, NgSwitchCase } from '@angular/common'
 import { RouterLink } from '@angular/router';
 import { Store } from '@ngrx/store';
 import { Observable, Subject } from 'rxjs';
-import { NotificationService } from '../../../core/services/notification.service';
+import { filter, takeUntil } from 'rxjs/operators';
 import { CreditAmountPipe } from '../../../shared/pipes/credit-amount.pipe';
 import { DateFormatPipe } from '../../../shared/pipes/date-format.pipe';
 import { StellarAddressPipe } from '../../../shared/pipes/stellar-address.pipe';
@@ -20,13 +20,19 @@ import {
   CreditPortfolio,
   CreditTransaction,
 } from '../../../core/models/credit.model';
+import { RetirementRequest } from '../../../core/models/retirement.model';
 import { AppState } from '../../../core/store/app.state';
 import * as CreditsActions from '../../../core/store/credits/credits.actions';
+import * as RetirementActions from '../../../core/store/retirement/retirement.actions';
 import {
   selectPortfolio,
   selectCreditsLoading,
   selectCreditTransactions,
 } from '../../../core/store/credits/credits.selectors';
+import {
+  selectIsRetirementInProgress,
+  selectIsRetirementConfirmed,
+} from '../../../core/store/retirement/retirement.selectors';
 import {
   LucideAngularModule,
   Wallet,
@@ -283,6 +289,7 @@ import {
     <app-retire-credits-modal
       *ngIf="showRetireModal"
       [projects]="retireProjects"
+      [loading]="(retirementLoading$ | async) ?? false"
       (close)="closeRetireModal()"
       (confirm)="onRetireConfirm($event)"
     />
@@ -292,6 +299,7 @@ export class CreditsPortfolioComponent implements OnInit, OnDestroy {
   protected portfolio$: Observable<CreditPortfolio | null>;
   protected loading$: Observable<boolean>;
   protected transactions$: Observable<CreditTransaction[]>;
+  protected retirementLoading$: Observable<boolean>;
 
   protected showRetireModal = false;
   protected retireProjects: { id: string; name: string; balance: string }[] = [];
@@ -319,18 +327,21 @@ export class CreditsPortfolioComponent implements OnInit, OnDestroy {
 
   private destroy$ = new Subject<void>();
 
-  constructor(
-    private store: Store<AppState>,
-    private notificationService: NotificationService,
-  ) {
+  constructor(private store: Store<AppState>) {
     this.portfolio$ = this.store.select(selectPortfolio);
     this.loading$ = this.store.select(selectCreditsLoading);
     this.transactions$ = this.store.select(selectCreditTransactions);
+    this.retirementLoading$ = this.store.select(selectIsRetirementInProgress);
   }
 
   ngOnInit(): void {
     this.store.dispatch(CreditsActions.loadPortfolio());
     this.store.dispatch(CreditsActions.loadTransactions({}));
+
+    this.store
+      .select(selectIsRetirementConfirmed)
+      .pipe(filter(Boolean), takeUntil(this.destroy$))
+      .subscribe(() => this.closeRetireModal());
   }
 
   ngOnDestroy(): void {
@@ -359,7 +370,11 @@ export class CreditsPortfolioComponent implements OnInit, OnDestroy {
   }
 
   protected onRetireConfirm(event: { projectId: string; amount: string; purpose: string }): void {
-    this.notificationService.success('Retirement Initiated', `Retiring ${event.amount} credits...`);
-    this.closeRetireModal();
+    const request: RetirementRequest = {
+      projectId: event.projectId,
+      amount: event.amount,
+      purpose: event.purpose,
+    };
+    this.store.dispatch(RetirementActions.initiateRetirement({ request }));
   }
 }
