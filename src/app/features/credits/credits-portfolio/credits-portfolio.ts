@@ -2,9 +2,8 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { NgIf, NgFor, AsyncPipe, NgSwitch, NgSwitchCase } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { Store } from '@ngrx/store';
-import { Actions, ofType } from '@ngrx/effects';
 import { Observable, Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
+import { filter, takeUntil } from 'rxjs/operators';
 import { CreditAmountPipe } from '../../../shared/pipes/credit-amount.pipe';
 import { DateFormatPipe } from '../../../shared/pipes/date-format.pipe';
 import { StellarAddressPipe } from '../../../shared/pipes/stellar-address.pipe';
@@ -30,7 +29,10 @@ import {
   selectCreditsLoading,
   selectCreditTransactions,
 } from '../../../core/store/credits/credits.selectors';
-import { selectIsRetirementInProgress } from '../../../core/store/retirement/retirement.selectors';
+import {
+  selectIsRetirementInProgress,
+  selectIsRetirementConfirmed,
+} from '../../../core/store/retirement/retirement.selectors';
 import {
   LucideAngularModule,
   Wallet,
@@ -325,10 +327,7 @@ export class CreditsPortfolioComponent implements OnInit, OnDestroy {
 
   private destroy$ = new Subject<void>();
 
-  constructor(
-    private store: Store<AppState>,
-    private actions$: Actions,
-  ) {
+  constructor(private store: Store<AppState>) {
     this.portfolio$ = this.store.select(selectPortfolio);
     this.loading$ = this.store.select(selectCreditsLoading);
     this.transactions$ = this.store.select(selectCreditTransactions);
@@ -339,8 +338,9 @@ export class CreditsPortfolioComponent implements OnInit, OnDestroy {
     this.store.dispatch(CreditsActions.loadPortfolio());
     this.store.dispatch(CreditsActions.loadTransactions({}));
 
-    this.actions$
-      .pipe(ofType(RetirementActions.retirementConfirmed), takeUntil(this.destroy$))
+    this.store
+      .select(selectIsRetirementConfirmed)
+      .pipe(filter(Boolean), takeUntil(this.destroy$))
       .subscribe(() => this.closeRetireModal());
   }
 

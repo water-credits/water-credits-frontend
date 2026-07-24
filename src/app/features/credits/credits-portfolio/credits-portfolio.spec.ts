@@ -1,19 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { MockStore, provideMockStore } from '@ngrx/store/testing';
-import { provideMockActions } from '@ngrx/effects/testing';
-import { Subject } from 'rxjs';
-import { Action } from '@ngrx/store';
 
 import { CreditsPortfolioComponent } from './credits-portfolio';
 import * as RetirementActions from '../../../core/store/retirement/retirement.actions';
-import { selectIsRetirementInProgress } from '../../../core/store/retirement/retirement.selectors';
+import {
+  selectIsRetirementInProgress,
+  selectIsRetirementConfirmed,
+} from '../../../core/store/retirement/retirement.selectors';
 
 describe('CreditsPortfolioComponent', () => {
   let component: CreditsPortfolioComponent;
   let fixture: ComponentFixture<CreditsPortfolioComponent>;
   let store: MockStore;
-  let actions$: Subject<Action>;
 
   const initialState = {
     retirement: {
@@ -36,15 +35,9 @@ describe('CreditsPortfolioComponent', () => {
   };
 
   beforeEach(async () => {
-    actions$ = new Subject<Action>();
-
     await TestBed.configureTestingModule({
       imports: [CreditsPortfolioComponent],
-      providers: [
-        provideRouter([]),
-        provideMockStore({ initialState }),
-        provideMockActions(() => actions$),
-      ],
+      providers: [provideRouter([]), provideMockStore({ initialState })],
     }).compileComponents();
 
     store = TestBed.inject(MockStore);
@@ -86,7 +79,7 @@ describe('CreditsPortfolioComponent', () => {
   });
 
   describe('retirementLoading$ — loading state propagation', () => {
-    it('emits true when the retirement phase is preparing', async () => {
+    it('emits true when the retirement phase is in progress', async () => {
       store.overrideSelector(selectIsRetirementInProgress, true);
       store.refreshState();
 
@@ -109,23 +102,12 @@ describe('CreditsPortfolioComponent', () => {
     });
   });
 
-  describe('modal close on retirementConfirmed', () => {
-    it('closes the modal when retirementConfirmed is emitted through the Actions stream', () => {
+  describe('modal close on retirement confirmed', () => {
+    it('closes the modal when the store reports retirement as confirmed', () => {
       (component as any).showRetireModal = true;
 
-      actions$.next(
-        RetirementActions.retirementConfirmed({
-          retirement: {
-            id: 'ret-1',
-            userId: 'user-1',
-            projectId: 'proj-1',
-            amount: '500',
-            purpose: 'offset',
-            status: 'confirmed',
-            retiredAt: new Date().toISOString(),
-          },
-        }),
-      );
+      store.overrideSelector(selectIsRetirementConfirmed, true);
+      store.refreshState();
 
       expect((component as any).showRetireModal).toBe(false);
     });
