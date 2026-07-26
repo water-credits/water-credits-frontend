@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { io, Socket } from 'socket.io-client';
 import { environment } from '../../../environments/environment';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject, Observable, Subject } from 'rxjs';
 import { LoggingService } from './logging.service';
 import { SensorReading, SensorAlert } from '../models/sensor-reading.model';
 
@@ -12,6 +12,9 @@ export class WebsocketService {
   private socket: Socket | null = null;
   private connectedSubject = new BehaviorSubject<boolean>(false);
   public connected$ = this.connectedSubject.asObservable();
+  
+  // Cache of subjects for event streams to survive reconnections
+  private eventSubjects = new Map<string, Subject<any>>();
 
   constructor(private loggingService: LoggingService) {}
 
@@ -24,12 +27,17 @@ export class WebsocketService {
       query: { token, userId },
       transports: ['websocket'],
       autoConnect: true,
-      reconnection: true,
+      reconnection: false, // Disable built-in reconnection, handled by effects
     });
 
     this.socket.on('connect', () => {
       this.connectedSubject.next(true);
       this.loggingService.info('Connected to WebSocket');
+      
+      // Re-bind all active subjects to the new socket
+      this.eventSubjects.forEach((subject, event) => {
+        this.socket!.on(event, (data) => subject.next(data));
+      });
     });
 
     this.socket.on('disconnect', () => {
@@ -50,19 +58,16 @@ export class WebsocketService {
   }
 
   on<T = unknown>(event: string): Observable<T> {
-    return new Observable<T>((observer) => {
-      if (!this.socket) return;
-
-      this.socket.on(event, (data: T) => {
-        observer.next(data);
-      });
-
-      return () => {
-        if (this.socket) {
-          this.socket.off(event);
-        }
-      };
-    });
+    if (!this.eventSubjects.has(event)) {
+      const subject = new Subject<T>();
+      this.eventSubjects.set(event, subject);
+      
+      if (this.socket && this.socket.connected) {
+        this.socket.on(event, (data: T) => subject.next(data));
+      }
+    }
+    
+    return this.eventSubjects.get(event)!.asObservable();
   }
 
   emit(event: string, data?: unknown): void {
