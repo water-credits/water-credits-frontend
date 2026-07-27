@@ -2,6 +2,10 @@ import { Injectable } from '@angular/core';
 import axios, { AxiosError, AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 import { environment } from '../../../environments/environment';
 import { SessionBusService } from './session-bus.service';
+import { HttpInterceptor, HttpRequest, HttpHandler, HttpEvent, HttpErrorResponse, HttpResponse } from '@angular/common/http';
+import { Observable, throwError } from 'rxjs';
+import { catchError, tap } from 'rxjs/operators';
+import { LoggingService } from './logging.service';
 
 /**
  * HTTP client wrapper around axios.
@@ -19,6 +23,39 @@ import { SessionBusService } from './session-bus.service';
  *   clears localStorage, redirects, and disconnects the WebSocket as a
  *   single unified code path.
  */
+
+@Injectable()
+export class ApiLoggingInterceptor implements HttpInterceptor {
+  private loggingService = inject(LoggingService);
+
+  intercept(req: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
+    const startTime = Date.now();
+
+    return next.handle(req).pipe(
+      tap((event) => {
+        if (event instanceof HttpResponse) {
+          const duration = Date.now() - startTime;
+          this.loggingService.debug(`HTTP Success: ${req.method} ${req.urlWithParams}`, {
+            status: event.status,
+            durationMs: duration,
+          });
+        }
+      }),
+      catchError((error: HttpErrorResponse) => {
+        const duration = Date.now() - startTime;
+        this.loggingService.error(`HTTP Failed: ${req.method} ${req.urlWithParams}`, {
+          status: error.status,
+          statusText: error.statusText,
+          durationMs: duration,
+          url: req.url,
+          method: req.method,
+        }, error);
+
+        return throwError(() => error);
+      })
+    );
+  }
+  
 @Injectable({ providedIn: 'root' })
 export class ApiService {
   private axiosInstance: AxiosInstance;
