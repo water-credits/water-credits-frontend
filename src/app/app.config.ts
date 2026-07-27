@@ -1,6 +1,7 @@
-import { ApplicationConfig, provideZoneChangeDetection, isDevMode } from '@angular/core';
+import { ApplicationConfig, ErrorHandler, provideZoneChangeDetection, isDevMode } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { provideServiceWorker } from '@angular/service-worker';
+import { HTTP_INTERCEPTORS, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 
 import { routes } from './app.routes';
 import { provideStore } from '@ngrx/store';
@@ -16,12 +17,24 @@ import { SensorsEffects } from './core/store/sensors/sensors.effects';
 import { MarketplaceEffects } from './core/store/marketplace/marketplace.effects';
 import { FarmersEffects } from './core/store/farmers/farmers.effects';
 import { AnalyticsEffects } from './core/store/analytics/analytics.effects';
+import { GlobalErrorHandler } from './core/errors/global-error-handler';
+import { ApiLoggingInterceptor } from './core/services/api.service';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes),
     provideStore(reducers),
+    provideHttpClient(withInterceptorsFromDi()),
+    {
+      provide: ErrorHandler,
+      useClass: GlobalErrorHandler,
+    },
+    {
+      provide: HTTP_INTERCEPTORS,
+      useClass: ApiLoggingInterceptor,
+      multi: true,
+    },
     provideEffects([
       AuthEffects,
       ProjectsEffects,

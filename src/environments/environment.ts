@@ -4,6 +4,13 @@
 export const environment = {
   production: false,
   name: 'development',
+  minLogLevel: 'DEBUG', // Options: 'DEBUG' | 'INFO' | 'WARN' | 'ERROR' | 'NONE'
+  sentry: {
+    enabled: false,
+    dsn: '',
+    environment: 'development',
+    tracesSampleRate: 1.0,
+  },
 
   // Backend API & WebSocket
   apiUrl: 'http://localhost:3000/api/v1',
