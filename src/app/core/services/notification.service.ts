@@ -1,4 +1,5 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
+import { LoggingService } from './logging.service';
 import { BehaviorSubject } from 'rxjs';
 
 export interface ToastNotification {
@@ -12,6 +13,24 @@ export interface ToastNotification {
 @Injectable({
   providedIn: 'root',
 })
+export class NotificationService {
+  private loggingService = inject(LoggingService);
+
+  showSuccess(message: string): void {
+    this.loggingService.info(`[Toast Success]: ${message}`);
+    // existing toast implementation...
+  }
+
+  showWarning(message: string): void {
+    this.loggingService.warn(`[Toast Warning]: ${message}`);
+    // existing toast implementation...
+  }
+
+  showError(message: string, error?: unknown): void {
+    this.loggingService.error(`[Toast Error]: ${message}`, undefined, error);
+    // existing toast implementation...
+  }
+  
 export class NotificationService {
   private notificationsSubject = new BehaviorSubject<ToastNotification[]>([]);
   public notifications$ = this.notificationsSubject.asObservable();
