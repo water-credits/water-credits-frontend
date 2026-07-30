@@ -13,20 +13,24 @@ import { LucideAngularModule, Search, X } from 'lucide-angular';
       <lucide-angular
         [img]="SearchIcon"
         class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"
+        aria-hidden="true"
       ></lucide-angular>
       <input
         [ngModel]="value"
         (ngModelChange)="onInput($event)"
-        type="text"
+        type="search"
         [placeholder]="placeholder"
+        [attr.aria-label]="label || placeholder"
         class="input pl-10 pr-10"
       />
       <button
         *ngIf="value"
         (click)="clear()"
         class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+        aria-label="Clear search"
+        type="button"
       >
-        <lucide-angular [img]="XIcon" class="w-4 h-4"></lucide-angular>
+        <lucide-angular [img]="XIcon" class="w-4 h-4" aria-hidden="true"></lucide-angular>
       </button>
     </div>
   `,
@@ -34,6 +38,7 @@ import { LucideAngularModule, Search, X } from 'lucide-angular';
 export class SearchInputComponent implements OnInit, OnDestroy {
   @Input() value = '';
   @Input() placeholder = 'Search...';
+  @Input() label = '';
   @Input() debounceMs = 300;
   @Output() valueChange = new EventEmitter<string>();
   @Output() search = new EventEmitter<string>();

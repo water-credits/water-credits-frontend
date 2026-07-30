@@ -45,7 +45,7 @@ import { LucideAngularModule, Plus, LayoutGrid, Table2 } from 'lucide-angular';
           </p>
         </div>
         <a routerLink="/projects/new" class="btn btn-primary flex items-center gap-2">
-          <lucide-angular [img]="Plus" class="w-4 h-4"></lucide-angular>
+          <lucide-angular [img]="Plus" class="w-4 h-4" aria-hidden="true"></lucide-angular>
           New Project
         </a>
       </div>
@@ -70,7 +70,7 @@ import { LucideAngularModule, Plus, LayoutGrid, Table2 } from 'lucide-angular';
             "
             class="p-2 rounded-md transition-colors"
           >
-            <lucide-angular [img]="Table2" class="w-4 h-4"></lucide-angular>
+            <lucide-angular [img]="Table2" class="w-4 h-4" aria-hidden="true"></lucide-angular>
           </button>
           <button
             (click)="viewMode = 'grid'"
@@ -81,7 +81,7 @@ import { LucideAngularModule, Plus, LayoutGrid, Table2 } from 'lucide-angular';
             "
             class="p-2 rounded-md transition-colors"
           >
-            <lucide-angular [img]="LayoutGrid" class="w-4 h-4"></lucide-angular>
+            <lucide-angular [img]="LayoutGrid" class="w-4 h-4" aria-hidden="true"></lucide-angular>
           </button>
         </div>
       </div>

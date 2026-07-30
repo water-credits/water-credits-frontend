@@ -36,7 +36,7 @@ import { DateFormatPipe } from '../../../shared/pipes/date-format.pipe';
           </p>
         </div>
         <a routerLink="/retirement/new" class="btn btn-primary flex items-center gap-2">
-          <lucide-angular [img]="PlusIcon" class="w-4 h-4"></lucide-angular>
+          <lucide-angular [img]="PlusIcon" class="w-4 h-4" aria-hidden="true"></lucide-angular>
           New Retirement
         </a>
       </div>
@@ -71,7 +71,7 @@ import { DateFormatPipe } from '../../../shared/pipes/date-format.pipe';
                 [routerLink]="['/retirement', row.id, 'certificate']"
                 class="text-stellar-blue hover:text-stellar-blue-light inline-flex items-center gap-1 text-sm"
               >
-                <lucide-angular [img]="FileTextIcon" class="w-4 h-4"></lucide-angular>
+                <lucide-angular [img]="FileTextIcon" class="w-4 h-4" aria-hidden="true"></lucide-angular>
                 Certificate
               </a>
               <span *ngIf="row.status !== 'confirmed'" class="text-slate-400 text-sm">—</span>

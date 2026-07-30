@@ -1,14 +1,23 @@
 <div class="data-table">
   <div class="overflow-x-auto">
-    <table class="w-full text-left border-collapse">
+    <table
+      role="grid"
+      [attr.aria-label]="tableLabel"
+      class="w-full text-left border-collapse"
+    >
       <thead>
-        <tr class="border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-dark-bg">
+        <tr
+          role="row"
+          class="border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-dark-bg"
+        >
           <th
             *ngFor="let col of columns"
+            role="columnheader"
             [ngClass]="{
               'text-right': col.align === 'right',
               'text-center': col.align === 'center',
             }"
+            [attr.aria-sort]="col.sortable ? ariaSortValue(col) : null"
             class="px-4 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider"
             [style.width]="col.width"
           >
@@ -25,11 +34,16 @@
                 type="button"
                 (click)="onHeaderClick(col)"
                 class="sort-button text-slate-300 hover:text-slate-500"
-                [attr.aria-label]="'Sort by ' + col.label"
+                [attr.aria-label]="
+                  'Sort by ' + col.label + (internalSortColumn === col.key
+                    ? (internalSortDirection === 'asc' ? ', currently ascending' : ', currently descending')
+                    : '')
+                "
               >
                 <span
                   [class.opacity-0]="internalSortColumn !== col.key"
                   class="sort-indicator inline-flex"
+                  aria-hidden="true"
                 >
                   <svg
                     *ngIf="internalSortDirection === 'asc'"
@@ -56,7 +70,7 @@
                     <polyline points="6 9 12 15 18 9"></polyline>
                   </svg>
                 </span>
-                <span *ngIf="internalSortColumn !== col.key" class="opacity-60">
+                <span *ngIf="internalSortColumn !== col.key" class="opacity-60" aria-hidden="true">
                   <svg
                     class="w-3.5 h-3.5"
                     viewBox="0 0 24 24"
@@ -77,10 +91,10 @@
 
       <tbody *ngIf="!virtualScroll">
         <ng-container *ngIf="loading">
-          <tr class="border-b border-slate-100 dark:border-slate-700/50">
-            <td [attr.colspan]="columns.length" class="px-4 py-6">
+          <tr role="row" class="border-b border-slate-100 dark:border-slate-700/50">
+            <td [attr.colspan]="columns.length" class="px-4 py-6" aria-label="Loading data">
               <ng-container *ngFor="let _ of [].constructor(5); trackBy: trackBySkeleton">
-                <div class="table-skeleton-line-wrapper py-3">
+                <div class="table-skeleton-line-wrapper py-3" aria-hidden="true">
                   <div class="flex items-center gap-4">
                     <div
                       *ngFor="let col of columns"
@@ -93,19 +107,23 @@
           </tr>
         </ng-container>
         <ng-container *ngIf="!loading && data.length === 0">
-          <tr class="border-b border-slate-100 dark:border-slate-700/50">
+          <tr role="row" class="border-b border-slate-100 dark:border-slate-700/50">
             <td [attr.colspan]="columns.length" class="px-4 py-12">
               <app-empty-state [title]="emptyTitle" [message]="emptyMessage"></app-empty-state>
             </td>
           </tr>
         </ng-container>
-        <ng-container *ngFor="let row of data; trackBy: trackByRow">
+        <ng-container *ngFor="let row of data; let i = index; trackBy: trackByRow">
           <tr
-            class="border-b border-slate-100 dark:border-slate-700/50 last:border-0"
-            (click)="onRowClick(row)"
+            role="row"
+            class="border-b border-slate-100 dark:border-slate-700/50 last:border-0 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/40 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-stellar-blue"
+            [attr.tabindex]="i === 0 && focusedRowIndex === -1 ? 0 : (i === focusedRowIndex ? 0 : -1)"
+            (click)="onRowClick(row, i)"
+            (keydown)="onRowKeydown($event, row, i)"
           >
             <td
               *ngFor="let col of columns"
+              role="gridcell"
               [ngClass]="{
                 'text-right': col.align === 'right',
                 'text-center': col.align === 'center',
@@ -127,9 +145,9 @@
     </table>
 
     <ng-container *ngIf="virtualScroll">
-      <div *ngIf="loading" class="px-4 py-6">
+      <div *ngIf="loading" class="px-4 py-6" aria-label="Loading data">
         <ng-container *ngFor="let _ of [].constructor(5); trackBy: trackBySkeleton">
-          <div class="table-skeleton-line-wrapper py-3">
+          <div class="table-skeleton-line-wrapper py-3" aria-hidden="true">
             <div class="flex items-center gap-4">
               <div
                 *ngFor="let col of columns"
@@ -152,13 +170,17 @@
         <table class="w-full text-left border-collapse">
           <tbody>
             <tr
-              *cdkVirtualFor="let row of data; trackBy: trackByRow"
-              class="border-b border-slate-100 dark:border-slate-700/50 last:border-0"
+              *cdkVirtualFor="let row of data; let i = index; trackBy: trackByRow"
+              role="row"
+              class="border-b border-slate-100 dark:border-slate-700/50 last:border-0 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/40 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-stellar-blue"
               [style.height.px]="rowHeight"
-              (click)="onRowClick(row)"
+              [attr.tabindex]="i === 0 && focusedRowIndex === -1 ? 0 : (i === focusedRowIndex ? 0 : -1)"
+              (click)="onRowClick(row, i)"
+              (keydown)="onRowKeydown($event, row, i)"
             >
               <td
                 *ngFor="let col of columns"
+                role="gridcell"
                 [ngClass]="{
                   'text-right': col.align === 'right',
                   'text-center': col.align === 'center',

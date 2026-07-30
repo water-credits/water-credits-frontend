@@ -33,7 +33,7 @@ import { Project, ProjectFilters, ProjectStatus } from '../../../core/models/pro
         class="flex items-center justify-between px-4 md:px-6 py-3 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-dark-bg-lighter shrink-0"
       >
         <div class="flex items-center gap-2">
-          <lucide-angular [img]="MapPinIcon" class="w-5 h-5 text-stellar-blue"></lucide-angular>
+          <lucide-angular [img]="MapPinIcon" class="w-5 h-5 text-stellar-blue" aria-hidden="true"></lucide-angular>
           <span class="font-semibold text-slate-900 dark:text-white">Water Credits Explorer</span>
         </div>
         <a routerLink="/auth/login" class="btn btn-sm btn-outline">Sign In</a>
@@ -56,7 +56,7 @@ import { Project, ProjectFilters, ProjectStatus } from '../../../core/models/pro
             (click)="filterPanelOpen = !filterPanelOpen"
             class="md:hidden absolute bottom-4 right-4 z-[500] btn btn-primary shadow-lg flex items-center gap-2"
           >
-            <lucide-angular [img]="FilterIcon" class="w-4 h-4"></lucide-angular>
+            <lucide-angular [img]="FilterIcon" class="w-4 h-4" aria-hidden="true"></lucide-angular>
             Filters &amp; List
           </button>
         </div>
@@ -69,7 +69,7 @@ import { Project, ProjectFilters, ProjectStatus } from '../../../core/models/pro
           <div class="flex items-center justify-between md:hidden">
             <h2 class="font-semibold text-slate-900 dark:text-white">Filters &amp; Projects</h2>
             <button type="button" (click)="filterPanelOpen = false" class="text-slate-400">
-              <lucide-angular [img]="XIcon" class="w-5 h-5"></lucide-angular>
+              <lucide-angular [img]="XIcon" class="w-5 h-5" aria-hidden="true"></lucide-angular>
             </button>
           </div>
 
@@ -162,7 +162,7 @@ import { Project, ProjectFilters, ProjectStatus } from '../../../core/models/pro
               (click)="closeDetail()"
               class="text-slate-400 hover:text-slate-600"
             >
-              <lucide-angular [img]="XIcon" class="w-5 h-5"></lucide-angular>
+              <lucide-angular [img]="XIcon" class="w-5 h-5" aria-hidden="true"></lucide-angular>
             </button>
           </div>
           <app-status-badge [status]="project.status"></app-status-badge>

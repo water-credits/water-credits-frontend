@@ -77,7 +77,7 @@ import {
           </p>
         </div>
         <button (click)="refresh()" class="btn btn-outline text-sm flex items-center gap-2">
-          <lucide-angular [img]="RefreshCwIcon" class="w-4 h-4"></lucide-angular>
+          <lucide-angular [img]="RefreshCwIcon" class="w-4 h-4" aria-hidden="true"></lucide-angular>
           Refresh
         </button>
       </div>
@@ -99,7 +99,7 @@ import {
                 <div class="w-9 h-9 rounded-lg bg-stellar-blue/10 flex items-center justify-center">
                   <lucide-angular
                     [img]="WalletIcon"
-                    class="w-4.5 h-4.5 text-stellar-blue"
+                    class="w-4.5 h-4.5 text-stellar-blue" aria-hidden="true"
                   ></lucide-angular>
                 </div>
               </div>
@@ -120,7 +120,7 @@ import {
                 <div class="w-9 h-9 rounded-lg bg-credit-gold/10 flex items-center justify-center">
                   <lucide-angular
                     [img]="DollarSignIcon"
-                    class="w-4.5 h-4.5 text-credit-gold"
+                    class="w-4.5 h-4.5 text-credit-gold" aria-hidden="true"
                   ></lucide-angular>
                 </div>
               </div>
@@ -140,7 +140,7 @@ import {
                 >
                   <lucide-angular
                     [img]="PieChartIcon"
-                    class="w-4.5 h-4.5 text-environmental-green"
+                    class="w-4.5 h-4.5 text-environmental-green" aria-hidden="true"
                   ></lucide-angular>
                 </div>
               </div>
@@ -194,15 +194,17 @@ import {
                     <button
                       (click)="openRetireModal(row)"
                       class="btn btn-sm btn-outline flex items-center gap-1.5 text-xs"
+                      [attr.aria-label]="'Retire ' + row.projectName + ' credits'"
                     >
-                      <lucide-angular [img]="DropletsIcon" class="w-3.5 h-3.5"></lucide-angular>
+                      <lucide-angular [img]="DropletsIcon" class="w-3.5 h-3.5" aria-hidden="true"></lucide-angular>
                       Retire
                     </button>
                     <button
                       (click)="sellHolding(row)"
                       class="btn btn-sm btn-outline flex items-center gap-1.5 text-xs"
+                      [attr.aria-label]="'Sell ' + row.projectName + ' credits'"
                     >
-                      <lucide-angular [img]="TagIcon" class="w-3.5 h-3.5"></lucide-angular>
+                      <lucide-angular [img]="TagIcon" class="w-3.5 h-3.5" aria-hidden="true"></lucide-angular>
                       Sell
                     </button>
                   </div>
@@ -218,7 +220,7 @@ import {
               >
                 <lucide-angular
                   [img]="ClockIcon"
-                  class="w-4.5 h-4.5 text-stellar-blue"
+                  class="w-4.5 h-4.5 text-stellar-blue" aria-hidden="true"
                 ></lucide-angular>
                 Recent Transactions
               </h2>
@@ -256,7 +258,7 @@ import {
                             ? ArrowDownRightIcon
                             : ArrowLeftRightIcon
                       "
-                      class="w-4 h-4"
+                      class="w-4 h-4" aria-hidden="true"
                     ></lucide-angular>
                   </div>
                   <div>

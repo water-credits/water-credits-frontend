@@ -44,7 +44,7 @@ import {
         routerLink="/retirement"
         class="inline-flex items-center gap-1 text-sm text-stellar-blue hover:text-stellar-blue-light mb-6"
       >
-        <lucide-angular [img]="ArrowLeft" class="w-4 h-4"></lucide-angular>
+        <lucide-angular [img]="ArrowLeft" class="w-4 h-4" aria-hidden="true"></lucide-angular>
         Back to Retirement History
       </a>
 
@@ -81,7 +81,7 @@ import {
         <div
           class="bg-gradient-to-r from-stellar-blue to-environmental-green p-6 text-white text-center"
         >
-          <lucide-angular [img]="Award" class="w-12 h-12 mx-auto mb-2"></lucide-angular>
+          <lucide-angular [img]="Award" class="w-12 h-12 mx-auto mb-2" aria-hidden="true"></lucide-angular>
           <h1 class="text-2xl font-bold">Certificate of Carbon Credit Retirement</h1>
           <p class="text-blue-100 mt-1 text-sm">
             Water Credits &mdash; Verified Environmental Impact
@@ -111,7 +111,7 @@ import {
                 <div
                   class="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wider mb-1"
                 >
-                  <lucide-angular [img]="MapPin" class="w-3.5 h-3.5"></lucide-angular>
+                  <lucide-angular [img]="MapPin" class="w-3.5 h-3.5" aria-hidden="true"></lucide-angular>
                   Project
                 </div>
                 <p class="font-semibold text-slate-900 dark:text-white">{{ cert.projectName }}</p>
@@ -120,7 +120,7 @@ import {
                 <div
                   class="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wider mb-1"
                 >
-                  <lucide-angular [img]="Droplets" class="w-3.5 h-3.5"></lucide-angular>
+                  <lucide-angular [img]="Droplets" class="w-3.5 h-3.5" aria-hidden="true"></lucide-angular>
                   Amount Retired
                 </div>
                 <p class="font-semibold text-slate-900 dark:text-white">
@@ -131,7 +131,7 @@ import {
                 <div
                   class="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wider mb-1"
                 >
-                  <lucide-angular [img]="Calendar" class="w-3.5 h-3.5"></lucide-angular>
+                  <lucide-angular [img]="Calendar" class="w-3.5 h-3.5" aria-hidden="true"></lucide-angular>
                   Retirement Date
                 </div>
                 <p class="font-semibold text-slate-900 dark:text-white">
@@ -142,7 +142,7 @@ import {
                 <div
                   class="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wider mb-1"
                 >
-                  <lucide-angular [img]="User" class="w-3.5 h-3.5"></lucide-angular>
+                  <lucide-angular [img]="User" class="w-3.5 h-3.5" aria-hidden="true"></lucide-angular>
                   Retiree Address
                 </div>
                 <p class="font-semibold text-slate-900 dark:text-white font-mono text-sm">
@@ -163,7 +163,7 @@ import {
             <div class="border-t border-slate-200 dark:border-slate-700 pt-4 space-y-3">
               <div class="flex items-center justify-between text-sm">
                 <span class="text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                  <lucide-angular [img]="Hash" class="w-3.5 h-3.5"></lucide-angular>
+                  <lucide-angular [img]="Hash" class="w-3.5 h-3.5" aria-hidden="true"></lucide-angular>
                   Transaction Hash
                 </span>
                 <span class="font-mono text-xs text-slate-700 dark:text-slate-300">
@@ -175,7 +175,7 @@ import {
                 class="flex items-center justify-between text-sm"
               >
                 <span class="text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                  <lucide-angular [img]="ExternalLink" class="w-3.5 h-3.5"></lucide-angular>
+                  <lucide-angular [img]="ExternalLink" class="w-3.5 h-3.5" aria-hidden="true"></lucide-angular>
                   Certificate Metadata
                 </span>
                 <a
@@ -185,7 +185,7 @@ import {
                   class="text-stellar-blue hover:text-stellar-blue-light inline-flex items-center gap-1"
                 >
                   View on IPFS
-                  <lucide-angular [img]="ExternalLink" class="w-3 h-3"></lucide-angular>
+                  <lucide-angular [img]="ExternalLink" class="w-3 h-3" aria-hidden="true"></lucide-angular>
                 </a>
               </div>
             </div>
@@ -201,7 +201,7 @@ import {
               (click)="printCertificate()"
               class="btn btn-outline flex items-center gap-2 text-sm"
             >
-              <lucide-angular [img]="Printer" class="w-4 h-4"></lucide-angular>
+              <lucide-angular [img]="Printer" class="w-4 h-4" aria-hidden="true"></lucide-angular>
               Print / Download
             </button>
           </div>
@@ -215,7 +215,7 @@ import {
       >
         <lucide-angular
           [img]="Award"
-          class="w-16 h-16 text-slate-300 dark:text-slate-600 mx-auto mb-4"
+          class="w-16 h-16 text-slate-300 dark:text-slate-600 mx-auto mb-4" aria-hidden="true"
         ></lucide-angular>
         <h3 class="text-lg font-semibold text-slate-700 dark:text-slate-300">
           Certificate not found
@@ -224,7 +224,7 @@ import {
           The requested retirement certificate could not be loaded.
         </p>
         <a routerLink="/retirement" class="btn btn-primary mt-6 inline-flex items-center gap-2">
-          <lucide-angular [img]="ArrowLeft" class="w-4 h-4"></lucide-angular>
+          <lucide-angular [img]="ArrowLeft" class="w-4 h-4" aria-hidden="true"></lucide-angular>
           Back to Retirement History
         </a>
       </div>

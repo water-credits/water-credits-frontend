@@ -13,28 +13,31 @@ import {
   standalone: true,
   imports: [NgClass, NgIf, NgFor, LucideAngularModule],
   template: `
-    <div
+    <nav
+      aria-label="Pagination"
       class="flex items-center justify-between px-4 py-3 border-t border-slate-200 dark:border-slate-700"
     >
-      <div class="text-sm text-slate-600 dark:text-slate-400">
+      <div class="text-sm text-slate-600 dark:text-slate-400" aria-live="polite" aria-atomic="true">
         Showing <span class="font-medium">{{ startItem }}</span> to
         <span class="font-medium">{{ endItem }}</span> of
         <span class="font-medium">{{ total }}</span>
       </div>
-      <div class="flex items-center gap-1">
+      <div class="flex items-center gap-1" role="group" aria-label="Page navigation">
         <button
           (click)="goToPage.emit(1)"
           [disabled]="page === 1"
           class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed"
+          aria-label="First page"
         >
-          <lucide-angular [img]="ChevronsLeftIcon" class="w-4 h-4"></lucide-angular>
+          <lucide-angular [img]="ChevronsLeftIcon" class="w-4 h-4" aria-hidden="true"></lucide-angular>
         </button>
         <button
           (click)="goToPage.emit(page - 1)"
           [disabled]="page === 1"
           class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed"
+          aria-label="Previous page"
         >
-          <lucide-angular [img]="ChevronLeftIcon" class="w-4 h-4"></lucide-angular>
+          <lucide-angular [img]="ChevronLeftIcon" class="w-4 h-4" aria-hidden="true"></lucide-angular>
         </button>
         <ng-container *ngFor="let p of pages">
           <button
@@ -44,28 +47,32 @@ import {
               'bg-stellar-blue text-white': p === page,
               'hover:bg-slate-100 dark:hover:bg-slate-700': p !== page,
             }"
+            [attr.aria-current]="p === page ? 'page' : null"
+            [attr.aria-label]="p === page ? 'Page ' + p + ', current page' : 'Page ' + p"
             class="px-3 py-1 rounded-lg text-sm font-medium transition-colors"
           >
             {{ p }}
           </button>
-          <span *ngIf="p === -1" class="px-2 text-slate-400">...</span>
+          <span *ngIf="p === -1" class="px-2 text-slate-400" aria-hidden="true">...</span>
         </ng-container>
         <button
           (click)="goToPage.emit(page + 1)"
           [disabled]="page === totalPages"
           class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed"
+          aria-label="Next page"
         >
-          <lucide-angular [img]="ChevronRightIcon" class="w-4 h-4"></lucide-angular>
+          <lucide-angular [img]="ChevronRightIcon" class="w-4 h-4" aria-hidden="true"></lucide-angular>
         </button>
         <button
           (click)="goToPage.emit(totalPages)"
           [disabled]="page === totalPages"
           class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed"
+          aria-label="Last page"
         >
-          <lucide-angular [img]="ChevronsRightIcon" class="w-4 h-4"></lucide-angular>
+          <lucide-angular [img]="ChevronsRightIcon" class="w-4 h-4" aria-hidden="true"></lucide-angular>
         </button>
       </div>
-    </div>
+    </nav>
   `,
 })
 export class PaginationControlsComponent {

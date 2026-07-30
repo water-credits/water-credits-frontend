@@ -51,7 +51,7 @@ const PURPOSE_OPTIONS = [
         routerLink="/retirement"
         class="inline-flex items-center gap-1 text-sm text-stellar-blue hover:text-stellar-blue-light mb-6"
       >
-        <lucide-angular [img]="ChevronLeft" class="w-4 h-4"></lucide-angular>
+        <lucide-angular [img]="ChevronLeft" class="w-4 h-4" aria-hidden="true"></lucide-angular>
         Back to Retirement History
       </a>
 
@@ -76,11 +76,13 @@ const PURPOSE_OPTIONS = [
                 *ngIf="i < currentStep"
                 [img]="Check"
                 class="w-5 h-5"
+                aria-hidden="true"
               ></lucide-angular>
               <lucide-angular
                 *ngIf="i >= currentStep"
                 [img]="step.icon"
                 class="w-5 h-5"
+                aria-hidden="true"
               ></lucide-angular>
             </div>
             <div
@@ -105,12 +107,15 @@ const PURPOSE_OPTIONS = [
           <!-- Step 0: Project selection -->
           <div *ngSwitchCase="0" class="space-y-4">
             <div class="relative">
+              <label for="retirement-project-search" class="sr-only">Search projects</label>
               <lucide-angular
                 [img]="Search"
                 class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"
+                aria-hidden="true"
               ></lucide-angular>
               <input
-                type="text"
+                id="retirement-project-search"
+                type="search"
                 [(ngModel)]="searchQuery"
                 (input)="filterProjects()"
                 class="input pl-10"
@@ -153,21 +158,24 @@ const PURPOSE_OPTIONS = [
           <!-- Step 1: Amount -->
           <div *ngSwitchCase="1" class="space-y-4">
             <div>
-              <label class="label">Amount of Credits to Retire *</label>
+              <label for="retirement-amount" class="label">Amount of Credits to Retire *</label>
               <div class="relative">
                 <input
+                  id="retirement-amount"
                   type="number"
                   [(ngModel)]="amount"
+                  name="retirement-amount"
                   min="1"
                   step="0.01"
                   class="input pl-8"
                   placeholder="e.g., 100"
+                  aria-describedby="retirement-amount-hint"
                 />
-                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400"
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400" aria-hidden="true"
                   >#</span
                 >
               </div>
-              <p class="text-xs text-slate-500 dark:text-slate-400 mt-1.5">
+              <p id="retirement-amount-hint" class="text-xs text-slate-500 dark:text-slate-400 mt-1.5">
                 Enter the number of water quality credits you wish to permanently retire.
               </p>
             </div>
@@ -182,8 +190,8 @@ const PURPOSE_OPTIONS = [
           <!-- Step 2: Purpose -->
           <div *ngSwitchCase="2" class="space-y-4">
             <div>
-              <label class="label">Retirement Purpose *</label>
-              <select [(ngModel)]="purpose" class="input">
+              <label for="retirement-purpose" class="label">Retirement Purpose *</label>
+              <select id="retirement-purpose" [(ngModel)]="purpose" name="retirement-purpose" class="input">
                 <option value="">Select a purpose...</option>
                 <option *ngFor="let opt of purposeOptions" [value]="opt">{{ opt }}</option>
               </select>
@@ -232,7 +240,7 @@ const PURPOSE_OPTIONS = [
               <h3 class="font-medium text-slate-900 dark:text-white flex items-center gap-2">
                 <lucide-angular
                   [img]="ClipboardList"
-                  class="w-5 h-5 text-stellar-blue"
+                  class="w-5 h-5 text-stellar-blue" aria-hidden="true"
                 ></lucide-angular>
                 Review Retirement
               </h3>

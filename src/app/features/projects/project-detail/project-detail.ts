@@ -72,7 +72,7 @@ type ProjectTab = 'overview' | 'sensors';
           routerLink="/projects"
           class="inline-flex items-center gap-1 text-sm text-stellar-blue hover:text-stellar-blue-light mb-4"
         >
-          <lucide-angular [img]="ArrowLeft" class="w-4 h-4"></lucide-angular>
+          <lucide-angular [img]="ArrowLeft" class="w-4 h-4" aria-hidden="true"></lucide-angular>
           Back to Projects
         </a>
         <div class="flex items-start justify-between">
@@ -111,7 +111,7 @@ type ProjectTab = 'overview' | 'sensors';
           [class.text-slate-500]="activeTab !== 'sensors'"
           class="px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors flex items-center gap-1.5"
         >
-          <lucide-angular [img]="Droplets" class="w-3.5 h-3.5"></lucide-angular>
+          <lucide-angular [img]="Droplets" class="w-3.5 h-3.5" aria-hidden="true"></lucide-angular>
           Sensors
         </button>
       </div>
@@ -134,7 +134,7 @@ type ProjectTab = 'overview' | 'sensors';
                   <p class="text-sm font-medium flex items-center gap-1">
                     <lucide-angular
                       [img]="Ruler"
-                      class="w-3.5 h-3.5 text-slate-400"
+                      class="w-3.5 h-3.5 text-slate-400" aria-hidden="true"
                     ></lucide-angular>
                     {{ project.areaHectares }} hectares
                   </p>
@@ -144,7 +144,7 @@ type ProjectTab = 'overview' | 'sensors';
                   <p class="text-sm font-medium flex items-center gap-1">
                     <lucide-angular
                       [img]="MapPin"
-                      class="w-3.5 h-3.5 text-slate-400"
+                      class="w-3.5 h-3.5 text-slate-400" aria-hidden="true"
                     ></lucide-angular>
                     {{ project.latitude.toFixed(4) }}, {{ project.longitude.toFixed(4) }}
                   </p>
@@ -156,7 +156,7 @@ type ProjectTab = 'overview' | 'sensors';
                   <p class="text-sm font-medium flex items-center gap-1">
                     <lucide-angular
                       [img]="Calendar"
-                      class="w-3.5 h-3.5 text-slate-400"
+                      class="w-3.5 h-3.5 text-slate-400" aria-hidden="true"
                     ></lucide-angular>
                     {{ project.baselineStart | dateFormat: 'short' }} -
                     {{ project.baselineEnd | dateFormat: 'short' }}
@@ -205,7 +205,7 @@ type ProjectTab = 'overview' | 'sensors';
               <h3
                 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2"
               >
-                <lucide-angular [img]="FileText" class="w-4 h-4 text-stellar-blue"></lucide-angular>
+                <lucide-angular [img]="FileText" class="w-4 h-4 text-stellar-blue" aria-hidden="true"></lucide-angular>
                 Documents
               </h3>
               <div class="text-center py-6 text-sm text-slate-400">No documents uploaded</div>
@@ -215,7 +215,7 @@ type ProjectTab = 'overview' | 'sensors';
               <h3
                 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2"
               >
-                <lucide-angular [img]="Activity" class="w-4 h-4 text-stellar-blue"></lucide-angular>
+                <lucide-angular [img]="Activity" class="w-4 h-4 text-stellar-blue" aria-hidden="true"></lucide-angular>
                 Recent Activity
               </h3>
               <div class="text-center py-6 text-sm text-slate-400">No recent activity</div>
@@ -238,7 +238,7 @@ type ProjectTab = 'overview' | 'sensors';
             >
               <lucide-angular
                 [img]="Droplets"
-                class="w-10 h-10 mx-auto mb-3 text-slate-300"
+                class="w-10 h-10 mx-auto mb-3 text-slate-300" aria-hidden="true"
               ></lucide-angular>
               No sensor readings available for this project yet.
             </div>

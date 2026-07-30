@@ -20,7 +20,7 @@ import { selectAuthLoading, selectAuthError } from '../../../core/store/auth/aut
           <div
             class="w-16 h-16 rounded-2xl bg-stellar-blue flex items-center justify-center mx-auto mb-4"
           >
-            <lucide-angular [img]="DropletsIcon" class="w-8 h-8 text-white"></lucide-angular>
+            <lucide-angular [img]="DropletsIcon" class="w-8 h-8 text-white" aria-hidden="true"></lucide-angular>
           </div>
           <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Water Credits</h1>
           <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">

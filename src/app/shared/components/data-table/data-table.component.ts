@@ -50,12 +50,17 @@ export class DataTableComponent<T extends object = Record<string, unknown>> impl
   @Input() sortDirection: SortDirection = 'asc';
   @Input() virtualScroll = false;
   @Input() rowHeight = 48;
+  /** Accessible label for the table (used as aria-label). */
+  @Input() tableLabel = 'Data table';
 
   @Output() sort = new EventEmitter<SortEvent>();
   @Output() page = new EventEmitter<number>();
   @Output() rowClick = new EventEmitter<T>();
 
   @ContentChild('row') rowTemplate?: TemplateRef<{ $implicit: T; column: ColumnDef<T> }>;
+
+  /** The currently keyboard-focused row index (−1 = no row focused). */
+  protected focusedRowIndex = -1;
 
   protected internalSortColumn = '';
   protected internalSortDirection: SortDirection = 'asc';
@@ -65,12 +70,13 @@ export class DataTableComponent<T extends object = Record<string, unknown>> impl
       this.internalSortColumn = this.sortColumn;
       this.internalSortDirection = this.sortDirection;
     }
+    // Reset focused row when data changes
+    if (changes['data']) {
+      this.focusedRowIndex = -1;
+    }
   }
 
   // Arrow-bound: cdkVirtualFor invokes trackBy as a plain function call
-  // (not a method call on the component), so a normal method would lose
-  // its `this` binding. *ngFor's differ happens to preserve `this`, but
-  // we can't rely on that difference between the two rendering paths.
   protected trackByRow = (index: number, item: T): unknown => {
     if (this.trackByFn) {
       return this.trackByFn(index, item);
@@ -99,8 +105,55 @@ export class DataTableComponent<T extends object = Record<string, unknown>> impl
     this.sort.emit({ column: this.internalSortColumn, direction: this.internalSortDirection });
   }
 
-  protected onRowClick(row: T): void {
+  protected onRowClick(row: T, index: number): void {
+    this.focusedRowIndex = index;
     this.rowClick.emit(row);
+  }
+
+  /**
+   * Keyboard handler for the tbody.
+   * - Arrow Up/Down: move focus between rows
+   * - Enter/Space: activate the focused row (same as click)
+   * - Home/End: jump to first/last row
+   */
+  protected onRowKeydown(event: KeyboardEvent, row: T, index: number): void {
+    switch (event.key) {
+      case 'ArrowDown':
+        event.preventDefault();
+        this.moveFocus(Math.min(index + 1, this.data.length - 1));
+        break;
+      case 'ArrowUp':
+        event.preventDefault();
+        this.moveFocus(Math.max(index - 1, 0));
+        break;
+      case 'Home':
+        event.preventDefault();
+        this.moveFocus(0);
+        break;
+      case 'End':
+        event.preventDefault();
+        this.moveFocus(this.data.length - 1);
+        break;
+      case 'Enter':
+      case ' ':
+        event.preventDefault();
+        this.rowClick.emit(row);
+        break;
+    }
+  }
+
+  private moveFocus(targetIndex: number): void {
+    this.focusedRowIndex = targetIndex;
+    // The tabindex binding will update; trigger focus via querySelector
+    // We use setTimeout(0) to let Angular render the tabindex change first
+    setTimeout(() => {
+      const tbody = document.querySelector('.data-table tbody');
+      if (!tbody) return;
+      const rows = tbody.querySelectorAll<HTMLElement>('tr[role="row"]');
+      if (rows[targetIndex]) {
+        rows[targetIndex].focus();
+      }
+    }, 0);
   }
 
   protected onPageSelected(page: unknown): void {
@@ -133,5 +186,11 @@ export class DataTableComponent<T extends object = Record<string, unknown>> impl
   protected displayText(column: ColumnDef<T>, row: T): unknown {
     const key = this.asStringKey(column.key as string | number | symbol);
     return this.getItemValue(row, key);
+  }
+
+  /** Sort direction label for aria-sort attribute on th elements */
+  protected ariaSortValue(column: ColumnDef<T>): 'ascending' | 'descending' | 'none' {
+    if (this.internalSortColumn !== String(column.key)) return 'none';
+    return this.internalSortDirection === 'asc' ? 'ascending' : 'descending';
   }
 }

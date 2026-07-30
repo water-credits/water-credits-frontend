@@ -58,14 +58,14 @@ import {
             routerLink="/credits"
             class="inline-flex items-center gap-1 text-sm text-stellar-blue hover:text-stellar-blue-light mb-4"
           >
-            <lucide-angular [img]="ArrowLeftIcon" class="w-4 h-4"></lucide-angular>
+            <lucide-angular [img]="ArrowLeftIcon" class="w-4 h-4" aria-hidden="true"></lucide-angular>
             Back to Portfolio
           </a>
           <div class="flex items-center gap-3 mb-2">
             <div class="w-10 h-10 rounded-lg bg-stellar-blue/10 flex items-center justify-center">
               <lucide-angular
                 [img]="DropletsIcon"
-                class="w-5 h-5 text-stellar-blue"
+                class="w-5 h-5 text-stellar-blue" aria-hidden="true"
               ></lucide-angular>
             </div>
             <div>
@@ -88,7 +88,7 @@ import {
               <div class="w-8 h-8 rounded-lg bg-stellar-blue/10 flex items-center justify-center">
                 <lucide-angular
                   [img]="TrendingUpIcon"
-                  class="w-4 h-4 text-stellar-blue"
+                  class="w-4 h-4 text-stellar-blue" aria-hidden="true"
                 ></lucide-angular>
               </div>
             </div>
@@ -108,7 +108,7 @@ import {
               >
                 <lucide-angular
                   [img]="ShieldCheckIcon"
-                  class="w-4 h-4 text-environmental-green"
+                  class="w-4 h-4 text-environmental-green" aria-hidden="true"
                 ></lucide-angular>
               </div>
             </div>
@@ -126,7 +126,7 @@ import {
               <div class="w-8 h-8 rounded-lg bg-credit-gold/10 flex items-center justify-center">
                 <lucide-angular
                   [img]="DropletsIcon"
-                  class="w-4 h-4 text-credit-gold"
+                  class="w-4 h-4 text-credit-gold" aria-hidden="true"
                 ></lucide-angular>
               </div>
             </div>
@@ -144,7 +144,7 @@ import {
               <div class="w-8 h-8 rounded-lg bg-credit-gold/10 flex items-center justify-center">
                 <lucide-angular
                   [img]="DollarSignIcon"
-                  class="w-4 h-4 text-credit-gold"
+                  class="w-4 h-4 text-credit-gold" aria-hidden="true"
                 ></lucide-angular>
               </div>
             </div>
@@ -224,7 +224,7 @@ import {
                                 ? ArrowDownRightIcon
                                 : ArrowLeftRightIcon
                           "
-                          class="w-3.5 h-3.5"
+                          class="w-3.5 h-3.5" aria-hidden="true"
                         ></lucide-angular>
                       </div>
                       <span class="text-sm font-medium text-slate-900 dark:text-white capitalize">{{
@@ -245,7 +245,7 @@ import {
                       {{ tx.from | stellarAddress }}
                       <lucide-angular
                         [img]="ArrowRightIcon"
-                        class="w-3 h-3 text-slate-400"
+                        class="w-3 h-3 text-slate-400" aria-hidden="true"
                       ></lucide-angular>
                     </span>
                     <span *ngIf="tx.to">{{ tx.to | stellarAddress }}</span>

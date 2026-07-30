@@ -61,7 +61,7 @@ import { selectCurrentUser } from '../../../core/store/auth/auth.selectors';
           </p>
         </div>
         <a routerLink="/governance/new" class="btn btn-primary inline-flex items-center gap-2">
-          <lucide-angular [img]="PlusIcon" class="w-4 h-4"></lucide-angular>
+          <lucide-angular [img]="PlusIcon" class="w-4 h-4" aria-hidden="true"></lucide-angular>
           New Proposal
         </a>
       </div>
@@ -76,7 +76,7 @@ import { selectCurrentUser } from '../../../core/store/auth/auth.selectors';
       >
         <div class="card p-4">
           <div class="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mb-2">
-            <lucide-angular [img]="ScaleIcon" class="w-3.5 h-3.5"></lucide-angular>
+            <lucide-angular [img]="ScaleIcon" class="w-3.5 h-3.5" aria-hidden="true"></lucide-angular>
             <span>Protocol Fee</span>
           </div>
           <p class="text-lg font-semibold text-slate-900 dark:text-white">
@@ -85,7 +85,7 @@ import { selectCurrentUser } from '../../../core/store/auth/auth.selectors';
         </div>
         <div class="card p-4">
           <div class="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mb-2">
-            <lucide-angular [img]="ClockIcon" class="w-3.5 h-3.5"></lucide-angular>
+            <lucide-angular [img]="ClockIcon" class="w-3.5 h-3.5" aria-hidden="true"></lucide-angular>
             <span>Vote Duration</span>
           </div>
           <p class="text-lg font-semibold text-slate-900 dark:text-white">
@@ -94,7 +94,7 @@ import { selectCurrentUser } from '../../../core/store/auth/auth.selectors';
         </div>
         <div class="card p-4">
           <div class="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mb-2">
-            <lucide-angular [img]="ShieldIcon" class="w-3.5 h-3.5"></lucide-angular>
+            <lucide-angular [img]="ShieldIcon" class="w-3.5 h-3.5" aria-hidden="true"></lucide-angular>
             <span>Timelock</span>
           </div>
           <p class="text-lg font-semibold text-slate-900 dark:text-white">
@@ -103,7 +103,7 @@ import { selectCurrentUser } from '../../../core/store/auth/auth.selectors';
         </div>
         <div class="card p-4">
           <div class="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mb-2">
-            <lucide-angular [img]="TrendingUpIcon" class="w-3.5 h-3.5"></lucide-angular>
+            <lucide-angular [img]="TrendingUpIcon" class="w-3.5 h-3.5" aria-hidden="true"></lucide-angular>
             <span>Quorum</span>
           </div>
           <p class="text-lg font-semibold text-slate-900 dark:text-white">
@@ -112,7 +112,7 @@ import { selectCurrentUser } from '../../../core/store/auth/auth.selectors';
         </div>
         <div class="card p-4">
           <div class="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mb-2">
-            <lucide-angular [img]="ActivityIcon" class="w-3.5 h-3.5"></lucide-angular>
+            <lucide-angular [img]="ActivityIcon" class="w-3.5 h-3.5" aria-hidden="true"></lucide-angular>
             <span>Oracle Threshold</span>
           </div>
           <p class="text-lg font-semibold text-slate-900 dark:text-white">
@@ -121,7 +121,7 @@ import { selectCurrentUser } from '../../../core/store/auth/auth.selectors';
         </div>
         <div class="card p-4">
           <div class="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mb-2">
-            <lucide-angular [img]="UsersIcon" class="w-3.5 h-3.5"></lucide-angular>
+            <lucide-angular [img]="UsersIcon" class="w-3.5 h-3.5" aria-hidden="true"></lucide-angular>
             <span>Quality Penalty</span>
           </div>
           <p class="text-lg font-semibold text-slate-900 dark:text-white">
@@ -130,7 +130,7 @@ import { selectCurrentUser } from '../../../core/store/auth/auth.selectors';
         </div>
         <div class="card p-4">
           <div class="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mb-2">
-            <lucide-angular [img]="VoteIcon" class="w-3.5 h-3.5"></lucide-angular>
+            <lucide-angular [img]="VoteIcon" class="w-3.5 h-3.5" aria-hidden="true"></lucide-angular>
             <span>N-Removal Weight</span>
           </div>
           <p class="text-lg font-semibold text-slate-900 dark:text-white">
@@ -139,7 +139,7 @@ import { selectCurrentUser } from '../../../core/store/auth/auth.selectors';
         </div>
         <div class="card p-4">
           <div class="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mb-2">
-            <lucide-angular [img]="VoteIcon" class="w-3.5 h-3.5"></lucide-angular>
+            <lucide-angular [img]="VoteIcon" class="w-3.5 h-3.5" aria-hidden="true"></lucide-angular>
             <span>P-Removal Weight</span>
           </div>
           <p class="text-lg font-semibold text-slate-900 dark:text-white">
@@ -198,7 +198,7 @@ import { selectCurrentUser } from '../../../core/store/auth/auth.selectors';
                 >
                   <lucide-angular
                     [img]="ClockIcon"
-                    class="w-3.5 h-3.5 text-slate-400"
+                    class="w-3.5 h-3.5 text-slate-400" aria-hidden="true"
                   ></lucide-angular>
                   <span>{{ row.deadline | duration }} left</span>
                 </span>

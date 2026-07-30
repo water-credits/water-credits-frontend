@@ -20,14 +20,14 @@ import { LucideAngularModule, Droplets, TrendingUp, MapPin } from 'lucide-angula
             <app-status-badge [status]="project?.status || ''"></app-status-badge>
           </div>
           <div class="w-10 h-10 rounded-lg bg-stellar-blue/10 flex items-center justify-center">
-            <lucide-angular [img]="DropletsIcon" class="w-5 h-5 text-stellar-blue"></lucide-angular>
+            <lucide-angular [img]="DropletsIcon" class="w-5 h-5 text-stellar-blue" aria-hidden="true"></lucide-angular>
           </div>
         </div>
         <div
           *ngIf="showLocation"
           class="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400 mb-3"
         >
-          <lucide-angular [img]="MapPinIcon" class="w-3 h-3"></lucide-angular>
+          <lucide-angular [img]="MapPinIcon" class="w-3 h-3" aria-hidden="true"></lucide-angular>
           <span>{{ project?.latitude?.toFixed(4) }}, {{ project?.longitude?.toFixed(4) }}</span>
         </div>
         <div class="grid grid-cols-2 gap-4 mt-4">
@@ -44,7 +44,7 @@ import { LucideAngularModule, Droplets, TrendingUp, MapPin } from 'lucide-angula
           class="flex items-center justify-between mt-3 pt-3 border-t border-slate-100 dark:border-slate-700"
         >
           <div class="flex items-center gap-1 text-xs text-slate-500">
-            <lucide-angular [img]="TrendingUpIcon" class="w-3 h-3"></lucide-angular>
+            <lucide-angular [img]="TrendingUpIcon" class="w-3 h-3" aria-hidden="true"></lucide-angular>
             <span>{{ retired | creditAmount }} retired</span>
           </div>
           <span class="text-xs text-slate-400">{{ area }} ha</span>

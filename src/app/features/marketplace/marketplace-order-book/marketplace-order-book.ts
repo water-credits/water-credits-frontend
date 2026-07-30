@@ -31,7 +31,7 @@ import { CreditAmountPipe } from '../../../shared/pipes/credit-amount.pipe';
     <div class="space-y-6">
       <div class="flex items-center gap-4">
         <a routerLink="/marketplace" class="btn btn-ghost btn-sm">
-          <lucide-angular [img]="ArrowLeftIcon" class="w-4 h-4"></lucide-angular>
+          <lucide-angular [img]="ArrowLeftIcon" class="w-4 h-4" aria-hidden="true"></lucide-angular>
           Back to Marketplace
         </a>
         <div>
@@ -63,7 +63,7 @@ import { CreditAmountPipe } from '../../../shared/pipes/credit-amount.pipe';
               <div class="flex items-center gap-2">
                 <lucide-angular
                   [img]="TrendingDownIcon"
-                  class="w-4 h-4 text-red-500"
+                  class="w-4 h-4 text-red-500" aria-hidden="true"
                 ></lucide-angular>
                 <h2 class="font-semibold text-red-700 dark:text-red-400">Asks (Sell Orders)</h2>
               </div>
@@ -143,7 +143,7 @@ import { CreditAmountPipe } from '../../../shared/pipes/credit-amount.pipe';
               <div class="flex items-center gap-2">
                 <lucide-angular
                   [img]="TrendingUpIcon"
-                  class="w-4 h-4 text-green-500"
+                  class="w-4 h-4 text-green-500" aria-hidden="true"
                 ></lucide-angular>
                 <h2 class="font-semibold text-green-700 dark:text-green-400">Bids (Buy Orders)</h2>
               </div>

@@ -37,6 +37,11 @@ module.exports = {
         sans: ['Inter', 'sans-serif'],
         mono: ['JetBrains Mono', 'monospace'],
       },
+      // Explicit ring-offset colors for dark/light focus rings (WCAG 2.4.7)
+      ringOffsetColor: {
+        'dark-bg': '#0F172A',
+        'dark-bg-lighter': '#1E293B',
+      },
     },
   },
   plugins: [],

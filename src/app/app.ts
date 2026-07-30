@@ -2,6 +2,7 @@ import { Component, OnDestroy, OnInit, PLATFORM_ID, inject, signal } from '@angu
 import { isPlatformBrowser } from '@angular/common';
 import { RouterOutlet } from '@angular/router';
 import { LucideAngularModule, WifiOff } from 'lucide-angular';
+import { AnnouncerService } from './core/services/announcer.service';
 
 @Component({
   selector: 'app-root',
@@ -15,6 +16,11 @@ export class App implements OnInit, OnDestroy {
 
   protected readonly isOnline = signal<boolean>(true);
   protected readonly WifiOff = WifiOff;
+
+  // Injected for its side-effect: it listens to NavigationEnd and announces
+  // route changes to screen readers (WCAG 4.1.3). No public API needed here.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  private readonly _announcer = inject(AnnouncerService);
 
   ngOnInit(): void {
     if (!isPlatformBrowser(this.platformId)) {

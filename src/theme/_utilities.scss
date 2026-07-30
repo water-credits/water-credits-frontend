@@ -1,12 +1,43 @@
+// ─── Skip-to-main-content link (WCAG 2.4.1) ────────────────────────────────
+// Visually hidden until keyboard-focused. Must be the first focusable element.
+.skip-link {
+  @apply absolute left-4 top-4 z-[9999] px-4 py-2 bg-stellar-blue text-white text-sm font-medium rounded-lg;
+  // Hidden off-screen when not focused
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  height: 1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+
+  &:focus {
+    clip: auto;
+    clip-path: none;
+    height: auto;
+    overflow: visible;
+    position: fixed;
+    white-space: normal;
+    width: auto;
+    outline: 3px solid white;
+    outline-offset: 2px;
+  }
+}
+
+// ─── Buttons ────────────────────────────────────────────────────────────────
 .btn {
   @apply px-4 py-2 rounded-lg font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
+  // Visible focus ring for keyboard navigation (WCAG 2.4.7)
+  @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-stellar-blue;
 
   &-primary {
     @apply bg-stellar-blue text-white hover:bg-stellar-blue-dark active:scale-95;
+    @apply focus-visible:ring-stellar-blue focus-visible:ring-offset-white dark:focus-visible:ring-offset-dark-bg;
   }
 
   &-secondary {
     @apply bg-environmental-green text-white hover:bg-environmental-green-dark active:scale-95;
+    @apply focus-visible:ring-environmental-green;
   }
 
   &-outline {
@@ -15,17 +46,38 @@
 
   &-danger {
     @apply bg-retirement-red text-white hover:bg-retirement-red-dark active:scale-95;
+    @apply focus-visible:ring-retirement-red;
+  }
+
+  // Ghost variant – used in marketplace and other areas
+  &-ghost {
+    @apply text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 active:scale-95;
+    @apply px-3 py-1.5;
+  }
+
+  &-sm {
+    @apply px-3 py-1.5 text-sm;
   }
 }
 
+// ─── Card ────────────────────────────────────────────────────────────────────
 .card {
   @apply bg-white dark:bg-dark-bg-lighter rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden;
 }
 
+// ─── Form inputs ─────────────────────────────────────────────────────────────
 .input {
   @apply w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-dark-bg-lightest text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-stellar-blue transition-all;
 }
 
 .label {
   @apply block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1;
+}
+
+// ─── Generic interactive element focus ring ───────────────────────────────
+// Applied to icon-buttons in header / sidebar etc. that don't use .btn
+a:focus-visible,
+button:focus-visible {
+  @apply outline-none ring-2 ring-offset-2 ring-stellar-blue;
+  border-radius: 0.375rem; // keep consistent rounding
 }

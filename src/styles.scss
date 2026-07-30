@@ -48,6 +48,29 @@ a {
   }
 }
 
+/* ── Reduced-motion: disable all non-essential animations (WCAG 2.3.3) ── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ── High-contrast mode: thicken borders and rings (WCAG 1.4.11) ─────── */
+@media (prefers-contrast: more) {
+  .btn {
+    outline: 2px solid currentColor;
+  }
+
+  .input {
+    border-width: 2px;
+  }
+}
+
 /* PWA update-available toast (rendered by DashboardComponent) */
 .update-toast {
   display: flex;

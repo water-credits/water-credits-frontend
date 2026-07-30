@@ -23,7 +23,7 @@ import { getErrorMessage } from '../../../core/utils/error.utils';
         </div>
         <div class="flex items-center gap-2">
           <button (click)="resetForm()" class="btn btn-outline flex items-center gap-2">
-            <lucide-angular [img]="RotateCcw" class="w-4 h-4"></lucide-angular>
+            <lucide-angular [img]="RotateCcw" class="w-4 h-4" aria-hidden="true"></lucide-angular>
             Reset
           </button>
           <button
@@ -31,7 +31,7 @@ import { getErrorMessage } from '../../../core/utils/error.utils';
             [disabled]="saving"
             class="btn btn-primary flex items-center gap-2"
           >
-            <lucide-angular [img]="Save" class="w-4 h-4"></lucide-angular>
+            <lucide-angular [img]="Save" class="w-4 h-4" aria-hidden="true"></lucide-angular>
             {{ saving ? 'Saving...' : 'Save Changes' }}
           </button>
         </div>
@@ -46,7 +46,7 @@ import { getErrorMessage } from '../../../core/utils/error.utils';
           <h3
             class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-6 flex items-center gap-2"
           >
-            <lucide-angular [img]="Settings" class="w-4 h-4 text-slate-400"></lucide-angular>
+            <lucide-angular [img]="Settings" class="w-4 h-4 text-slate-400" aria-hidden="true"></lucide-angular>
             Governance Configuration
           </h3>
 

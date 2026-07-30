@@ -144,12 +144,12 @@ const CHART_THRESHOLDS: Record<string, { low?: number; high?: number }> = {
             <lucide-angular
               [img]="RefreshCwIcon"
               class="w-3.5 h-3.5"
-              [class.animate-spin]="autoRefresh"
+              [class.animate-spin]="autoRefresh" aria-hidden="true"
             ></lucide-angular>
             {{ autoRefresh ? 'Auto' : 'Manual' }}
           </button>
           <a routerLink="/sensors/config" class="btn btn-outline flex items-center gap-2 text-xs">
-            <lucide-angular [img]="SettingsIcon" class="w-3.5 h-3.5"></lucide-angular>
+            <lucide-angular [img]="SettingsIcon" class="w-3.5 h-3.5" aria-hidden="true"></lucide-angular>
             Configure
           </a>
         </div>
@@ -171,7 +171,7 @@ const CHART_THRESHOLDS: Record<string, { low?: number; high?: number }> = {
                   <lucide-angular
                     [img]="param.icon"
                     class="w-4 h-4"
-                    [style.color]="param.color"
+                    [style.color]="param.color" aria-hidden="true"
                   ></lucide-angular>
                 </div>
                 <span
@@ -243,7 +243,7 @@ const CHART_THRESHOLDS: Record<string, { low?: number; high?: number }> = {
                     <lucide-angular
                       [img]="param.icon"
                       class="w-3 h-3"
-                      [style.color]="param.color"
+                      [style.color]="param.color" aria-hidden="true"
                     ></lucide-angular>
                   </div>
                   <span class="text-sm text-slate-600 dark:text-slate-400">{{ param.label }}</span>

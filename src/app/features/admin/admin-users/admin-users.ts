@@ -94,7 +94,7 @@ import { getErrorMessage } from '../../../core/utils/error.utils';
                 (click)="confirmDelete(user)"
                 class="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
               >
-                <lucide-angular [img]="Trash2" class="w-4 h-4"></lucide-angular>
+                <lucide-angular [img]="Trash2" class="w-4 h-4" aria-hidden="true"></lucide-angular>
               </button>
             </span>
 

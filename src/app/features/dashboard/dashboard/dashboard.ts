@@ -68,7 +68,7 @@ const SENSOR_THRESHOLDS: Record<string, { low?: number; high?: number }> = {
   template: `
     @if (updateAvailable()) {
       <div class="update-toast" role="status" aria-live="polite">
-        <lucide-angular [img]="RefreshCw" class="update-toast__icon"></lucide-angular>
+        <lucide-angular [img]="RefreshCw" class="update-toast__icon" aria-hidden="true"></lucide-angular>
         <span class="update-toast__text">A new version is available.</span>
         <button type="button" class="update-toast__btn" (click)="reloadApp()">Reload</button>
       </div>
@@ -106,7 +106,7 @@ const SENSOR_THRESHOLDS: Record<string, { low?: number; high?: number }> = {
                 Total Projects
               </p>
               <div class="w-9 h-9 rounded-lg bg-stellar-blue/10 flex items-center justify-center">
-                <lucide-angular [img]="Leaf" class="w-4 h-4 text-stellar-blue"></lucide-angular>
+                <lucide-angular [img]="Leaf" class="w-4 h-4 text-stellar-blue" aria-hidden="true"></lucide-angular>
               </div>
             </div>
             <p class="text-2xl font-bold text-slate-900 dark:text-white">
@@ -129,7 +129,7 @@ const SENSOR_THRESHOLDS: Record<string, { low?: number; high?: number }> = {
               >
                 <lucide-angular
                   [img]="Coins"
-                  class="w-4 h-4 text-environmental-green"
+                  class="w-4 h-4 text-environmental-green" aria-hidden="true"
                 ></lucide-angular>
               </div>
             </div>
@@ -148,7 +148,7 @@ const SENSOR_THRESHOLDS: Record<string, { low?: number; high?: number }> = {
               <div class="w-9 h-9 rounded-lg bg-credit-gold/10 flex items-center justify-center">
                 <lucide-angular
                   [img]="TrendingUp"
-                  class="w-4 h-4 text-credit-gold"
+                  class="w-4 h-4 text-credit-gold" aria-hidden="true"
                 ></lucide-angular>
               </div>
             </div>
@@ -170,7 +170,7 @@ const SENSOR_THRESHOLDS: Record<string, { low?: number; high?: number }> = {
               <div class="w-9 h-9 rounded-lg bg-retirement-red/10 flex items-center justify-center">
                 <lucide-angular
                   [img]="Activity"
-                  class="w-4 h-4 text-retirement-red"
+                  class="w-4 h-4 text-retirement-red" aria-hidden="true"
                 ></lucide-angular>
               </div>
             </div>
@@ -220,7 +220,7 @@ const SENSOR_THRESHOLDS: Record<string, { low?: number; high?: number }> = {
             >
               <lucide-angular
                 [img]="AlertTriangle"
-                class="w-8 h-8 mx-auto mb-2 text-credit-gold"
+                class="w-8 h-8 mx-auto mb-2 text-credit-gold" aria-hidden="true"
               ></lucide-angular>
               No active alerts
             </div>
@@ -230,7 +230,7 @@ const SENSOR_THRESHOLDS: Record<string, { low?: number; high?: number }> = {
             >
               <lucide-angular
                 [img]="AlertTriangle"
-                class="w-4 h-4 text-credit-gold mt-0.5 shrink-0"
+                class="w-4 h-4 text-credit-gold mt-0.5 shrink-0" aria-hidden="true"
               ></lucide-angular>
               <div>
                 <p class="text-sm font-medium text-slate-700 dark:text-slate-300">

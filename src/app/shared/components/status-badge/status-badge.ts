@@ -9,8 +9,9 @@ import { NgClass } from '@angular/common';
     <span
       [ngClass]="colorClasses"
       class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize"
+      role="status"
     >
-      <span class="w-1.5 h-1.5 rounded-full mr-1.5" [ngClass]="dotColor"></span>
+      <span class="w-1.5 h-1.5 rounded-full mr-1.5" [ngClass]="dotColor" aria-hidden="true"></span>
       {{ label || status }}
     </span>
   `,

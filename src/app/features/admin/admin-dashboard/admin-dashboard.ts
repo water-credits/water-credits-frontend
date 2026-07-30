@@ -64,7 +64,7 @@ import { LoggingService } from '../../../core/services/logging.service';
           </p>
         </div>
         <button (click)="refresh()" class="btn btn-outline text-sm flex items-center gap-2">
-          <lucide-angular [img]="RefreshCwIcon" class="w-4 h-4"></lucide-angular>
+          <lucide-angular [img]="RefreshCwIcon" class="w-4 h-4" aria-hidden="true"></lucide-angular>
           Refresh
         </button>
       </div>
@@ -95,7 +95,7 @@ import { LoggingService } from '../../../core/services/logging.service';
               <div class="w-9 h-9 rounded-lg bg-stellar-blue/10 flex items-center justify-center">
                 <lucide-angular
                   [img]="UsersIcon"
-                  class="w-4 h-4 text-stellar-blue"
+                  class="w-4 h-4 text-stellar-blue" aria-hidden="true"
                 ></lucide-angular>
               </div>
             </div>
@@ -116,7 +116,7 @@ import { LoggingService } from '../../../core/services/logging.service';
               >
                 <lucide-angular
                   [img]="Building2Icon"
-                  class="w-4 h-4 text-environmental-green"
+                  class="w-4 h-4 text-environmental-green" aria-hidden="true"
                 ></lucide-angular>
               </div>
             </div>
@@ -138,7 +138,7 @@ import { LoggingService } from '../../../core/services/logging.service';
               <div class="w-9 h-9 rounded-lg bg-credit-gold/10 flex items-center justify-center">
                 <lucide-angular
                   [img]="ShieldCheckIcon"
-                  class="w-4 h-4 text-credit-gold"
+                  class="w-4 h-4 text-credit-gold" aria-hidden="true"
                 ></lucide-angular>
               </div>
             </div>
@@ -157,7 +157,7 @@ import { LoggingService } from '../../../core/services/logging.service';
               <div class="w-9 h-9 rounded-lg bg-retirement-red/10 flex items-center justify-center">
                 <lucide-angular
                   [img]="RefreshCwIcon"
-                  class="w-4 h-4 text-retirement-red"
+                  class="w-4 h-4 text-retirement-red" aria-hidden="true"
                 ></lucide-angular>
               </div>
             </div>
@@ -172,7 +172,7 @@ import { LoggingService } from '../../../core/services/logging.service';
             <h3
               class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-4 flex items-center gap-2"
             >
-              <lucide-angular [img]="ClockIcon" class="w-4 h-4 text-slate-400"></lucide-angular>
+              <lucide-angular [img]="ClockIcon" class="w-4 h-4 text-slate-400" aria-hidden="true"></lucide-angular>
               Queue Depths
             </h3>
             <div class="space-y-3">
@@ -207,7 +207,7 @@ import { LoggingService } from '../../../core/services/logging.service';
             <h3
               class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-4 flex items-center gap-2"
             >
-              <lucide-angular [img]="ActivityIcon" class="w-4 h-4 text-slate-400"></lucide-angular>
+              <lucide-angular [img]="ActivityIcon" class="w-4 h-4 text-slate-400" aria-hidden="true"></lucide-angular>
               Quick Links
             </h3>
             <div class="space-y-2">
@@ -221,7 +221,7 @@ import { LoggingService } from '../../../core/services/logging.service';
                   >
                     <lucide-angular
                       [img]="HardDriveIcon"
-                      class="w-4 h-4 text-credit-gold"
+                      class="w-4 h-4 text-credit-gold" aria-hidden="true"
                     ></lucide-angular>
                   </div>
                   <div>
@@ -233,7 +233,7 @@ import { LoggingService } from '../../../core/services/logging.service';
                 </div>
                 <lucide-angular
                   [img]="ArrowRightIcon"
-                  class="w-4 h-4 text-slate-300 group-hover:text-slate-500 transition-colors"
+                  class="w-4 h-4 text-slate-300 group-hover:text-slate-500 transition-colors" aria-hidden="true"
                 ></lucide-angular>
               </a>
               <a
@@ -246,7 +246,7 @@ import { LoggingService } from '../../../core/services/logging.service';
                   >
                     <lucide-angular
                       [img]="SettingsIcon"
-                      class="w-4 h-4 text-stellar-blue"
+                      class="w-4 h-4 text-stellar-blue" aria-hidden="true"
                     ></lucide-angular>
                   </div>
                   <div>
@@ -258,7 +258,7 @@ import { LoggingService } from '../../../core/services/logging.service';
                 </div>
                 <lucide-angular
                   [img]="ArrowRightIcon"
-                  class="w-4 h-4 text-slate-300 group-hover:text-slate-500 transition-colors"
+                  class="w-4 h-4 text-slate-300 group-hover:text-slate-500 transition-colors" aria-hidden="true"
                 ></lucide-angular>
               </a>
               <a
@@ -271,7 +271,7 @@ import { LoggingService } from '../../../core/services/logging.service';
                   >
                     <lucide-angular
                       [img]="UsersIcon"
-                      class="w-4 h-4 text-environmental-green"
+                      class="w-4 h-4 text-environmental-green" aria-hidden="true"
                     ></lucide-angular>
                   </div>
                   <div>
@@ -283,7 +283,7 @@ import { LoggingService } from '../../../core/services/logging.service';
                 </div>
                 <lucide-angular
                   [img]="ArrowRightIcon"
-                  class="w-4 h-4 text-slate-300 group-hover:text-slate-500 transition-colors"
+                  class="w-4 h-4 text-slate-300 group-hover:text-slate-500 transition-colors" aria-hidden="true"
                 ></lucide-angular>
               </a>
             </div>

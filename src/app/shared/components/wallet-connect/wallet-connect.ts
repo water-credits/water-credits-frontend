@@ -11,7 +11,7 @@ import { LucideAngularModule, Wallet, ChevronDown, LogOut, Copy, Check } from 'l
     <div class="relative">
       <ng-container *ngIf="!connected">
         <button (click)="connect.emit()" class="btn btn-primary text-sm flex items-center gap-2">
-          <lucide-angular [img]="WalletIcon" class="w-4 h-4"></lucide-angular>
+          <lucide-angular [img]="WalletIcon" class="w-4 h-4" aria-hidden="true"></lucide-angular>
           Connect Wallet
         </button>
       </ng-container>
@@ -22,7 +22,7 @@ import { LucideAngularModule, Wallet, ChevronDown, LogOut, Copy, Check } from 'l
         >
           <span class="w-2 h-2 rounded-full bg-green-500"></span>
           <span class="text-sm font-mono">{{ address | stellarAddress }}</span>
-          <lucide-angular [img]="ChevronDownIcon" class="w-3 h-3 text-slate-400"></lucide-angular>
+          <lucide-angular [img]="ChevronDownIcon" class="w-3 h-3 text-slate-400" aria-hidden="true"></lucide-angular>
         </button>
         <div
           *ngIf="showMenu"
@@ -36,14 +36,14 @@ import { LucideAngularModule, Wallet, ChevronDown, LogOut, Copy, Check } from 'l
             (click)="copyAddress()"
             class="w-full flex items-center gap-3 px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
           >
-            <lucide-angular [img]="copied ? CheckIcon : CopyIcon" class="w-4 h-4"></lucide-angular>
+            <lucide-angular [img]="copied ? CheckIcon : CopyIcon" class="w-4 h-4" aria-hidden="true"></lucide-angular>
             {{ copied ? 'Copied!' : 'Copy Address' }}
           </button>
           <button
             (click)="disconnect.emit(); showMenu = false"
             class="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
           >
-            <lucide-angular [img]="LogOutIcon" class="w-4 h-4"></lucide-angular>
+            <lucide-angular [img]="LogOutIcon" class="w-4 h-4" aria-hidden="true"></lucide-angular>
             Disconnect
           </button>
         </div>

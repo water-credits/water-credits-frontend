@@ -31,8 +31,9 @@ import { NavItem } from '../../../core/models/shared-interfaces.model';
       [class.w-0]="!isOpen"
       [class.lg:w-16]="!isOpen"
       class="h-full bg-white dark:bg-dark-bg-lighter border-r border-slate-200 dark:border-slate-700 transition-all duration-300 overflow-hidden flex flex-col"
+      aria-label="Main navigation"
     >
-      <div class="flex-1 py-4 space-y-1 px-2 overflow-y-auto">
+      <nav class="flex-1 py-4 space-y-1 px-2 overflow-y-auto">
         <a
           *ngFor="let item of navItems; trackBy: trackByNavItem"
           [routerLink]="item.route"
@@ -44,20 +45,25 @@ import { NavItem } from '../../../core/models/shared-interfaces.model';
               : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 border-transparent'
           "
           class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors border-l-2"
+          [attr.aria-label]="!isOpen ? item.label : null"
+          [attr.title]="!isOpen ? item.label : null"
         >
-          <lucide-angular [img]="item.icon" class="w-5 h-5 shrink-0"></lucide-angular>
+          <lucide-angular [img]="item.icon" class="w-5 h-5 shrink-0" aria-hidden="true"></lucide-angular>
           <span *ngIf="isOpen" class="whitespace-nowrap">{{ item.label }}</span>
         </a>
-      </div>
+      </nav>
       <div class="p-3 border-t border-slate-200 dark:border-slate-700">
         <button
           (click)="toggle()"
           class="flex items-center gap-2 px-3 py-2 w-full rounded-lg text-sm text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+          [attr.aria-label]="isOpen ? 'Collapse sidebar' : 'Expand sidebar'"
+          [attr.aria-expanded]="isOpen"
         >
           <lucide-angular
             [img]="ChevronLeftIcon"
             [class.rotate-180]="!isOpen"
             class="w-4 h-4 transition-transform"
+            aria-hidden="true"
           ></lucide-angular>
           <span *ngIf="isOpen">Collapse</span>
         </button>

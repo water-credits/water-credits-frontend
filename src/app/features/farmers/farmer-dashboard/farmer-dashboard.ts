@@ -71,7 +71,7 @@ import {
                 Total Parcels
               </p>
               <div class="w-9 h-9 rounded-lg bg-stellar-blue/10 flex items-center justify-center">
-                <lucide-angular [img]="MapPin" class="w-4 h-4 text-stellar-blue"></lucide-angular>
+                <lucide-angular [img]="MapPin" class="w-4 h-4 text-stellar-blue" aria-hidden="true"></lucide-angular>
               </div>
             </div>
             <p class="text-2xl font-bold text-slate-900 dark:text-white">
@@ -92,7 +92,7 @@ import {
               >
                 <lucide-angular
                   [img]="Droplets"
-                  class="w-4 h-4 text-environmental-green"
+                  class="w-4 h-4 text-environmental-green" aria-hidden="true"
                 ></lucide-angular>
               </div>
             </div>
@@ -110,7 +110,7 @@ import {
                 Credits Earned
               </p>
               <div class="w-9 h-9 rounded-lg bg-credit-gold/10 flex items-center justify-center">
-                <lucide-angular [img]="Coins" class="w-4 h-4 text-credit-gold"></lucide-angular>
+                <lucide-angular [img]="Coins" class="w-4 h-4 text-credit-gold" aria-hidden="true"></lucide-angular>
               </div>
             </div>
             <p class="text-2xl font-bold text-slate-900 dark:text-white">
@@ -127,7 +127,7 @@ import {
                 Active BMPs
               </p>
               <div class="w-9 h-9 rounded-lg bg-retirement-red/10 flex items-center justify-center">
-                <lucide-angular [img]="Leaf" class="w-4 h-4 text-retirement-red"></lucide-angular>
+                <lucide-angular [img]="Leaf" class="w-4 h-4 text-retirement-red" aria-hidden="true"></lucide-angular>
               </div>
             </div>
             <p class="text-2xl font-bold text-slate-900 dark:text-white">{{ enrolledBmps }}</p>
@@ -154,7 +154,7 @@ import {
                 <div
                   class="w-8 h-8 rounded-lg bg-slate-100 dark:bg-dark-bg flex items-center justify-center"
                 >
-                  <lucide-angular [img]="Sprout" class="w-4 h-4 text-slate-500"></lucide-angular>
+                  <lucide-angular [img]="Sprout" class="w-4 h-4 text-slate-500" aria-hidden="true"></lucide-angular>
                 </div>
                 <div>
                   <p class="text-sm font-medium text-slate-700 dark:text-slate-300">
@@ -173,7 +173,7 @@ import {
               class="inline-flex items-center gap-1 text-sm text-stellar-blue hover:text-stellar-blue-light mt-3"
             >
               View all parcels
-              <lucide-angular [img]="ArrowRight" class="w-3 h-3"></lucide-angular>
+              <lucide-angular [img]="ArrowRight" class="w-3 h-3" aria-hidden="true"></lucide-angular>
             </a>
           </div>
 
@@ -184,7 +184,7 @@ import {
             <div *ngIf="bmps.length === 0" class="text-center py-8 text-sm text-slate-400">
               <lucide-angular
                 [img]="Trees"
-                class="w-8 h-8 mx-auto mb-2 text-slate-300 dark:text-slate-600"
+                class="w-8 h-8 mx-auto mb-2 text-slate-300 dark:text-slate-600" aria-hidden="true"
               ></lucide-angular>
               No BMPs enrolled yet
             </div>
@@ -202,7 +202,7 @@ import {
                   <lucide-angular
                     [img]="bmp.enrolled ? Wheat : Leaf"
                     class="w-4 h-4"
-                    [class]="bmp.enrolled ? 'text-environmental-green' : 'text-slate-500'"
+                    [class]="bmp.enrolled ? 'text-environmental-green' : 'text-slate-500'" aria-hidden="true"
                   ></lucide-angular>
                 </div>
                 <div>
@@ -227,7 +227,7 @@ import {
               class="inline-flex items-center gap-1 text-sm text-stellar-blue hover:text-stellar-blue-light mt-3"
             >
               Manage practices
-              <lucide-angular [img]="ArrowRight" class="w-3 h-3"></lucide-angular>
+              <lucide-angular [img]="ArrowRight" class="w-3 h-3" aria-hidden="true"></lucide-angular>
             </a>
           </div>
         </div>
@@ -240,7 +240,7 @@ import {
             <div
               class="w-12 h-12 rounded-xl bg-stellar-blue/10 flex items-center justify-center shrink-0"
             >
-              <lucide-angular [img]="MapPin" class="w-6 h-6 text-stellar-blue"></lucide-angular>
+              <lucide-angular [img]="MapPin" class="w-6 h-6 text-stellar-blue" aria-hidden="true"></lucide-angular>
             </div>
             <div>
               <p class="font-semibold text-slate-900 dark:text-white">Parcels</p>
@@ -256,7 +256,7 @@ import {
             >
               <lucide-angular
                 [img]="Leaf"
-                class="w-6 h-6 text-environmental-green"
+                class="w-6 h-6 text-environmental-green" aria-hidden="true"
               ></lucide-angular>
             </div>
             <div>
@@ -271,7 +271,7 @@ import {
             <div
               class="w-12 h-12 rounded-xl bg-credit-gold/10 flex items-center justify-center shrink-0"
             >
-              <lucide-angular [img]="TrendingUp" class="w-6 h-6 text-credit-gold"></lucide-angular>
+              <lucide-angular [img]="TrendingUp" class="w-6 h-6 text-credit-gold" aria-hidden="true"></lucide-angular>
             </div>
             <div>
               <p class="font-semibold text-slate-900 dark:text-white">Earnings</p>

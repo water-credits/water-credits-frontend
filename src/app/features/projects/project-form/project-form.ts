@@ -67,7 +67,7 @@ const ALLOWED_MIME = [
         routerLink="/projects"
         class="inline-flex items-center gap-1 text-sm text-stellar-blue hover:text-stellar-blue-light mb-6"
       >
-        <lucide-angular [img]="ChevronLeft" class="w-4 h-4"></lucide-angular>
+        <lucide-angular [img]="ChevronLeft" class="w-4 h-4" aria-hidden="true"></lucide-angular>
         Back to Projects
       </a>
       <div class="card p-6">
@@ -95,12 +95,13 @@ const ALLOWED_MIME = [
                 <lucide-angular
                   *ngIf="i < currentStep"
                   [img]="CheckIcon"
-                  class="w-4 h-4"
+                  class="w-4 h-4" aria-hidden="true"
                 ></lucide-angular>
                 <lucide-angular
                   *ngIf="i >= currentStep"
                   [img]="stepIcons[i]"
                   class="w-4 h-4"
+                  aria-hidden="true"
                 ></lucide-angular>
               </div>
               <span class="text-[10px] text-slate-500 hidden sm:block">{{ label }}</span>
@@ -126,7 +127,7 @@ const ALLOWED_MIME = [
           *ngIf="storeError"
           class="mb-4 flex items-center gap-2 p-3 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-600 text-sm"
         >
-          <lucide-angular [img]="AlertCircleIcon" class="w-4 h-4 shrink-0"></lucide-angular>
+          <lucide-angular [img]="AlertCircleIcon" class="w-4 h-4 shrink-0" aria-hidden="true"></lucide-angular>
           {{ storeError }}
         </div>
         <!-- Step 0: Basic Info -->
@@ -318,7 +319,7 @@ const ALLOWED_MIME = [
             >
               <lucide-angular
                 [img]="UploadIcon"
-                class="w-10 h-10 mx-auto mb-3 text-slate-400"
+                class="w-10 h-10 mx-auto mb-3 text-slate-400" aria-hidden="true"
               ></lucide-angular>
               <p class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                 Drag &amp; drop files here, or
@@ -346,7 +347,7 @@ const ALLOWED_MIME = [
                 <div class="flex items-center gap-2 min-w-0">
                   <lucide-angular
                     [img]="FileTextIcon"
-                    class="w-4 h-4 text-stellar-blue shrink-0"
+                    class="w-4 h-4 text-stellar-blue shrink-0" aria-hidden="true"
                   ></lucide-angular>
                   <span class="truncate text-slate-700 dark:text-slate-300">{{
                     doc.filename
@@ -370,7 +371,7 @@ const ALLOWED_MIME = [
                     (click)="removeDoc(i)"
                     class="text-slate-400 hover:text-red-500 transition-colors"
                   >
-                    <lucide-angular [img]="XIcon" class="w-4 h-4"></lucide-angular>
+                    <lucide-angular [img]="XIcon" class="w-4 h-4" aria-hidden="true"></lucide-angular>
                   </button>
                 </div>
               </div>
@@ -469,7 +470,7 @@ const ALLOWED_MIME = [
               <div *ngFor="let doc of docs" class="flex items-center gap-2 text-sm">
                 <lucide-angular
                   [img]="FileTextIcon"
-                  class="w-4 h-4 text-stellar-blue"
+                  class="w-4 h-4 text-stellar-blue" aria-hidden="true"
                 ></lucide-angular>
                 <span class="truncate">{{ doc.filename }}</span>
                 <span *ngIf="doc.error" class="text-xs text-red-500">(upload failed)</span>
@@ -486,7 +487,7 @@ const ALLOWED_MIME = [
             (click)="prevStep()"
             class="btn btn-outline"
           >
-            <lucide-angular [img]="ChevronLeft" class="w-4 h-4 mr-1"></lucide-angular> Previous
+            <lucide-angular [img]="ChevronLeft" class="w-4 h-4 mr-1" aria-hidden="true"></lucide-angular> Previous
           </button>
           <button
             *ngIf="currentStep === 0"
@@ -505,7 +506,7 @@ const ALLOWED_MIME = [
               [disabled]="!canProceed"
               class="btn btn-primary flex items-center gap-1"
             >
-              Next <lucide-angular [img]="ChevronRight" class="w-4 h-4"></lucide-angular>
+              Next <lucide-angular [img]="ChevronRight" class="w-4 h-4" aria-hidden="true"></lucide-angular>
             </button>
             <button
               *ngIf="currentStep === 4"

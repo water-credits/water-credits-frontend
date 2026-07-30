@@ -11,7 +11,7 @@ import { LucideIconData } from '../../../core/models/shared-interfaces.model';
     <div class="flex flex-col items-center justify-center py-16 px-4 text-center">
       <lucide-angular
         [img]="icon"
-        class="w-16 h-16 text-slate-300 dark:text-slate-600 mb-4"
+        class="w-16 h-16 text-slate-300 dark:text-slate-600 mb-4" aria-hidden="true"
       ></lucide-angular>
       <h3 class="text-lg font-semibold text-slate-700 dark:text-slate-300 mb-2">{{ title }}</h3>
       <p class="text-sm text-slate-500 dark:text-slate-400 mb-6 max-w-sm">{{ message }}</p>

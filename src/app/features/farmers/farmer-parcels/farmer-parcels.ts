@@ -51,7 +51,7 @@ import {
           </p>
         </div>
         <button (click)="showForm = !showForm" class="btn btn-primary flex items-center gap-2">
-          <lucide-angular [img]="showForm ? X : Plus" class="w-4 h-4"></lucide-angular>
+          <lucide-angular [img]="showForm ? X : Plus" class="w-4 h-4" aria-hidden="true"></lucide-angular>
           {{ showForm ? 'Cancel' : 'Register Parcel' }}
         </button>
       </div>
@@ -147,7 +147,7 @@ import {
           class="mt-4 p-4 bg-slate-50 dark:bg-dark-bg rounded-lg border border-dashed border-slate-300 dark:border-slate-600"
         >
           <div class="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 mb-2">
-            <lucide-angular [img]="MapPin" class="w-4 h-4"></lucide-angular>
+            <lucide-angular [img]="MapPin" class="w-4 h-4" aria-hidden="true"></lucide-angular>
             <span>Map Boundary (Optional)</span>
           </div>
           <div
@@ -217,7 +217,7 @@ import {
             <div class="flex items-start justify-between mb-3">
               <div class="flex items-center gap-2">
                 <div class="w-8 h-8 rounded-lg bg-stellar-blue/10 flex items-center justify-center">
-                  <lucide-angular [img]="Sprout" class="w-4 h-4 text-stellar-blue"></lucide-angular>
+                  <lucide-angular [img]="Sprout" class="w-4 h-4 text-stellar-blue" aria-hidden="true"></lucide-angular>
                 </div>
                 <h3 class="font-semibold text-slate-900 dark:text-white">{{ parcel.name }}</h3>
               </div>
@@ -228,28 +228,28 @@ import {
             </p>
             <div class="grid grid-cols-2 gap-2 text-xs">
               <div class="flex items-center gap-1">
-                <lucide-angular [img]="Ruler" class="w-3 h-3 text-slate-400"></lucide-angular>
+                <lucide-angular [img]="Ruler" class="w-3 h-3 text-slate-400" aria-hidden="true"></lucide-angular>
                 <span class="text-slate-400">Area:</span>
                 <span class="font-medium text-slate-700 dark:text-slate-300"
                   >{{ parcel.areaHectares }} ha</span
                 >
               </div>
               <div class="flex items-center gap-1">
-                <lucide-angular [img]="Crop" class="w-3 h-3 text-slate-400"></lucide-angular>
+                <lucide-angular [img]="Crop" class="w-3 h-3 text-slate-400" aria-hidden="true"></lucide-angular>
                 <span class="text-slate-400">Methodology:</span>
                 <span class="font-medium text-slate-700 dark:text-slate-300">{{
                   parcel.methodology
                 }}</span>
               </div>
               <div class="flex items-center gap-1">
-                <lucide-angular [img]="Globe" class="w-3 h-3 text-slate-400"></lucide-angular>
+                <lucide-angular [img]="Globe" class="w-3 h-3 text-slate-400" aria-hidden="true"></lucide-angular>
                 <span class="text-slate-400">Location:</span>
                 <span class="font-medium text-slate-700 dark:text-slate-300"
                   >{{ parcel.latitude.toFixed(3) }}, {{ parcel.longitude.toFixed(3) }}</span
                 >
               </div>
               <div class="flex items-center gap-1">
-                <lucide-angular [img]="Calendar" class="w-3 h-3 text-slate-400"></lucide-angular>
+                <lucide-angular [img]="Calendar" class="w-3 h-3 text-slate-400" aria-hidden="true"></lucide-angular>
                 <span class="text-slate-400">Baseline:</span>
                 <span class="font-medium text-slate-700 dark:text-slate-300">{{
                   (parcel.baselineStart || '').split('T')[0]
@@ -259,7 +259,7 @@ import {
             <div class="mt-3 pt-3 border-t border-slate-100 dark:border-slate-700 flex justify-end">
               <span class="text-xs text-stellar-blue flex items-center gap-1">
                 View details
-                <lucide-angular [img]="ChevronRight" class="w-3 h-3"></lucide-angular>
+                <lucide-angular [img]="ChevronRight" class="w-3 h-3" aria-hidden="true"></lucide-angular>
               </span>
             </div>
           </div>

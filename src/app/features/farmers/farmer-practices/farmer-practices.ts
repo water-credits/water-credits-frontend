@@ -61,7 +61,7 @@ interface Bmp {
                   class="w-5 h-5"
                   [ngClass]="
                     bmp.enrolled ? 'text-environmental-green' : 'text-slate-500 dark:text-slate-400'
-                  "
+                  " aria-hidden="true"
                 ></lucide-angular>
               </div>
               <div>
@@ -80,7 +80,7 @@ interface Bmp {
             >
               <lucide-angular
                 [img]="bmp.enrolled ? CheckCircle : Circle"
-                class="w-6 h-6"
+                class="w-6 h-6" aria-hidden="true"
               ></lucide-angular>
             </button>
           </div>
@@ -105,7 +105,7 @@ interface Bmp {
             <div class="flex items-center gap-1 text-sm">
               <lucide-angular
                 [img]="Leaf"
-                class="w-3.5 h-3.5 text-environmental-green"
+                class="w-3.5 h-3.5 text-environmental-green" aria-hidden="true"
               ></lucide-angular>
               <span class="font-semibold text-environmental-green">{{ bmp.estimatedCredits }}</span>
               <span class="text-xs text-slate-400">credits/yr</span>
@@ -123,7 +123,7 @@ interface Bmp {
         <div class="flex items-start gap-3">
           <lucide-angular
             [img]="Info"
-            class="w-5 h-5 text-stellar-blue mt-0.5 shrink-0"
+            class="w-5 h-5 text-stellar-blue mt-0.5 shrink-0" aria-hidden="true"
           ></lucide-angular>
           <div>
             <h3 class="text-sm font-semibold text-slate-900 dark:text-white mb-1">About BMPs</h3>

@@ -19,7 +19,7 @@ import { selectGovernanceCreating } from '../../../core/store/governance/governa
         routerLink="/governance"
         class="inline-flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
       >
-        <lucide-angular [img]="ArrowLeftIcon" class="w-4 h-4"></lucide-angular>
+        <lucide-angular [img]="ArrowLeftIcon" class="w-4 h-4" aria-hidden="true"></lucide-angular>
         Back to Governance
       </a>
 
@@ -137,12 +137,12 @@ import { selectGovernanceCreating } from '../../../core/store/governance/governa
               <lucide-angular
                 *ngIf="!(isSubmitting$ | async)"
                 [img]="SendIcon"
-                class="w-4 h-4"
+                class="w-4 h-4" aria-hidden="true"
               ></lucide-angular>
               <lucide-angular
                 *ngIf="isSubmitting$ | async"
                 [img]="LoaderIcon"
-                class="w-4 h-4 animate-spin"
+                class="w-4 h-4 animate-spin" aria-hidden="true"
               ></lucide-angular>
               {{ (isSubmitting$ | async) ? 'Submitting...' : 'Submit Proposal' }}
             </button>

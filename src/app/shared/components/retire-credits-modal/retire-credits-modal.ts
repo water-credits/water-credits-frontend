@@ -1,8 +1,9 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, HostListener } from '@angular/core';
 import { NgIf, NgFor } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CreditAmountPipe } from '../../pipes/credit-amount.pipe';
 import { LucideAngularModule, X, ChevronLeft, Check, Droplets } from 'lucide-angular';
+import { FocusTrapDirective } from '../../directives/focus-trap.directive';
 
 interface Step {
   label: string;
@@ -12,10 +13,18 @@ interface Step {
 @Component({
   selector: 'app-retire-credits-modal',
   standalone: true,
-  imports: [NgIf, NgFor, FormsModule, CreditAmountPipe, LucideAngularModule],
+  imports: [NgIf, NgFor, FormsModule, CreditAmountPipe, LucideAngularModule, FocusTrapDirective],
   template: `
-    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+    <div
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+      aria-hidden="true"
+    >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="retire-modal-title"
+        aria-describedby="retire-modal-desc"
+        appFocusTrap
         class="bg-white dark:bg-dark-bg-lighter rounded-xl shadow-2xl max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto"
       >
         <div
@@ -26,36 +35,44 @@ interface Step {
               *ngIf="currentStep > 0"
               (click)="prevStep()"
               class="text-slate-400 hover:text-slate-600"
+              aria-label="Go to previous step"
+              type="button"
             >
-              <lucide-angular [img]="ChevronLeft" class="w-5 h-5"></lucide-angular>
+              <lucide-angular [img]="ChevronLeft" class="w-5 h-5" aria-hidden="true"></lucide-angular>
             </button>
-            <h2 class="text-lg font-semibold text-slate-900 dark:text-white">
+            <h2 id="retire-modal-title" class="text-lg font-semibold text-slate-900 dark:text-white">
               {{ steps[currentStep].label }}
             </h2>
           </div>
           <button
             (click)="close.emit()"
             class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+            aria-label="Close dialog"
+            type="button"
           >
-            <lucide-angular [img]="X" class="w-5 h-5"></lucide-angular>
+            <lucide-angular [img]="X" class="w-5 h-5" aria-hidden="true"></lucide-angular>
           </button>
         </div>
         <div class="px-6 py-4">
-          <div class="flex items-center justify-between mb-6">
-            <div *ngFor="let step of steps; let i = index" class="flex items-center">
+          <!-- Step progress indicator -->
+          <div class="flex items-center justify-between mb-6" role="list" aria-label="Wizard steps">
+            <div *ngFor="let step of steps; let i = index" class="flex items-center" role="listitem">
               <div
                 [class]="{
                   'bg-stellar-blue text-white': i <= currentStep,
                   'bg-slate-200 dark:bg-slate-700 text-slate-500': i > currentStep,
                 }"
                 class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium transition-colors"
+                [attr.aria-current]="i === currentStep ? 'step' : null"
+                [attr.aria-label]="step.label + (i < currentStep ? ' – completed' : i === currentStep ? ' – current' : '')"
               >
                 <lucide-angular
                   *ngIf="i < currentStep"
                   [img]="Check"
                   class="w-4 h-4"
+                  aria-hidden="true"
                 ></lucide-angular>
-                <span *ngIf="i >= currentStep">{{ i + 1 }}</span>
+                <span *ngIf="i >= currentStep" aria-hidden="true">{{ i + 1 }}</span>
               </div>
               <div
                 *ngIf="i < steps.length - 1"
@@ -64,17 +81,19 @@ interface Step {
                   'bg-slate-200 dark:bg-slate-700': i >= currentStep,
                 }"
                 class="w-12 h-0.5 mx-1 transition-colors"
+                aria-hidden="true"
               ></div>
             </div>
           </div>
 
-          <p class="text-sm text-slate-500 dark:text-slate-400 mb-4">
+          <p id="retire-modal-desc" class="text-sm text-slate-500 dark:text-slate-400 mb-4">
             {{ steps[currentStep].description }}
           </p>
 
+          <!-- Step 0: Project selection -->
           <div *ngIf="currentStep === 0">
-            <label class="label">Select Project</label>
-            <select [(ngModel)]="selectedProjectId" class="input mb-4">
+            <label for="retire-project-select" class="label">Select Project</label>
+            <select id="retire-project-select" [(ngModel)]="selectedProjectId" name="retire-project" class="input mb-4">
               <option value="">Choose a project...</option>
               <option *ngFor="let p of projects" [value]="p.id">
                 {{ p.name }} ({{ p.balance }} available)
@@ -82,24 +101,29 @@ interface Step {
             </select>
           </div>
 
+          <!-- Step 1: Amount -->
           <div *ngIf="currentStep === 1">
-            <label class="label">Amount to Retire</label>
+            <label for="retire-amount-input" class="label">Amount to Retire</label>
             <input
+              id="retire-amount-input"
               type="number"
               [(ngModel)]="amount"
+              name="retire-amount"
               class="input mb-2"
               placeholder="Enter amount..."
               min="0"
               step="any"
+              aria-describedby="retire-amount-hint"
             />
-            <p class="text-xs text-slate-400">
+            <p id="retire-amount-hint" class="text-xs text-slate-400">
               Available balance: {{ availableBalance | creditAmount }}
             </p>
           </div>
 
+          <!-- Step 2: Purpose -->
           <div *ngIf="currentStep === 2">
-            <label class="label">Retirement Purpose</label>
-            <select [(ngModel)]="purpose" class="input mb-4">
+            <label for="retire-purpose-select" class="label">Retirement Purpose</label>
+            <select id="retire-purpose-select" [(ngModel)]="purpose" name="retire-purpose" class="input mb-4">
               <option value="offset">Carbon Offset</option>
               <option value="sustainability">Sustainability Report</option>
               <option value="compliance">Regulatory Compliance</option>
@@ -108,6 +132,7 @@ interface Step {
             </select>
           </div>
 
+          <!-- Step 3: Review -->
           <div *ngIf="currentStep === 3" class="space-y-3">
             <div class="bg-slate-50 dark:bg-dark-bg rounded-lg p-4 space-y-2">
               <div class="flex justify-between text-sm">
@@ -132,10 +157,12 @@ interface Step {
             </p>
           </div>
 
+          <!-- Step 4: Done -->
           <div *ngIf="currentStep === 4" class="text-center py-4">
             <lucide-angular
               [img]="Check"
               class="w-12 h-12 text-environmental-green mx-auto mb-3"
+              aria-hidden="true"
             ></lucide-angular>
             <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-1">
               Retirement Submitted!
@@ -145,7 +172,7 @@ interface Step {
         </div>
 
         <div class="flex justify-end gap-3 p-6 border-t border-slate-200 dark:border-slate-700">
-          <button *ngIf="currentStep <= 2" (click)="close.emit()" class="btn btn-outline">
+          <button *ngIf="currentStep <= 2" (click)="close.emit()" class="btn btn-outline" type="button">
             Cancel
           </button>
           <button
@@ -153,6 +180,7 @@ interface Step {
             (click)="nextStep()"
             [disabled]="!canProceed"
             class="btn btn-primary"
+            type="button"
           >
             Continue
           </button>
@@ -161,10 +189,11 @@ interface Step {
             (click)="confirm.emit({ projectId: selectedProjectId, amount, purpose })"
             [disabled]="loading"
             class="btn btn-primary"
+            type="button"
           >
             {{ loading ? 'Submitting...' : 'Confirm Retirement' }}
           </button>
-          <button *ngIf="currentStep === 4" (click)="close.emit()" class="btn btn-primary">
+          <button *ngIf="currentStep === 4" (click)="close.emit()" class="btn btn-primary" type="button">
             Done
           </button>
         </div>
@@ -194,6 +223,12 @@ export class RetireCreditsModalComponent {
   protected readonly ChevronLeft = ChevronLeft;
   protected readonly Check = Check;
   protected readonly Droplets = Droplets;
+
+  /** Close the modal on Escape key (WCAG 2.1.2) */
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    this.close.emit();
+  }
 
   get selectedProjectName(): string {
     return this.projects.find((p) => p.id === this.selectedProjectId)?.name || '';
