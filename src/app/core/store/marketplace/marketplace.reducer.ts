@@ -2,6 +2,7 @@ import { createReducer, on } from '@ngrx/store';
 import * as MarketplaceActions from './marketplace.actions';
 import * as AuthActions from '../auth/auth.actions';
 import { MarketplaceListing, OrderBook } from '../../services/marketplace.service';
+import { OhlcCandle, PriceChartTimeRange } from '../../models/marketplace.model';
 
 /** The buy wizard's current phase, used to drive UI state. */
 export type BuyPhase =
@@ -29,6 +30,15 @@ export interface MarketplaceState {
   /** Timestamp (ms) of the last successful listings fetch, for cache expiration checks. */
   lastFetched: number | null;
   error: string | null;
+
+  // ── Price history ──────────────────────────────────────────────────────────
+  /** OHLC candles for the active chart view. */
+  priceHistory: OhlcCandle[];
+  /** Active time range selection in the price chart. */
+  priceChartRange: PriceChartTimeRange;
+  /** True while price history fetch is in flight. */
+  priceHistoryLoading: boolean;
+  priceHistoryError: string | null;
 }
 
 const initialState: MarketplaceState = {
@@ -46,6 +56,11 @@ const initialState: MarketplaceState = {
   activeListing: null,
   lastFetched: null,
   error: null,
+
+  priceHistory: [],
+  priceChartRange: '24H',
+  priceHistoryLoading: false,
+  priceHistoryError: null,
 };
 
 export const marketplaceReducer = createReducer(
@@ -87,6 +102,11 @@ export const marketplaceReducer = createReducer(
     ...state,
     loading: false,
     error,
+  })),
+  /** Replaces the entire order book with a fresh WebSocket snapshot. */
+  on(MarketplaceActions.updateOrderBookRealtime, (state, { orderBook }) => ({
+    ...state,
+    orderBook,
   })),
 
   on(MarketplaceActions.createListing, (state) => ({

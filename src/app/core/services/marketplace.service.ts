@@ -1,39 +1,17 @@
 import { Injectable } from '@angular/core';
 import { ApiService } from './api.service';
 import { PaginatedResponse } from '../models/pagination.model';
+import {
+  MarketplaceListing,
+  CreateListingRequest,
+  OrderBook,
+  PriceHistoryResponse,
+  PriceChartTimeRange,
+} from '../models/marketplace.model';
 
-export interface MarketplaceListing {
-  id: string;
-  projectId: string;
-  projectName: string;
-  sellerId: string;
-  sellerName?: string;
-  amount: string;
-  price: number;
-  totalValue: number;
-  status: 'active' | 'filled' | 'cancelled' | 'expired';
-  expiresAt?: string;
-  createdAt: string;
-}
-
-export interface OrderBookEntry {
-  price: number;
-  amount: string;
-  total: string;
-  count: number;
-}
-
-export interface OrderBook {
-  bids: OrderBookEntry[];
-  asks: OrderBookEntry[];
-}
-
-export interface CreateListingRequest {
-  projectId: string;
-  amount: string;
-  price: number;
-  expiresAt?: string;
-}
+// Re-export for backward-compat with existing store files that import from here.
+export type { MarketplaceListing, CreateListingRequest, OrderBook } from '../models/marketplace.model';
+export type { OrderBookEntry } from '../models/marketplace.model';
 
 /**
  * Response from POST /marketplace/listings/:id/buy.
@@ -65,6 +43,7 @@ export class MarketplaceService {
     limit?: number;
     status?: string;
     projectId?: string;
+    search?: string;
   }): Promise<PaginatedResponse<MarketplaceListing>> {
     return this.api.get<PaginatedResponse<MarketplaceListing>>('/marketplace/listings', { params });
   }

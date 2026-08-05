@@ -4,6 +4,11 @@ import { environment } from '../../../environments/environment';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { LoggingService } from './logging.service';
 import { SensorReading, SensorAlert } from '../models/sensor-reading.model';
+import {
+  MarketplaceTradeEvent,
+  MarketplaceOrderBookEvent,
+  MarketplacePriceEvent,
+} from '../models/marketplace.model';
 
 @Injectable({
   providedIn: 'root',
@@ -85,5 +90,44 @@ export class WebsocketService {
 
   unsubscribeFromProject(projectId: string): void {
     this.emit('unsubscribe:project', { projectId });
+  }
+
+  // ── Marketplace events ────────────────────────────────────────────────────
+
+  /**
+   * Subscribe to marketplace real-time room for a given project.
+   * The server will then emit marketplace:price, marketplace:trade and
+   * marketplace:orderbook events for that project.
+   */
+  subscribeToMarketplace(projectId: string): void {
+    this.emit('subscribe:marketplace', { projectId });
+  }
+
+  /** Unsubscribe from marketplace events for a project. */
+  unsubscribeFromMarketplace(projectId: string): void {
+    this.emit('unsubscribe:marketplace', { projectId });
+  }
+
+  /**
+   * Observable of `marketplace:price` events — fires when a new OHLC candle
+   * is updated or closed for the subscribed project.
+   */
+  get marketplacePrice$(): Observable<MarketplacePriceEvent> {
+    return this.on<MarketplacePriceEvent>('marketplace:price');
+  }
+
+  /**
+   * Observable of `marketplace:trade` events — fires when a trade is executed.
+   */
+  get marketplaceTrade$(): Observable<MarketplaceTradeEvent> {
+    return this.on<MarketplaceTradeEvent>('marketplace:trade');
+  }
+
+  /**
+   * Observable of `marketplace:orderbook` events — fires when the order book
+   * snapshot is updated for the subscribed project.
+   */
+  get marketplaceOrderBook$(): Observable<MarketplaceOrderBookEvent> {
+    return this.on<MarketplaceOrderBookEvent>('marketplace:orderbook');
   }
 }
