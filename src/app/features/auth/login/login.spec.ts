@@ -1,17 +1,26 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideStore } from '@ngrx/store';
+import { provideMockStore } from '@ngrx/store/testing';
 import { provideRouter } from '@angular/router';
-import { reducers } from '../../../core/store/app.state';
 import { LoginComponent } from './login';
 
 describe('LoginComponent', () => {
   let component: LoginComponent;
   let fixture: ComponentFixture<LoginComponent>;
 
+  const initialState = {
+    auth: {
+      user: null,
+      token: null,
+      sessionReady: false,
+      loading: false,
+      error: null,
+    },
+  };
+
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [LoginComponent],
-      providers: [provideRouter([]), provideStore(reducers)],
+      providers: [provideRouter([]), provideMockStore({ initialState })],
     }).compileComponents();
 
     fixture = TestBed.createComponent(LoginComponent);
