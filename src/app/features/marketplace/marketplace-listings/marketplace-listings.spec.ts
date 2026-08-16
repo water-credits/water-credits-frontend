@@ -1,8 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { provideStore } from '@ngrx/store';
-import { provideEffects } from '@ngrx/effects';
-import { reducers } from '../../../core/store/app.state';
+import { provideMockStore } from '@ngrx/store/testing';
 
 import { MarketplaceListingsComponent } from './marketplace-listings';
 
@@ -10,10 +8,29 @@ describe('MarketplaceListingsComponent', () => {
   let component: MarketplaceListingsComponent;
   let fixture: ComponentFixture<MarketplaceListingsComponent>;
 
+  const initialState = {
+    marketplace: {
+      listings: [],
+      total: 0,
+      page: 1,
+      limit: 10,
+      totalPages: 0,
+      filters: {},
+      orderBook: null,
+      loading: false,
+      creating: false,
+      cancelling: false,
+      buyPhase: 'idle',
+      activeListing: null,
+      lastFetched: null,
+      error: null,
+    },
+  };
+
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [MarketplaceListingsComponent],
-      providers: [provideRouter([]), provideStore(reducers), provideEffects([])],
+      providers: [provideRouter([]), provideMockStore({ initialState })],
     }).compileComponents();
 
     fixture = TestBed.createComponent(MarketplaceListingsComponent);

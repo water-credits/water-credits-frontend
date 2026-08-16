@@ -1,8 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { provideStore } from '@ngrx/store';
-import { provideEffects } from '@ngrx/effects';
-import { reducers } from '../../../core/store/app.state';
+import { provideMockStore } from '@ngrx/store/testing';
 
 import { DefaultLayoutComponent } from './default-layout';
 
@@ -10,10 +8,25 @@ describe('DefaultLayoutComponent', () => {
   let component: DefaultLayoutComponent;
   let fixture: ComponentFixture<DefaultLayoutComponent>;
 
+  const initialState = {
+    ui: {
+      sidebarOpen: true,
+      isDarkMode: true,
+      isLoading: false,
+      notifications: [],
+      unreadNotificationCount: 0,
+    },
+    wallet: {
+      address: null,
+      loading: false,
+      error: null,
+    },
+  };
+
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [DefaultLayoutComponent],
-      providers: [provideRouter([]), provideStore(reducers), provideEffects([])],
+      providers: [provideRouter([]), provideMockStore({ initialState })],
     }).compileComponents();
 
     fixture = TestBed.createComponent(DefaultLayoutComponent);
