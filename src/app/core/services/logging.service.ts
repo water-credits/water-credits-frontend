@@ -23,6 +23,8 @@ export class LoggingService {
     if (!this.isProduction) {
       console.error(`[ERROR] ${message}`, error);
     }
+    // TODO: send to remote logging service (e.g. Sentry, Datadog)
+    // when integration is configured in production
   }
 
   debug(message: string, ...optionalParams: unknown[]): void {
