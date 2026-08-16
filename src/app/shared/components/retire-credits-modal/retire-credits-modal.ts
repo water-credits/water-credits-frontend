@@ -9,6 +9,16 @@ interface Step {
   description: string;
 }
 
+const STELLAR_SCALE = 10_000_000n;
+
+function parseStellarAmount(value: unknown): bigint | null {
+  const match = /^(\d+)(?:\.(\d{1,7}))?$/.exec(String(value).trim());
+  if (!match) return null;
+
+  const fraction = (match[2] ?? '').padEnd(7, '0');
+  return BigInt(match[1]) * STELLAR_SCALE + BigInt(fraction);
+}
+
 @Component({
   selector: 'app-retire-credits-modal',
   standalone: true,
@@ -86,7 +96,8 @@ interface Step {
             <label class="label">Amount to Retire</label>
             <input
               type="number"
-              [(ngModel)]="amount"
+              [value]="amount"
+              (input)="onAmountInput($event)"
               class="input mb-2"
               placeholder="Enter amount..."
               min="0"
@@ -95,6 +106,11 @@ interface Step {
             <p class="text-xs text-slate-400">
               Available balance: {{ availableBalance | creditAmount }}
             </p>
+            @if (amountError) {
+              <p class="mt-2 text-xs text-red-600 dark:text-red-400" role="alert">
+                {{ amountError }}
+              </p>
+            }
           </div>
 
           <div *ngIf="currentStep === 2">
@@ -203,12 +219,29 @@ export class RetireCreditsModalComponent {
     return this.projects.find((p) => p.id === this.selectedProjectId)?.balance || '0';
   }
 
+  protected onAmountInput(event: Event): void {
+    this.amount = (event.target as HTMLInputElement).value;
+  }
+
+  get amountError(): string | null {
+    if (this.currentStep !== 1 || !this.amount) return null;
+
+    const amount = parseStellarAmount(this.amount);
+    const balance = parseStellarAmount(this.availableBalance);
+    return amount !== null && balance !== null && amount > balance
+      ? `Exceeds available balance of ${this.availableBalance}`
+      : null;
+  }
+
   get canProceed(): boolean {
     switch (this.currentStep) {
       case 0:
         return !!this.selectedProjectId;
-      case 1:
-        return !!this.amount && parseFloat(this.amount) > 0;
+      case 1: {
+        const amount = parseStellarAmount(this.amount);
+        const balance = parseStellarAmount(this.availableBalance);
+        return amount !== null && balance !== null && amount > 0n && amount <= balance;
+      }
       case 2:
         return !!this.purpose;
       default:
