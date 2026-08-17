@@ -16,6 +16,7 @@ class StubLoginComponent {}
 import { AuthEffects } from './auth.effects';
 import { AuthService } from '../../services/auth.service';
 import { WalletService } from '../../services/wallet.service';
+import { WebsocketService } from '../../services/websocket.service';
 import { NotificationService } from '../../services/notification.service';
 import { SessionBusService } from '../../services/session-bus.service';
 import { ApiService } from '../../services/api.service';
@@ -58,6 +59,11 @@ describe('AuthEffects', () => {
     signChallenge: vi.fn(),
   };
 
+  const wsServiceMock = {
+    connect: vi.fn(),
+    disconnect: vi.fn(),
+  };
+
   const notificationServiceMock = {
     success: vi.fn(),
     error: vi.fn(),
@@ -87,6 +93,7 @@ describe('AuthEffects', () => {
         provideMockActions(() => actions$),
         { provide: AuthService, useValue: authServiceMock },
         { provide: WalletService, useValue: walletServiceMock },
+        { provide: WebsocketService, useValue: wsServiceMock },
         { provide: NotificationService, useValue: notificationServiceMock },
         { provide: ApiService, useValue: apiServiceMock },
         SessionBusService,
@@ -145,12 +152,20 @@ describe('AuthEffects', () => {
       expect(localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN)).toBe(mockToken);
       expect(router.navigateByUrl).toHaveBeenCalledWith('/dashboard');
     });
+
+    it('opens the WebSocket connection with the user token and ID', async () => {
+      const resultPromise = firstValueFrom(effects.loginSuccess$);
+      actions$.next(AuthActions.loginSuccess({ user: mockUser, token: mockToken }));
+      await resultPromise;
+
+      expect(wsServiceMock.connect).toHaveBeenCalledWith(mockToken, mockUser.id);
+    });
   });
 
   // ── logout$ side effects ────────────────────────────────────────────────────
 
   describe('logout$', () => {
-    it('clears localStorage, disconnects wallet, shows info toast, navigates to /auth/login', async () => {
+    it('clears localStorage, disconnects wallet, closes WebSocket, shows info toast, navigates to /auth/login', async () => {
       localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, mockToken);
 
       const resultPromise = firstValueFrom(effects.logout$);
@@ -159,11 +174,12 @@ describe('AuthEffects', () => {
 
       expect(localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN)).toBeNull();
       expect(walletServiceMock.disconnect).toHaveBeenCalled();
+      expect(wsServiceMock.disconnect).toHaveBeenCalled();
       expect(notificationServiceMock.info).toHaveBeenCalled();
       expect(router.navigateByUrl).toHaveBeenCalledWith('/auth/login');
     });
 
-    it('shows a warning toast (not info) for force-logout', async () => {
+    it('shows a warning toast (not info) for force-logout and closes WebSocket', async () => {
       localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, mockToken);
 
       const resultPromise = firstValueFrom(effects.logout$);
@@ -172,6 +188,7 @@ describe('AuthEffects', () => {
 
       expect(notificationServiceMock.warning).toHaveBeenCalled();
       expect(notificationServiceMock.info).not.toHaveBeenCalled();
+      expect(wsServiceMock.disconnect).toHaveBeenCalled();
       expect(router.navigateByUrl).toHaveBeenCalledWith('/auth/login');
     });
   });
