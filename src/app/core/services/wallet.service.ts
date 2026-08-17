@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
-import freighter from '@stellar/freighter-api';
-import { BehaviorSubject } from 'rxjs';
+import freighter, { WatchWalletChanges } from '@stellar/freighter-api';
+import { BehaviorSubject, Observable, EMPTY } from 'rxjs';
+import { distinctUntilChanged, filter } from 'rxjs/operators';
 import { LoggingService } from './logging.service';
 
 @Injectable({
@@ -9,6 +10,27 @@ import { LoggingService } from './logging.service';
 export class WalletService {
   private publicKeySubject = new BehaviorSubject<string | null>(null);
   public publicKey$ = this.publicKeySubject.asObservable();
+
+  /**
+   * Emits the new public key whenever the user switches Stellar accounts in
+   * Freighter mid-session. Only emits distinct values (no duplicate fires if
+   * the user switches back to the same account).
+   *
+   * Implemented using Freighter v6's `WatchWalletChanges` class, which polls
+   * for changes and delivers `{ address, network, networkPassphrase }` to its
+   * callback. We wrap it in an Observable for a teardown-safe, RxJS-idiomatic
+   * interface consistent with WebsocketService.on<T>().
+   *
+   * Falls back to EMPTY when not running in a browser environment.
+   */
+  public readonly addressChange$: Observable<string> = this.buildAddressChangeObservable();
+
+  /**
+   * Emits the new network name whenever the user switches networks in
+   * Freighter mid-session. Shares the same WatchWalletChanges poll underneath
+   * — only distinct values are emitted.
+   */
+  public readonly networkChange$: Observable<string> = this.buildNetworkChangeObservable();
 
   constructor(private loggingService: LoggingService) {}
 
@@ -87,5 +109,70 @@ export class WalletService {
 
   getStoredPublicKey(): string | null {
     return this.publicKeySubject.value;
+  }
+
+  // ── Private helpers ─────────────────────────────────────────────────────────
+
+  /**
+   * Wraps `WatchWalletChanges` (Freighter v6's polling watcher) in a
+   * teardown-safe Observable that emits the address whenever the active
+   * Stellar account changes mid-session.
+   *
+   * WatchWalletChanges.watch(cb) starts a poll (default 3-second interval)
+   * and calls `cb` with `{ address, network, networkPassphrase }` on every
+   * detected change. WatchWalletChanges.stop() halts the poll. We wire the
+   * stop() call into the Observable's teardown so the watcher is cleaned up
+   * when the last subscriber unsubscribes.
+   *
+   * Pattern mirrors WebsocketService.on<T>() — the handler reference is
+   * kept locally so only this subscriber's watcher is stopped on teardown.
+   *
+   * Falls back to EMPTY when WatchWalletChanges is unavailable (non-browser
+   * environments, future SDK changes).
+   */
+  private buildAddressChangeObservable(): Observable<string> {
+    if (typeof WatchWalletChanges === 'undefined') {
+      return EMPTY;
+    }
+
+    return new Observable<string>((observer) => {
+      const watcher = new WatchWalletChanges();
+      watcher.watch(({ address }) => {
+        if (address) {
+          observer.next(address);
+        }
+      });
+
+      // Teardown: stop polling when the subscriber unsubscribes.
+      return () => watcher.stop();
+    }).pipe(
+      filter((address): address is string => typeof address === 'string' && address.length > 0),
+      distinctUntilChanged(),
+    );
+  }
+
+  /**
+   * Wraps `WatchWalletChanges` to emit the network name on mid-session
+   * network switches. Uses a separate watcher instance from addressChange$
+   * so each Observable's teardown is independent.
+   */
+  private buildNetworkChangeObservable(): Observable<string> {
+    if (typeof WatchWalletChanges === 'undefined') {
+      return EMPTY;
+    }
+
+    return new Observable<string>((observer) => {
+      const watcher = new WatchWalletChanges();
+      watcher.watch(({ network }) => {
+        if (network) {
+          observer.next(network);
+        }
+      });
+
+      return () => watcher.stop();
+    }).pipe(
+      filter((network): network is string => typeof network === 'string' && network.length > 0),
+      distinctUntilChanged(),
+    );
   }
 }

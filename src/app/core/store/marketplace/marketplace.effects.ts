@@ -8,25 +8,7 @@ import * as MarketplaceActions from './marketplace.actions';
 import { MarketplaceService } from '../../services/marketplace.service';
 import { WalletService } from '../../services/wallet.service';
 import { NotificationService } from '../../services/notification.service';
-
-/**
- * Sentinel substrings matched against Freighter's rejection error message to
- * distinguish "user cancelled" from a genuine network/extension error.
- * Duplicated from RetirementEffects — see that file for the same helper; no
- * shared util exists yet for this check.
- */
-function isUserDeclined(err: unknown): boolean {
-  if (err instanceof Error) {
-    return (
-      err.message.includes('User declined') ||
-      err.message.toLowerCase().includes('declined') ||
-      err.message.toLowerCase().includes('rejected') ||
-      err.message.toLowerCase().includes('cancelled') ||
-      err.message.toLowerCase().includes('canceled')
-    );
-  }
-  return false;
-}
+import { isWalletDeclined } from '../../utils/wallet.utils';
 
 @Injectable()
 export class MarketplaceEffects {
@@ -157,7 +139,7 @@ export class MarketplaceEffects {
                 networkPassphrase,
               );
             } catch (sigErr) {
-              if (isUserDeclined(sigErr)) {
+              if (isWalletDeclined(sigErr)) {
                 return MarketplaceActions.buySignatureRejected({ listingId: listing.id });
               }
               const message = sigErr instanceof Error ? sigErr.message : 'Signing failed';
