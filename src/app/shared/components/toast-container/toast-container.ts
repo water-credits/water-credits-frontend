@@ -1,11 +1,10 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  inject,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { AsyncPipe, NgClass, NgFor, NgIf } from '@angular/common';
 import { LucideAngularModule, X, CheckCircle, XCircle, AlertTriangle, Info } from 'lucide-angular';
-import { NotificationService, ToastNotification } from '../../../core/services/notification.service';
+import {
+  NotificationService,
+  ToastNotification,
+} from '../../../core/services/notification.service';
 
 interface ToastConfig {
   containerClass: string;
@@ -50,12 +49,16 @@ interface ToastConfig {
             *ngIf="toast.title"
             [ngClass]="config(toast).titleClass"
             class="text-sm font-semibold leading-5"
-          >{{ toast.title }}</p>
+          >
+            {{ toast.title }}
+          </p>
           <p
             *ngIf="toast.message"
             [ngClass]="config(toast).messageClass"
             class="text-sm leading-5 mt-0.5"
-          >{{ toast.message }}</p>
+          >
+            {{ toast.message }}
+          </p>
         </div>
 
         <!-- Close button (always present; essential when duration === 0) -->
@@ -79,7 +82,8 @@ export class ToastContainerComponent {
 
   private readonly configs: Record<ToastNotification['type'], ToastConfig> = {
     success: {
-      containerClass: 'bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-700',
+      containerClass:
+        'bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-700',
       iconClass: 'text-environmental-green',
       titleClass: 'text-emerald-900 dark:text-emerald-100',
       messageClass: 'text-emerald-800 dark:text-emerald-200',
@@ -99,7 +103,8 @@ export class ToastContainerComponent {
       ariaLive: 'assertive',
     },
     warning: {
-      containerClass: 'bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700',
+      containerClass:
+        'bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700',
       iconClass: 'text-credit-gold',
       titleClass: 'text-amber-900 dark:text-amber-100',
       messageClass: 'text-amber-800 dark:text-amber-200',
@@ -109,7 +114,8 @@ export class ToastContainerComponent {
       ariaLive: 'assertive',
     },
     info: {
-      containerClass: 'bg-violet-50 dark:bg-violet-900/30 border border-violet-200 dark:border-violet-700',
+      containerClass:
+        'bg-violet-50 dark:bg-violet-900/30 border border-violet-200 dark:border-violet-700',
       iconClass: 'text-stellar-blue',
       titleClass: 'text-violet-900 dark:text-violet-100',
       messageClass: 'text-violet-800 dark:text-violet-200',

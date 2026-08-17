@@ -2,7 +2,10 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BehaviorSubject } from 'rxjs';
 import { vi } from 'vitest';
 import { ToastContainerComponent } from './toast-container';
-import { NotificationService, ToastNotification } from '../../../core/services/notification.service';
+import {
+  NotificationService,
+  ToastNotification,
+} from '../../../core/services/notification.service';
 
 /** Build a minimal ToastNotification for test helpers. */
 function makeToast(overrides: Partial<ToastNotification> = {}): ToastNotification {
@@ -20,7 +23,10 @@ describe('ToastContainerComponent', () => {
   let fixture: ComponentFixture<ToastContainerComponent>;
   let component: ToastContainerComponent;
   let notificationsSubject: BehaviorSubject<ToastNotification[]>;
-  let mockNotificationService: { notifications$: typeof notificationsSubject; remove: ReturnType<typeof vi.fn> };
+  let mockNotificationService: {
+    notifications$: typeof notificationsSubject;
+    remove: ReturnType<typeof vi.fn>;
+  };
 
   beforeEach(async () => {
     notificationsSubject = new BehaviorSubject<ToastNotification[]>([]);
@@ -31,9 +37,7 @@ describe('ToastContainerComponent', () => {
 
     await TestBed.configureTestingModule({
       imports: [ToastContainerComponent],
-      providers: [
-        { provide: NotificationService, useValue: mockNotificationService },
-      ],
+      providers: [{ provide: NotificationService, useValue: mockNotificationService }],
     }).compileComponents();
 
     fixture = TestBed.createComponent(ToastContainerComponent);
@@ -79,7 +83,9 @@ describe('ToastContainerComponent', () => {
     expect(textContent).toContain('First');
     expect(textContent).toContain('Second');
     // Two dismiss buttons — one per toast
-    const closeButtons = fixture.nativeElement.querySelectorAll('button[aria-label="Dismiss notification"]');
+    const closeButtons = fixture.nativeElement.querySelectorAll(
+      'button[aria-label="Dismiss notification"]',
+    );
     expect(closeButtons.length).toBe(2);
   });
 
@@ -104,11 +110,15 @@ describe('ToastContainerComponent', () => {
   // Type → CSS class mapping
   // ─────────────────────────────────────────────────────────────────────────
 
-  const typeTests: Array<{ type: ToastNotification['type']; expectedClass: string; expectedRole: string }> = [
-    { type: 'success', expectedClass: 'bg-emerald-50',  expectedRole: 'status' },
-    { type: 'error',   expectedClass: 'bg-red-50',      expectedRole: 'alert'  },
-    { type: 'warning', expectedClass: 'bg-amber-50',    expectedRole: 'alert'  },
-    { type: 'info',    expectedClass: 'bg-violet-50',   expectedRole: 'status' },
+  const typeTests: Array<{
+    type: ToastNotification['type'];
+    expectedClass: string;
+    expectedRole: string;
+  }> = [
+    { type: 'success', expectedClass: 'bg-emerald-50', expectedRole: 'status' },
+    { type: 'error', expectedClass: 'bg-red-50', expectedRole: 'alert' },
+    { type: 'warning', expectedClass: 'bg-amber-50', expectedRole: 'alert' },
+    { type: 'info', expectedClass: 'bg-violet-50', expectedRole: 'status' },
   ];
 
   typeTests.forEach(({ type, expectedClass, expectedRole }) => {
