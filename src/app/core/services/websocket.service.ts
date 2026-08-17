@@ -51,16 +51,21 @@ export class WebsocketService {
 
   on<T = unknown>(event: string): Observable<T> {
     return new Observable<T>((observer) => {
-      if (!this.socket) return;
+      if (!this.socket) {
+        observer.error(new Error(`WebSocket not connected; cannot listen to "${event}"`));
+        return;
+      }
 
-      this.socket.on(event, (data: T) => {
-        observer.next(data);
-      });
+      // Capture the handler reference so that teardown removes only this
+      // subscriber's listener, leaving any other subscriber for the same
+      // event name untouched.
+      const handler = (data: T): void => observer.next(data);
+      this.socket.on(event, handler);
 
       return () => {
-        if (this.socket) {
-          this.socket.off(event);
-        }
+        // Pass the exact handler reference — socket.off(event) with no
+        // second argument would remove ALL listeners for this event.
+        this.socket?.off(event, handler);
       };
     });
   }

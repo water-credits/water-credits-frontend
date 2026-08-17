@@ -1,10 +1,10 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectionStrategy } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Store } from '@ngrx/store';
 import { NgIf, NgFor, DecimalPipe } from '@angular/common';
-import { Subject, takeUntil, interval } from 'rxjs';
+import { Subject, BehaviorSubject, interval, EMPTY } from 'rxjs';
+import { takeUntil, switchMap } from 'rxjs/operators';
 import { SensorDevice, SensorReading } from '../../../core/models/sensor-reading.model';
-import { SensorsService } from '../../../core/services/sensors.service';
 import { WebsocketService } from '../../../core/services/websocket.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import {
@@ -21,6 +21,12 @@ import {
 import { DateFormatPipe } from '../../../shared/pipes/date-format.pipe';
 import { NumberAbbreviatePipe } from '../../../shared/pipes/number-abbreviate.pipe';
 import * as SensorsActions from '../../../core/store/sensors/sensors.actions';
+import {
+  selectSensorDevices,
+  selectRecentReadings,
+  selectSensorsLoading,
+} from '../../../core/store/sensors/sensors.selectors';
+import { AppState } from '../../../core/store/app.state';
 import {
   LucideAngularModule,
   Activity,
@@ -88,6 +94,7 @@ const STATUS_THRESHOLDS: Record<string, { good: [number, number]; warning: [numb
 @Component({
   selector: 'app-sensors-dashboard',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     NgIf,
     NgFor,
@@ -286,6 +293,13 @@ export class SensorsDashboardComponent implements OnInit, OnDestroy {
   protected parameterConfigs = PARAMETER_CONFIGS;
   private refreshInterval = 30000;
   private destroy$ = new Subject<void>();
+  /**
+   * Drives the auto-refresh polling loop.
+   * Emitting `true` starts a new interval; emitting `false` tears it down
+   * (switchMap to EMPTY).  This guarantees at most one live interval at a
+   * time and cancels cleanly on destroy$.
+   */
+  private autoRefresh$ = new BehaviorSubject<boolean>(false);
 
   protected readonly ActivityIcon = Activity;
   protected readonly DropletsIcon = Droplets;
@@ -309,13 +323,13 @@ export class SensorsDashboardComponent implements OnInit, OnDestroy {
   ];
 
   constructor(
-    private store: Store,
-    private sensorsService: SensorsService,
+    private store: Store<AppState>,
     private wsService: WebsocketService,
     private notificationService: NotificationService,
   ) {}
 
   ngOnInit(): void {
+    // ── WebSocket connection status badge ──────────────────────────────────
     this.wsService.connected$.pipe(takeUntil(this.destroy$)).subscribe({
       next: (connected) => {
         this.wsConnected = connected;
@@ -323,47 +337,65 @@ export class SensorsDashboardComponent implements OnInit, OnDestroy {
       error: () => {},
     });
 
-    this.wsService
-      .on<SensorReading>('sensor:reading')
+    // ── Device list from the store ─────────────────────────────────────────
+    // Real-time readings flow through SensorsEffects.receiveSensorReading$
+    // → store → selector; no direct WS subscription in the component.
+    this.store
+      .select(selectSensorDevices)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (reading: SensorReading) => {
-          this.store.dispatch(SensorsActions.addRealtimeReading({ reading }));
+        next: (devices) => {
+          this.devices = devices;
         },
         error: () => {},
       });
 
+    // ── Recent readings from the store ─────────────────────────────────────
     this.store
-      .select((state) => (state as any).sensors)
+      .select(selectRecentReadings)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (sensors) => {
-          this.devices = sensors.devices;
-          this.recentReadings = sensors.recentReadings;
+        next: (readings) => {
+          this.recentReadings = readings;
           this.updateDerivedData();
         },
         error: () => {},
       });
 
-    this.loadData();
+    // ── Loading state from the store ───────────────────────────────────────
+    this.store
+      .select(selectSensorsLoading)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (loading) => {
+          this.loading = loading;
+        },
+        error: () => {},
+      });
+
+    // ── Auto-refresh polling ───────────────────────────────────────────────
+    // switchMap guarantees only one interval is alive at a time.
+    // When autoRefresh$ emits false (or destroy$ fires) the interval is
+    // cancelled — no leak regardless of how many times the user toggles.
+    this.autoRefresh$
+      .pipe(
+        switchMap((enabled) => (enabled ? interval(this.refreshInterval) : EMPTY)),
+        takeUntil(this.destroy$),
+      )
+      .subscribe({
+        next: () => {
+          this.store.dispatch(SensorsActions.loadDevices({}));
+        },
+        error: () => {},
+      });
+
+    // Initial data load — delegate to the effect, not the service directly.
+    this.store.dispatch(SensorsActions.loadDevices({}));
   }
 
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
-  }
-
-  private async loadData(): Promise<void> {
-    this.loading = true;
-    try {
-      const [devices] = await Promise.all([this.sensorsService.getDevices()]);
-      this.store.dispatch(SensorsActions.loadDevicesSuccess({ devices }));
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to load devices';
-      this.store.dispatch(SensorsActions.loadDevicesFailure({ error: message }));
-    } finally {
-      this.loading = false;
-    }
   }
 
   private updateDerivedData(): void {
@@ -400,15 +432,9 @@ export class SensorsDashboardComponent implements OnInit, OnDestroy {
 
   protected toggleAutoRefresh(): void {
     this.autoRefresh = !this.autoRefresh;
+    // Push the new state; the autoRefresh$ pipe handles start/cancel.
+    this.autoRefresh$.next(this.autoRefresh);
     if (this.autoRefresh) {
-      interval(this.refreshInterval)
-        .pipe(takeUntil(this.destroy$))
-        .subscribe({
-          next: () => {
-            this.loadData();
-          },
-          error: () => {},
-        });
       this.notificationService.info(
         'Auto-refresh enabled',
         `Updating every ${this.refreshInterval / 1000}s`,
