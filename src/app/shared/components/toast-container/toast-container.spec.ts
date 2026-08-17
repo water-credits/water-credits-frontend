@@ -75,7 +75,6 @@ describe('ToastContainerComponent', () => {
     ]);
     fixture.detectChanges();
 
-    const allToasts = fixture.nativeElement.querySelectorAll('[role], [aria-live]');
     const textContent: string = fixture.nativeElement.textContent;
     expect(textContent).toContain('First');
     expect(textContent).toContain('Second');
