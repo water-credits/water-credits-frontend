@@ -78,8 +78,9 @@ export class WalletEffects {
             const address = this.walletService.getStoredPublicKey();
             return address ? WalletActions.connectWalletSuccess({ address }) : null;
           }),
-          filter((action): action is ReturnType<typeof WalletActions.connectWalletSuccess> =>
-            action !== null,
+          filter(
+            (action): action is ReturnType<typeof WalletActions.connectWalletSuccess> =>
+              action !== null,
           ),
         ),
       ),
