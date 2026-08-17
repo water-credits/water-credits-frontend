@@ -108,10 +108,7 @@ import { WalletService } from '../../../core/services/wallet.service';
               class="flex items-center justify-between px-4 py-3 border-b border-slate-100 dark:border-slate-700"
             >
               <h3 class="text-sm font-semibold text-slate-900 dark:text-white">Notifications</h3>
-              <button
-                (click)="markAllRead()"
-                class="text-xs text-stellar-blue hover:underline"
-              >
+              <button (click)="markAllRead()" class="text-xs text-stellar-blue hover:underline">
                 Mark all read
               </button>
             </div>
@@ -166,9 +163,9 @@ export class HeaderComponent implements OnInit, OnDestroy {
   /** The connected wallet address from the store (wallet slice). */
   protected readonly walletAddress$ = this.store.select(selectWalletAddress);
   protected readonly unreadCount$ = this.store.select(selectUnreadNotificationCount);
-  protected readonly notifications$ = this.store.select(selectNotifications).pipe(
-    map((notifications) => notifications.slice(0, 5)),
-  );
+  protected readonly notifications$ = this.store
+    .select(selectNotifications)
+    .pipe(map((notifications) => notifications.slice(0, 5)));
 
   protected notificationsOpen = false;
 
