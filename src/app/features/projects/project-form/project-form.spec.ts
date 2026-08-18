@@ -7,6 +7,7 @@ import { ProjectFormComponent } from './project-form';
 import { ApiService } from '../../../core/services/api.service';
 import { ProjectsService } from '../../../core/services/projects.service';
 import { NotificationService } from '../../../core/services/notification.service';
+import { ConfirmService } from '../../../core/services/confirm.service';
 import * as ProjectsActions from '../../../core/store/projects/projects.actions';
 import { ProjectsState } from '../../../core/store/projects/projects.reducer';
 
@@ -52,16 +53,22 @@ describe('ProjectFormComponent', () => {
   let fixture: ComponentFixture<ProjectFormComponent>;
   let store: MockStore;
   let notificationService: { success: ReturnType<typeof vi.fn>; error: ReturnType<typeof vi.fn> };
+  let confirmService: { confirm: ReturnType<typeof vi.fn> };
 
   beforeEach(async () => {
     notificationService = { success: vi.fn(), error: vi.fn() };
+    confirmService = { confirm: vi.fn() };
 
+    // Note: `provideMockActions` is deliberately absent. The component must no
+    // longer inject `Actions`, so leaving it unprovided means a regression would
+    // fail every test in this file with a NullInjectorError.
     await TestBed.configureTestingModule({
       imports: [ProjectFormComponent],
       providers: [
         provideRouter([]),
         provideMockStore({ initialState }),
         { provide: NotificationService, useValue: notificationService },
+        { provide: ConfirmService, useValue: confirmService },
         { provide: ProjectsService, useValue: { getProject: vi.fn() } },
         { provide: ApiService, useValue: { uploadFile: vi.fn() } },
       ],
@@ -147,7 +154,9 @@ describe('ProjectFormComponent', () => {
       sub.unsubscribe();
 
       expect(submittedAtDispatch).toBe(true);
+      // `submitted` short-circuits the guard, so no prompt is raised on the way out.
       expect(component.canDeactivate()).toBe(true);
+      expect(confirmService.confirm).not.toHaveBeenCalled();
     });
 
     it('does not raise the success notification itself (that belongs to ProjectsEffects)', () => {
@@ -218,25 +227,64 @@ describe('ProjectFormComponent', () => {
   });
 
   describe('canDeactivate', () => {
-    it('returns false when the form is dirty and the user cancels the confirm prompt', () => {
-      vi.spyOn(window, 'confirm').mockReturnValue(false);
-      component.step0.markAsDirty();
-
-      expect(component.canDeactivate()).toBe(false);
-    });
-
-    it('returns true when the form is dirty and the user accepts the confirm prompt', () => {
-      vi.spyOn(window, 'confirm').mockReturnValue(true);
-      component.step0.markAsDirty();
-
+    it('returns true when the form has been submitted', () => {
+      internals(component).submitted = true;
       expect(component.canDeactivate()).toBe(true);
     });
 
-    it('returns true when the form is pristine', () => {
-      const confirmSpy = vi.spyOn(window, 'confirm');
-
+    it('returns true when no form state is dirty and no docs are attached', () => {
       expect(component.canDeactivate()).toBe(true);
-      expect(confirmSpy).not.toHaveBeenCalled();
+    });
+
+    it('asks ConfirmService when there are unsaved changes', () => {
+      component.step0.get('name')!.markAsDirty();
+      confirmService.confirm.mockReturnValue(Promise.resolve(false));
+
+      const result = component.canDeactivate();
+
+      expect(confirmService.confirm).toHaveBeenCalled();
+      expect(result).toBeInstanceOf(Promise);
+    });
+
+    it('resolves true when the user confirms discarding changes', async () => {
+      component.step0.get('name')!.markAsDirty();
+      confirmService.confirm.mockResolvedValue(true);
+
+      await expect(component.canDeactivate()).resolves.toBe(true);
+    });
+
+    it('resolves false when the user cancels', async () => {
+      component.step0.get('name')!.markAsDirty();
+      confirmService.confirm.mockResolvedValue(false);
+
+      await expect(component.canDeactivate()).resolves.toBe(false);
+    });
+
+    it('returns false when the form is dirty and the user cancels the confirm prompt', async () => {
+      component.step0.markAsDirty();
+      confirmService.confirm.mockResolvedValue(false);
+
+      await expect(component.canDeactivate()).resolves.toBe(false);
+      // Pin the prompt copy and the destructive styling, not just the fact of the call.
+      expect(confirmService.confirm).toHaveBeenCalledWith({
+        title: 'Unsaved changes',
+        message: 'You have unsaved changes. Leave this page and discard them?',
+        confirmLabel: 'Discard',
+        confirmVariant: 'danger',
+      });
+    });
+
+    it('returns true when the form is dirty and the user accepts the confirm prompt', async () => {
+      component.step0.markAsDirty();
+      confirmService.confirm.mockResolvedValue(true);
+
+      await expect(component.canDeactivate()).resolves.toBe(true);
+      expect(confirmService.confirm).toHaveBeenCalledTimes(1);
+    });
+
+    it('returns true when the form is pristine, without prompting at all', () => {
+      expect(component.canDeactivate()).toBe(true);
+      expect(confirmService.confirm).not.toHaveBeenCalled();
     });
   });
 });

@@ -2,12 +2,19 @@ import { Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { HeaderComponent } from '../header/header';
 import { SidebarComponent } from '../sidebar/sidebar';
+import { ConfirmOutletComponent } from '../../components/confirm-outlet/confirm-outlet';
 import { ToastContainerComponent } from '../../components/toast-container/toast-container';
 
 @Component({
   selector: 'app-default-layout',
   standalone: true,
-  imports: [RouterOutlet, HeaderComponent, SidebarComponent, ToastContainerComponent],
+  imports: [
+    RouterOutlet,
+    HeaderComponent,
+    SidebarComponent,
+    ConfirmOutletComponent,
+    ToastContainerComponent,
+  ],
   template: `
     <div class="min-h-screen flex flex-col">
       <app-header></app-header>
@@ -18,6 +25,7 @@ import { ToastContainerComponent } from '../../components/toast-container/toast-
         </main>
       </div>
     </div>
+    <app-confirm-outlet></app-confirm-outlet>
 
     <!-- Fixed viewport toast overlay — renders above all modals (z-50) and the sidebar -->
     <app-toast-container></app-toast-container>
