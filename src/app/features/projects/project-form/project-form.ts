@@ -16,6 +16,7 @@ import { Subject, takeUntil } from 'rxjs';
 import { NotificationService } from '../../../core/services/notification.service';
 import { ApiService } from '../../../core/services/api.service';
 import { ProjectsService } from '../../../core/services/projects.service';
+import { ConfirmService } from '../../../core/services/confirm.service';
 import { MapViewComponent, MapLocation } from '../../../shared/components/map-view/map-view';
 import { PendingChanges } from '../../../core/guards/pending-changes.guard';
 import * as ProjectsActions from '../../../core/store/projects/projects.actions';
@@ -626,6 +627,7 @@ export class ProjectFormComponent implements OnInit, OnDestroy, PendingChanges {
     private apiService: ApiService,
     private projectsService: ProjectsService,
     private notificationService: NotificationService,
+    private confirmService: ConfirmService,
   ) {
     this.step0 = this.fb.group({
       name: ['', [Validators.required, Validators.maxLength(120)]],
@@ -703,7 +705,12 @@ export class ProjectFormComponent implements OnInit, OnDestroy, PendingChanges {
     if (this.submitted) return true;
     const dirty = this.step0.dirty || this.step1.dirty || this.step2.dirty || this.docs.length > 0;
     if (!dirty) return true;
-    return window.confirm('You have unsaved changes. Leave this page and discard them?');
+    return this.confirmService.confirm({
+      title: 'Unsaved changes',
+      message: 'You have unsaved changes. Leave this page and discard them?',
+      confirmLabel: 'Discard',
+      confirmVariant: 'danger',
+    });
   }
 
   // ── step navigation ─────────────────────────────────────────────────────
