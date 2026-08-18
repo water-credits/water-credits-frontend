@@ -8,21 +8,7 @@ import * as GovernanceActions from './governance.actions';
 import { GovernanceService } from '../../services/governance.service';
 import { WalletService } from '../../services/wallet.service';
 import { NotificationService } from '../../services/notification.service';
-
-const USER_DECLINED_MESSAGE = 'User declined';
-
-function isUserDeclined(err: unknown): boolean {
-  if (err instanceof Error) {
-    return (
-      err.message.includes(USER_DECLINED_MESSAGE) ||
-      err.message.toLowerCase().includes('declined') ||
-      err.message.toLowerCase().includes('rejected') ||
-      err.message.toLowerCase().includes('cancelled') ||
-      err.message.toLowerCase().includes('canceled')
-    );
-  }
-  return false;
-}
+import { isWalletDeclined } from '../../utils/wallet.utils';
 
 @Injectable()
 export class GovernanceEffects {
@@ -165,7 +151,7 @@ export class GovernanceEffects {
                 networkPassphrase,
               );
             } catch (sigErr) {
-              if (isUserDeclined(sigErr)) {
+              if (isWalletDeclined(sigErr)) {
                 return GovernanceActions.castVoteSignatureRejected({ proposalId });
               }
               const message = sigErr instanceof Error ? sigErr.message : 'Signing failed';
