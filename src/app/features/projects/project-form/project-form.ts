@@ -11,14 +11,17 @@ import {
 } from '@angular/forms';
 import { NgIf, NgFor, NgClass, DecimalPipe } from '@angular/common';
 import { Store } from '@ngrx/store';
-import { Actions, ofType } from '@ngrx/effects';
-import { Subject, takeUntil } from 'rxjs';
+import { Subject, takeUntil, skip, distinctUntilChanged } from 'rxjs';
 import { NotificationService } from '../../../core/services/notification.service';
 import { ApiService } from '../../../core/services/api.service';
 import { ProjectsService } from '../../../core/services/projects.service';
 import { MapViewComponent, MapLocation } from '../../../shared/components/map-view/map-view';
 import { PendingChanges } from '../../../core/guards/pending-changes.guard';
 import * as ProjectsActions from '../../../core/store/projects/projects.actions';
+import {
+  selectProjectsLoading,
+  selectProjectsError,
+} from '../../../core/store/projects/projects.selectors';
 import {
   LucideAngularModule,
   ChevronLeft,
@@ -622,7 +625,6 @@ export class ProjectFormComponent implements OnInit, OnDestroy, PendingChanges {
     private route: ActivatedRoute,
     private router: Router,
     private store: Store,
-    private actions$: Actions,
     private apiService: ApiService,
     private projectsService: ProjectsService,
     private notificationService: NotificationService,
@@ -671,25 +673,26 @@ export class ProjectFormComponent implements OnInit, OnDestroy, PendingChanges {
       }
     }
 
-    // Navigate to the new project page after a successful create dispatched via the store.
-    this.actions$
-      .pipe(ofType(ProjectsActions.createProjectSuccess), takeUntil(this.destroy$))
-      .subscribe(({ project }) => {
-        this.notificationService.success(
-          'Project created',
-          `${project.name} has been registered successfully`,
-        );
-        this.saving = false;
-        this.router.navigate(['/projects', project.id]);
+    // The submit button's busy state is owned by the store, not the component.
+    // Success navigation and its toast live in ProjectsEffects.createProjectSuccess$.
+    this.store
+      .select(selectProjectsLoading)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((loading) => {
+        this.saving = loading;
       });
 
-    // Surface field-level API errors back to the form.
-    this.actions$
-      .pipe(ofType(ProjectsActions.createProjectFailure), takeUntil(this.destroy$))
-      .subscribe(({ error }) => {
-        this.notificationService.error('Failed to create project', error);
-        this.saving = false;
-        this.submitted = false;
+    // Surface API errors back to the form. skip(1) drops the selector's initial
+    // replay so a stale error from an earlier request cannot fire a toast here.
+    this.store
+      .select(selectProjectsError)
+      .pipe(skip(1), distinctUntilChanged(), takeUntil(this.destroy$))
+      .subscribe((error) => {
+        this.storeError = error;
+        if (error) {
+          this.notificationService.error('Failed to create project', error);
+          this.submitted = false;
+        }
       });
   }
 
@@ -749,9 +752,11 @@ export class ProjectFormComponent implements OnInit, OnDestroy, PendingChanges {
 
   submit(): void {
     if (this.saving) return;
-    this.saving = true;
+    // Set before dispatching: PendingChangesGuard reads `submitted` to allow the
+    // store-driven navigation away from this form.
     this.submitted = true;
-    // Dispatch through the store; success/failure are handled via Actions stream above.
+    // Dispatch through the store; `saving` and `storeError` follow the selectors
+    // subscribed in ngOnInit, and navigation happens in ProjectsEffects.
     this.store.dispatch(
       ProjectsActions.createProject({
         data: {
