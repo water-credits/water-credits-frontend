@@ -60,10 +60,17 @@ export const projectsReducer = createReducer(
     loading: false,
     error,
   })),
+  on(ProjectsActions.createProject, (state) => ({ ...state, loading: true, error: null })),
   on(ProjectsActions.createProjectSuccess, (state, { project }) => ({
     ...state,
+    loading: false,
     projects: [project, ...state.projects],
     total: state.total + 1,
+  })),
+  on(ProjectsActions.createProjectFailure, (state, { error }) => ({
+    ...state,
+    loading: false,
+    error,
   })),
   on(ProjectsActions.updateProjectSuccess, (state, { project }) => ({
     ...state,
