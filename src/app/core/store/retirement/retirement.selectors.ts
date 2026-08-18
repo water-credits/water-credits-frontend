@@ -1,5 +1,6 @@
 import { createFeatureSelector, createSelector } from '@ngrx/store';
 import { RetirementState } from './retirement.reducer';
+import { Pagination } from '../../../shared/components/data-table/column-def.model';
 
 export const selectRetirementState = createFeatureSelector<RetirementState>('retirement');
 
@@ -15,6 +16,26 @@ export const selectRetirementPage = createSelector(selectRetirementState, (state
 export const selectRetirementTotalPages = createSelector(
   selectRetirementState,
   (state) => state.totalPages,
+);
+
+export const selectRetirementLastFetched = createSelector(
+  selectRetirementState,
+  (state) => state.lastFetched,
+);
+
+/**
+ * Convenience selector used by RetirementHistoryComponent to bind the
+ * DataTable [pagination] input without local component state.
+ * The limit stored in the reducer matches RETIREMENT_PAGE_LIMIT.
+ */
+export const selectRetirementPagination = createSelector(
+  selectRetirementState,
+  (state): Pagination => ({
+    page: state.page,
+    totalPages: state.totalPages,
+    total: state.total,
+    limit: 10,
+  }),
 );
 
 export const selectActiveRetirement = createSelector(

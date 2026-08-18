@@ -15,6 +15,7 @@ import * as MarketplaceActions from './marketplace/marketplace.actions';
 import { selectMarketplacePagination } from './marketplace/marketplace.selectors';
 import * as RetirementActions from './retirement/retirement.actions';
 import { selectRetirementPage } from './retirement/retirement.selectors';
+import { RETIREMENT_PAGE_LIMIT } from '../../features/retirement/retirement-history/retirement-history';
 
 interface PaginationOverrides {
   retirementPage?: number;
@@ -75,7 +76,7 @@ describe('CacheInvalidationEffects', () => {
     expect(actions).toEqual([
       CreditsActions.loadPortfolio(),
       AnalyticsActions.loadAnalyticsOverview(),
-      RetirementActions.loadRetirements({ page: 3, limit: 20 }),
+      RetirementActions.loadRetirements({ page: 3, limit: RETIREMENT_PAGE_LIMIT }),
     ]);
   });
 
