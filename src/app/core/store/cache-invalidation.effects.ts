@@ -52,7 +52,11 @@ function loadActionsForSlice(slice: CacheSlice, pagination: CachePagination): Ac
     case 'governance':
       return [GovernanceActions.loadProposals({ params: { page: 1, limit: 20 } })];
     case 'farmers':
-      return [FarmersActions.loadParcels(), FarmersActions.loadFarmerOverview()];
+      return [
+        FarmersActions.loadParcels(),
+        FarmersActions.loadFarmerOverview(),
+        FarmersActions.loadBmps(),
+      ];
     default:
       return [];
   }

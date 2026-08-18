@@ -55,13 +55,14 @@ describe('CacheInvalidationEffects', () => {
     effects = TestBed.inject(CacheInvalidationEffects);
   }
 
-  it('refreshes parcels, farmer overview, and analytics after parcel registration', async () => {
+  it('refreshes parcels, farmer overview, BMPs, and analytics after parcel registration', async () => {
     setup(of(FarmersActions.registerParcelSuccess({ parcel: {} as any })));
 
     const actions = await firstValueFrom(effects.invalidateDependentSlices$.pipe(toArray()));
     expect(actions).toEqual([
       FarmersActions.loadParcels(),
       FarmersActions.loadFarmerOverview(),
+      FarmersActions.loadBmps(),
       AnalyticsActions.loadAnalyticsOverview(),
     ]);
   });
@@ -110,7 +111,7 @@ describe('CacheInvalidationEffects', () => {
     );
 
     const actions = await firstValueFrom(effects.invalidateDependentSlices$.pipe(toArray()));
-    // farmers loads (2) + analytics (1) + analytics + projects (2) = 5.
-    expect(actions.length).toBe(5);
+    // farmers loads (3: parcels + overview + bmps) + analytics (1) + analytics + projects (2) = 6.
+    expect(actions.length).toBe(6);
   });
 });
