@@ -16,6 +16,7 @@ import * as CreditsActions from './credits/credits.actions';
 import * as AnalyticsActions from './analytics/analytics.actions';
 import * as RetirementActions from './retirement/retirement.actions';
 import { selectRetirementPage } from './retirement/retirement.selectors';
+import { RETIREMENT_PAGE_LIMIT } from '../../features/retirement/retirement-history/retirement-history';
 
 interface CachePagination {
   retirementPage: number;
@@ -39,7 +40,12 @@ function loadActionsForSlice(slice: CacheSlice, pagination: CachePagination): Ac
     case 'credits':
       return [CreditsActions.loadPortfolio()];
     case 'retirement':
-      return [RetirementActions.loadRetirements({ page: pagination.retirementPage, limit: 20 })];
+      return [
+        RetirementActions.loadRetirements({
+          page: pagination.retirementPage,
+          limit: RETIREMENT_PAGE_LIMIT,
+        }),
+      ];
     case 'marketplace':
       return [
         MarketplaceActions.loadListings({
@@ -52,7 +58,11 @@ function loadActionsForSlice(slice: CacheSlice, pagination: CachePagination): Ac
     case 'governance':
       return [GovernanceActions.loadProposals({ params: { page: 1, limit: 20 } })];
     case 'farmers':
-      return [FarmersActions.loadParcels(), FarmersActions.loadFarmerOverview()];
+      return [
+        FarmersActions.loadParcels(),
+        FarmersActions.loadFarmerOverview(),
+        FarmersActions.loadBmps(),
+      ];
     default:
       return [];
   }

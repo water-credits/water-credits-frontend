@@ -15,6 +15,7 @@ import * as MarketplaceActions from './marketplace/marketplace.actions';
 import { selectMarketplacePagination } from './marketplace/marketplace.selectors';
 import * as RetirementActions from './retirement/retirement.actions';
 import { selectRetirementPage } from './retirement/retirement.selectors';
+import { RETIREMENT_PAGE_LIMIT } from '../../features/retirement/retirement-history/retirement-history';
 
 interface PaginationOverrides {
   retirementPage?: number;
@@ -55,13 +56,14 @@ describe('CacheInvalidationEffects', () => {
     effects = TestBed.inject(CacheInvalidationEffects);
   }
 
-  it('refreshes parcels, farmer overview, and analytics after parcel registration', async () => {
+  it('refreshes parcels, farmer overview, BMPs, and analytics after parcel registration', async () => {
     setup(of(FarmersActions.registerParcelSuccess({ parcel: {} as any })));
 
     const actions = await firstValueFrom(effects.invalidateDependentSlices$.pipe(toArray()));
     expect(actions).toEqual([
       FarmersActions.loadParcels(),
       FarmersActions.loadFarmerOverview(),
+      FarmersActions.loadBmps(),
       AnalyticsActions.loadAnalyticsOverview(),
     ]);
   });
@@ -75,7 +77,7 @@ describe('CacheInvalidationEffects', () => {
     expect(actions).toEqual([
       CreditsActions.loadPortfolio(),
       AnalyticsActions.loadAnalyticsOverview(),
-      RetirementActions.loadRetirements({ page: 3, limit: 20 }),
+      RetirementActions.loadRetirements({ page: 3, limit: RETIREMENT_PAGE_LIMIT }),
     ]);
   });
 
@@ -110,7 +112,7 @@ describe('CacheInvalidationEffects', () => {
     );
 
     const actions = await firstValueFrom(effects.invalidateDependentSlices$.pipe(toArray()));
-    // farmers loads (2) + analytics (1) + analytics + projects (2) = 5.
-    expect(actions.length).toBe(5);
+    // farmers loads (3: parcels + overview + bmps) + analytics (1) + analytics + projects (2) = 6.
+    expect(actions.length).toBe(6);
   });
 });

@@ -7,10 +7,12 @@ import { Action } from '@ngrx/store';
 import { FarmersEffects } from './farmers.effects';
 import { ProjectsService } from '../../services/projects.service';
 import { AnalyticsService } from '../../services/analytics.service';
+import { FarmersService } from '../../services/farmers.service';
 import { NotificationService } from '../../services/notification.service';
 import * as FarmersActions from './farmers.actions';
 import { Project, ProjectStatus } from '../../models/project.model';
 import { AnalyticsOverview } from '../../models/analytics.model';
+import { Bmp } from '../../models/bmp.model';
 
 // ─── Test fixtures ────────────────────────────────────────────────────────────
 
@@ -51,6 +53,33 @@ const mockParcelCreate = {
   baselineEnd: '2025-12-31',
 };
 
+const mockBmp: Bmp = {
+  id: 'cover-crops',
+  name: 'Cover Crops',
+  description: 'Plant cover crops to reduce erosion.',
+  category: 'soil management',
+  enrolled: false,
+  estimatedCredits: 120,
+  icon: null,
+  requirements: ['Minimum 2 months coverage'],
+};
+
+const mockBmpEnrolled: Bmp = { ...mockBmp, enrolled: true };
+
+const mockBmps: Bmp[] = [
+  mockBmp,
+  {
+    id: 'no-till',
+    name: 'No-Till Farming',
+    description: 'Eliminate tillage.',
+    category: 'soil management',
+    enrolled: true,
+    estimatedCredits: 85,
+    icon: null,
+    requirements: ['Zero tillage on enrolled acres'],
+  },
+];
+
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
 describe('FarmersEffects', () => {
@@ -64,6 +93,12 @@ describe('FarmersEffects', () => {
 
   const analyticsServiceMock = {
     getOverview: vi.fn(),
+  };
+
+  const farmersServiceMock = {
+    getBmps: vi.fn(),
+    enrollBmp: vi.fn(),
+    unenrollBmp: vi.fn(),
   };
 
   const notificationServiceMock = {
@@ -84,6 +119,7 @@ describe('FarmersEffects', () => {
         provideMockActions(() => actions$),
         { provide: ProjectsService, useValue: projectsServiceMock },
         { provide: AnalyticsService, useValue: analyticsServiceMock },
+        { provide: FarmersService, useValue: farmersServiceMock },
         { provide: NotificationService, useValue: notificationServiceMock },
       ],
     });
@@ -240,6 +276,188 @@ describe('FarmersEffects', () => {
       expect(action).toEqual(
         FarmersActions.loadFarmerOverviewFailure({ error: 'Service unavailable' }),
       );
+    });
+  });
+
+  // ── Load BMPs ───────────────────────────────────────────────────────────────
+
+  describe('loadBmps$', () => {
+    it('emits loadBmpsSuccess with the BMP list on success', async () => {
+      farmersServiceMock.getBmps.mockResolvedValue(mockBmps);
+
+      const resultPromise = firstValueFrom(effects.loadBmps$);
+      actions$.next(FarmersActions.loadBmps());
+      const action = await resultPromise;
+
+      expect(action).toEqual(FarmersActions.loadBmpsSuccess({ bmps: mockBmps }));
+      expect(farmersServiceMock.getBmps).toHaveBeenCalled();
+    });
+
+    it('emits loadBmpsSuccess with empty array when service returns [] (404 fallback)', async () => {
+      farmersServiceMock.getBmps.mockResolvedValue([]);
+
+      const resultPromise = firstValueFrom(effects.loadBmps$);
+      actions$.next(FarmersActions.loadBmps());
+      const action = await resultPromise;
+
+      expect(action).toEqual(FarmersActions.loadBmpsSuccess({ bmps: [] }));
+    });
+
+    it('emits loadBmpsFailure on non-404 error', async () => {
+      farmersServiceMock.getBmps.mockRejectedValue(new Error('Server error'));
+
+      const resultPromise = firstValueFrom(effects.loadBmps$);
+      actions$.next(FarmersActions.loadBmps());
+      const action = await resultPromise;
+
+      expect(action).toEqual(FarmersActions.loadBmpsFailure({ error: 'Server error' }));
+    });
+  });
+
+  // ── Enroll Practice ─────────────────────────────────────────────────────────
+
+  describe('enrollPractice$', () => {
+    it('emits enrollPracticeSuccess with updated BMP on success', async () => {
+      farmersServiceMock.enrollBmp.mockResolvedValue(mockBmpEnrolled);
+
+      const resultPromise = firstValueFrom(effects.enrollPractice$);
+      actions$.next(FarmersActions.enrollPractice({ practiceId: 'cover-crops' }));
+      const action = await resultPromise;
+
+      expect(action).toEqual(FarmersActions.enrollPracticeSuccess({ bmp: mockBmpEnrolled }));
+      expect(farmersServiceMock.enrollBmp).toHaveBeenCalledWith('cover-crops');
+    });
+
+    it('emits enrollPracticeFailure on error', async () => {
+      farmersServiceMock.enrollBmp.mockRejectedValue(new Error('Enroll failed'));
+
+      const resultPromise = firstValueFrom(effects.enrollPractice$);
+      actions$.next(FarmersActions.enrollPractice({ practiceId: 'cover-crops' }));
+      const action = await resultPromise;
+
+      expect(action).toEqual(
+        FarmersActions.enrollPracticeFailure({ practiceId: 'cover-crops', error: 'Enroll failed' }),
+      );
+    });
+  });
+
+  describe('enrollPracticeSuccess$', () => {
+    it('shows a success notification with the BMP name', async () => {
+      const resultPromise = firstValueFrom(effects.enrollPracticeSuccess$);
+      actions$.next(FarmersActions.enrollPracticeSuccess({ bmp: mockBmpEnrolled }));
+      await resultPromise;
+
+      expect(notificationServiceMock.success).toHaveBeenCalledWith(
+        'Enrolled',
+        expect.stringContaining('Cover Crops'),
+      );
+    });
+  });
+
+  describe('enrollPracticeFailure$', () => {
+    it('shows an error notification', async () => {
+      const resultPromise = firstValueFrom(effects.enrollPracticeFailure$);
+      actions$.next(
+        FarmersActions.enrollPracticeFailure({ practiceId: 'cover-crops', error: 'Enroll failed' }),
+      );
+      await resultPromise;
+
+      expect(notificationServiceMock.error).toHaveBeenCalledWith(
+        'Enrollment failed',
+        'Enroll failed',
+      );
+    });
+  });
+
+  // ── Unenroll Practice ───────────────────────────────────────────────────────
+
+  describe('unenrollPractice$', () => {
+    it('emits unenrollPracticeSuccess with the practiceId on success', async () => {
+      farmersServiceMock.unenrollBmp.mockResolvedValue(undefined);
+
+      const resultPromise = firstValueFrom(effects.unenrollPractice$);
+      actions$.next(FarmersActions.unenrollPractice({ practiceId: 'cover-crops' }));
+      const action = await resultPromise;
+
+      expect(action).toEqual(FarmersActions.unenrollPracticeSuccess({ practiceId: 'cover-crops' }));
+      expect(farmersServiceMock.unenrollBmp).toHaveBeenCalledWith('cover-crops');
+    });
+
+    it('emits unenrollPracticeFailure on error', async () => {
+      farmersServiceMock.unenrollBmp.mockRejectedValue(new Error('Unenroll failed'));
+
+      const resultPromise = firstValueFrom(effects.unenrollPractice$);
+      actions$.next(FarmersActions.unenrollPractice({ practiceId: 'cover-crops' }));
+      const action = await resultPromise;
+
+      expect(action).toEqual(
+        FarmersActions.unenrollPracticeFailure({
+          practiceId: 'cover-crops',
+          error: 'Unenroll failed',
+        }),
+      );
+    });
+  });
+
+  describe('unenrollPracticeSuccess$', () => {
+    it('shows an info notification', async () => {
+      const resultPromise = firstValueFrom(effects.unenrollPracticeSuccess$);
+      actions$.next(FarmersActions.unenrollPracticeSuccess({ practiceId: 'cover-crops' }));
+      await resultPromise;
+
+      expect(notificationServiceMock.info).toHaveBeenCalledWith(
+        'Unenrolled',
+        expect.stringContaining('cover-crops'),
+      );
+    });
+  });
+
+  describe('unenrollPracticeFailure$', () => {
+    it('shows an error notification', async () => {
+      const resultPromise = firstValueFrom(effects.unenrollPracticeFailure$);
+      actions$.next(
+        FarmersActions.unenrollPracticeFailure({
+          practiceId: 'cover-crops',
+          error: 'Unenroll failed',
+        }),
+      );
+      await resultPromise;
+
+      expect(notificationServiceMock.error).toHaveBeenCalledWith(
+        'Unenrollment failed',
+        'Unenroll failed',
+      );
+    });
+  });
+
+  // ── mergeMap: concurrent card toggles ───────────────────────────────────────
+
+  describe('enrollPractice$ — mergeMap allows concurrent card toggles', () => {
+    it('processes two different cards concurrently', async () => {
+      let resolveFirst!: (v: Bmp) => void;
+      const firstCardPromise = new Promise<Bmp>((res) => {
+        resolveFirst = res;
+      });
+
+      farmersServiceMock.enrollBmp
+        .mockReturnValueOnce(firstCardPromise) // card A — hangs
+        .mockResolvedValue({ ...mockBmp, id: 'no-till', enrolled: true }); // card B — resolves fast
+
+      // Card B result arrives first
+      const cardBPromise = firstValueFrom(effects.enrollPractice$);
+      actions$.next(FarmersActions.enrollPractice({ practiceId: 'cover-crops' })); // card A
+      actions$.next(FarmersActions.enrollPractice({ practiceId: 'no-till' })); // card B
+
+      const cardBAction = await cardBPromise;
+      expect((cardBAction as ReturnType<typeof FarmersActions.enrollPracticeSuccess>).bmp.id).toBe(
+        'no-till',
+      );
+
+      // Both service calls were started (mergeMap, not exhaustMap)
+      expect(farmersServiceMock.enrollBmp).toHaveBeenCalledTimes(2);
+
+      // Resolve card A so there's no dangling promise
+      resolveFirst(mockBmpEnrolled);
     });
   });
 });

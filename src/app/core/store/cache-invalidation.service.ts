@@ -31,6 +31,19 @@ export const CACHE_INVALIDATION_MAP: Record<string, CacheSlice[]> = {
   [MarketplaceActions.buyConfirmed.type]: ['credits', 'marketplace'],
   [GovernanceActions.castVoteSuccess.type]: ['governance'],
   [FarmersActions.registerParcelSuccess.type]: ['farmers', 'analytics'],
+  /**
+   * BMP enrollment/unenrollment changes the set of practices available for
+   * credit issuance. We invalidate only the 'farmers' slice (triggering a
+   * loadBmps re-fetch via loadActionsForSlice) rather than a broader
+   * analytics invalidation: the credit-issuance calculation is a backend
+   * concern that happens asynchronously after verification, so refreshing
+   * analytics immediately after enrollment would return stale data anyway.
+   *
+   * loadActionsForSlice dispatches loadBmps (added below) alongside
+   * loadParcels and loadFarmerOverview when 'farmers' is invalidated.
+   */
+  [FarmersActions.enrollPracticeSuccess.type]: ['farmers'],
+  [FarmersActions.unenrollPracticeSuccess.type]: ['farmers'],
 };
 
 /** The list of action types this service knows how to react to. */

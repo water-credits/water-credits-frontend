@@ -1,8 +1,10 @@
-import { Component, OnInit } from '@angular/core';
-import { NgIf, NgFor, NgClass } from '@angular/common';
-import { NotificationService } from '../../../core/services/notification.service';
+import { Component, inject, OnInit } from '@angular/core';
+import { AsyncPipe, NgClass, NgFor, NgIf } from '@angular/common';
+import { Store } from '@ngrx/store';
+import { Observable } from 'rxjs';
 import {
   LucideAngularModule,
+  LucideIconData,
   Leaf,
   CheckCircle,
   Circle,
@@ -12,23 +14,39 @@ import {
   Trees,
   Flower2,
   Sun,
+  Loader,
 } from 'lucide-angular';
 
-interface Bmp {
-  id: string;
-  name: string;
-  description: string;
-  category: string;
-  enrolled: boolean;
-  estimatedCredits: number;
-  icon: any;
-  requirements: string[];
-}
+import { AppState } from '../../../core/store/app.state';
+import * as FarmersActions from '../../../core/store/farmers/farmers.actions';
+import {
+  selectBmps,
+  selectBmpsLoading,
+  selectIsPracticeEnrolling,
+} from '../../../core/store/farmers/farmers.selectors';
+import { Bmp } from '../../../core/models/bmp.model';
+
+/**
+ * BMP icon map — resolved at component level (the only place Lucide is
+ * rendered) so the Bmp model stays free of render-layer dependencies.
+ *
+ * When the server returns a BMP whose id is not in this map the default
+ * `Sprout` icon is used as a safe fallback.
+ */
+const BMP_ICON_MAP: Record<string, unknown> = {
+  'cover-crops': Sprout,
+  'no-till': Sun,
+  'buffer-strips': Trees,
+  'managed-grazing': Wheat,
+  compost: Flower2,
+};
+
+const DEFAULT_ICON = Sprout;
 
 @Component({
   selector: 'app-farmer-practices',
   standalone: true,
-  imports: [NgIf, NgFor, NgClass, LucideAngularModule],
+  imports: [NgIf, NgFor, NgClass, AsyncPipe, LucideAngularModule],
   template: `
     <div class="space-y-6">
       <div>
@@ -38,9 +56,34 @@ interface Bmp {
         </p>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+      <!-- Loading skeleton -->
+      <div
+        *ngIf="bmpsLoading$ | async"
+        class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"
+      >
         <div
-          *ngFor="let bmp of bmps"
+          *ngFor="let _ of [1, 2, 3, 4, 5]"
+          class="card p-5 border border-slate-200 dark:border-slate-700 animate-pulse"
+        >
+          <div class="flex items-start gap-3 mb-3">
+            <div class="w-10 h-10 rounded-xl bg-slate-200 dark:bg-slate-700"></div>
+            <div class="flex-1 space-y-2">
+              <div class="h-4 bg-slate-200 dark:bg-slate-700 rounded w-3/4"></div>
+              <div class="h-3 bg-slate-200 dark:bg-slate-700 rounded w-1/3"></div>
+            </div>
+          </div>
+          <div class="h-3 bg-slate-200 dark:bg-slate-700 rounded mb-1 w-full"></div>
+          <div class="h-3 bg-slate-200 dark:bg-slate-700 rounded w-5/6"></div>
+        </div>
+      </div>
+
+      <!-- BMP cards -->
+      <div
+        *ngIf="!(bmpsLoading$ | async)"
+        class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"
+      >
+        <div
+          *ngFor="let bmp of bmps$ | async; trackBy: trackByBmpId"
           class="card p-5 border"
           [ngClass]="
             bmp.enrolled
@@ -57,7 +100,7 @@ interface Bmp {
                 class="w-10 h-10 rounded-xl flex items-center justify-center"
               >
                 <lucide-angular
-                  [img]="bmp.icon"
+                  [img]="resolveIcon(bmp)"
                   class="w-5 h-5"
                   [ngClass]="
                     bmp.enrolled ? 'text-environmental-green' : 'text-slate-500 dark:text-slate-400'
@@ -69,21 +112,37 @@ interface Bmp {
                 <span class="text-xs text-slate-400 capitalize">{{ bmp.category }}</span>
               </div>
             </div>
+
+            <!-- Toggle button — disabled while this practice's request is in flight -->
             <button
               (click)="toggleBmp(bmp)"
-              class="shrink-0"
+              class="shrink-0 transition-opacity"
+              [disabled]="isEnrolling(bmp.id) | async"
+              [class.opacity-50]="isEnrolling(bmp.id) | async"
+              [class.cursor-not-allowed]="isEnrolling(bmp.id) | async"
               [ngClass]="
                 bmp.enrolled
                   ? 'text-environmental-green'
                   : 'text-slate-300 dark:text-slate-600 hover:text-slate-400'
               "
+              [attr.aria-label]="(bmp.enrolled ? 'Unenroll from ' : 'Enroll in ') + bmp.name"
+              [attr.aria-pressed]="bmp.enrolled"
             >
+              <!-- Spinner while in-flight -->
               <lucide-angular
-                [img]="bmp.enrolled ? CheckCircle : Circle"
-                class="w-6 h-6"
+                *ngIf="isEnrolling(bmp.id) | async; else toggleIcon"
+                [img]="Loader"
+                class="w-6 h-6 animate-spin"
               ></lucide-angular>
+              <ng-template #toggleIcon>
+                <lucide-angular
+                  [img]="bmp.enrolled ? CheckCircle : Circle"
+                  class="w-6 h-6"
+                ></lucide-angular>
+              </ng-template>
             </button>
           </div>
+
           <p class="text-sm text-slate-500 dark:text-slate-400 mb-3">{{ bmp.description }}</p>
 
           <div class="mb-3">
@@ -140,106 +199,56 @@ interface Bmp {
   `,
 })
 export class FarmerPracticesComponent implements OnInit {
-  protected bmps: Bmp[] = [];
+  private readonly store = inject(Store<AppState>);
 
+  protected readonly bmps$: Observable<Bmp[]> = this.store.select(selectBmps);
+  protected readonly bmpsLoading$: Observable<boolean> = this.store.select(selectBmpsLoading);
+
+  // Lucide icon references for the template
   protected readonly Leaf = Leaf;
   protected readonly CheckCircle = CheckCircle;
   protected readonly Circle = Circle;
   protected readonly Info = Info;
-  protected readonly Sprout = Sprout;
-  protected readonly Wheat = Wheat;
-  protected readonly Trees = Trees;
-  protected readonly Flower2 = Flower2;
-  protected readonly Sun = Sun;
-
-  constructor(private notificationService: NotificationService) {}
+  protected readonly Loader = Loader;
 
   ngOnInit(): void {
-    this.bmps = [
-      {
-        id: 'cover-crops',
-        name: 'Cover Crops',
-        category: 'soil management',
-        description:
-          'Plant cover crops like rye, clover, or radish during fallow periods to reduce erosion, improve soil organic matter, and capture nutrients.',
-        enrolled: false,
-        estimatedCredits: 120,
-        icon: Sprout,
-        requirements: [
-          'Minimum 2 months of cover crop coverage per year',
-          'At least 3 species in rotation',
-          'No-till termination preferred',
-        ],
-      },
-      {
-        id: 'no-till',
-        name: 'No-Till Farming',
-        category: 'soil management',
-        description:
-          'Eliminate tillage to preserve soil structure, reduce runoff, increase water infiltration, and sequester carbon.',
-        enrolled: false,
-        estimatedCredits: 85,
-        icon: Sun,
-        requirements: [
-          'Zero tillage on enrolled acres',
-          'Residue cover maintained at 30%+',
-          '3-year minimum commitment',
-        ],
-      },
-      {
-        id: 'buffer-strips',
-        name: 'Buffer Strips',
-        category: 'water management',
-        description:
-          'Establish vegetated buffer strips along waterways to filter sediment, nutrients, and pesticides from surface runoff.',
-        enrolled: false,
-        estimatedCredits: 200,
-        icon: Trees,
-        requirements: [
-          'Minimum 30 ft width along waterways',
-          'Native perennial grasses or shrubs',
-          'No fertilizer or pesticide application',
-        ],
-      },
-      {
-        id: 'managed-grazing',
-        name: 'Managed Grazing',
-        category: 'livestock management',
-        description:
-          'Implement rotational grazing systems to improve pasture health, reduce erosion, and enhance nutrient cycling.',
-        enrolled: false,
-        estimatedCredits: 150,
-        icon: Wheat,
-        requirements: [
-          'Rotational grazing with minimum 4 paddocks',
-          'Minimum 60-day rest period per paddock',
-          'Stocking rate management plan',
-        ],
-      },
-      {
-        id: 'compost',
-        name: 'Compost Application',
-        category: 'nutrient management',
-        description:
-          'Apply compost to improve soil organic matter, water holding capacity, and reduce synthetic fertilizer needs.',
-        enrolled: false,
-        estimatedCredits: 95,
-        icon: Flower2,
-        requirements: [
-          'Compost from certified sources',
-          'Application rate based on soil testing',
-          'Incorporation within 24 hours',
-        ],
-      },
-    ];
+    this.store.dispatch(FarmersActions.loadBmps());
   }
 
   toggleBmp(bmp: Bmp): void {
-    bmp.enrolled = !bmp.enrolled;
     if (bmp.enrolled) {
-      this.notificationService.success('Enrolled', `You are now enrolled in ${bmp.name}`);
+      this.store.dispatch(FarmersActions.unenrollPractice({ practiceId: bmp.id }));
     } else {
-      this.notificationService.info('Unenrolled', `You have unenrolled from ${bmp.name}`);
+      this.store.dispatch(FarmersActions.enrollPractice({ practiceId: bmp.id }));
     }
+  }
+
+  /**
+   * Returns an Observable<boolean> for the per-card loading state.
+   * Called once per card render; Angular's async pipe handles subscription
+   * and unsubscription automatically even with OnPush change detection.
+   */
+  isEnrolling(practiceId: string): Observable<boolean> {
+    return this.store.select(selectIsPracticeEnrolling(practiceId));
+  }
+
+  /**
+   * trackBy for *ngFor — prevents full DOM re-creation when the store
+   * updates a single BMP's enrolled field.
+   */
+  trackByBmpId(_index: number, bmp: Bmp): string {
+    return bmp.id;
+  }
+
+  /**
+   * Resolves the Lucide icon for a BMP. The server-side Bmp model's `icon`
+   * field may be null/undefined (JSON cannot carry a function reference), so
+   * we fall back to the local BMP_ICON_MAP keyed by BMP id. If neither is
+   * available, DEFAULT_ICON (Sprout) is used.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  resolveIcon(bmp: Bmp): LucideIconData {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return (bmp.icon ?? BMP_ICON_MAP[bmp.id] ?? DEFAULT_ICON) as LucideIconData;
   }
 }

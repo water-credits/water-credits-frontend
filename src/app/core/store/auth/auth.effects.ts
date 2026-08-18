@@ -6,6 +6,7 @@ import { from } from 'rxjs';
 import * as AuthActions from './auth.actions';
 import { AuthService } from '../../services/auth.service';
 import { WalletService } from '../../services/wallet.service';
+import { WebsocketService } from '../../services/websocket.service';
 import { NotificationService } from '../../services/notification.service';
 import { SessionBusService } from '../../services/session-bus.service';
 import { ApiService } from '../../services/api.service';
@@ -21,6 +22,7 @@ export class AuthEffects implements OnInitEffects {
   private readonly store = inject(Store<AppState>);
   private readonly authService = inject(AuthService);
   private readonly walletService = inject(WalletService);
+  private readonly wsService = inject(WebsocketService);
   private readonly notificationService = inject(NotificationService);
   private readonly sessionBus = inject(SessionBusService);
   private readonly apiService = inject(ApiService);
@@ -98,6 +100,17 @@ export class AuthEffects implements OnInitEffects {
         ofType(AuthActions.loginSuccess),
         tap(({ user, token }) => {
           localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, token);
+          // Open the WebSocket connection now that we have a valid JWT and
+          // user ID.  We use user.id (internal DB identifier) rather than
+          // the wallet address because the wallet address may be null on
+          // the WalletState after a reload (Issue 3 — tracked separately).
+          // connect() safely disconnects any pre-existing socket first.
+          //
+          // TODO: if the JWT is silently refreshed mid-session the socket's
+          // auth handshake token will become stale.  A future fix should
+          // either reconnect the socket after token refresh or use a
+          // short-lived handshake token.  Tracked in a follow-up issue.
+          this.wsService.connect(token, user.id);
           this.notificationService.success(
             'Welcome!',
             `Signed in as ${user.displayName || user.wallet}`,
@@ -178,7 +191,8 @@ export class AuthEffects implements OnInitEffects {
   /**
    * Handles both user-initiated logout and force-logout triggered by a 401.
    * This is the single code path that clears storage, disconnects the wallet,
-   * shows a notification, and redirects to the login page.
+   * closes the WebSocket connection, shows a notification, and redirects to
+   * the login page.
    */
   logout$ = createEffect(
     () =>
@@ -187,6 +201,7 @@ export class AuthEffects implements OnInitEffects {
         tap((action) => {
           localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
           this.walletService.disconnect();
+          this.wsService.disconnect();
           if (action.type === AuthActions.forceLogout.type) {
             this.notificationService.warning('Session expired', 'Please sign in again');
           } else {

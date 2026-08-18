@@ -9,29 +9,7 @@ import * as CreditsActions from '../credits/credits.actions';
 import { RetirementService } from '../../services/retirement.service';
 import { WalletService } from '../../services/wallet.service';
 import { NotificationService } from '../../services/notification.service';
-
-/**
- * Sentinel string returned by Freighter when the user explicitly rejects the
- * signing prompt. We match against it to distinguish "user cancelled" from a
- * genuine network/extension error so we can show the right UX response.
- *
- * The Freighter v6 API throws an Error whose message contains this substring.
- */
-const USER_DECLINED_MESSAGE = 'User declined';
-
-/** Checks whether a caught value represents the user declining the Freighter prompt. */
-function isUserDeclined(err: unknown): boolean {
-  if (err instanceof Error) {
-    return (
-      err.message.includes(USER_DECLINED_MESSAGE) ||
-      err.message.toLowerCase().includes('declined') ||
-      err.message.toLowerCase().includes('rejected') ||
-      err.message.toLowerCase().includes('cancelled') ||
-      err.message.toLowerCase().includes('canceled')
-    );
-  }
-  return false;
-}
+import { isWalletDeclined } from '../../utils/wallet.utils';
 
 @Injectable()
 export class RetirementEffects {
@@ -79,7 +57,7 @@ export class RetirementEffects {
                 networkPassphrase,
               );
             } catch (sigErr) {
-              if (isUserDeclined(sigErr)) {
+              if (isWalletDeclined(sigErr)) {
                 return RetirementActions.retirementSignatureRejected({
                   retirementId: retirement.id,
                 });
