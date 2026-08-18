@@ -46,7 +46,9 @@ let nextDialogId = 0;
             <lucide-angular [img]="XIcon" class="w-5 h-5"></lucide-angular>
           </button>
         </div>
-        <p [id]="messageId" class="text-sm text-slate-600 dark:text-slate-400 mb-6">{{ message }}</p>
+        <p [id]="messageId" class="text-sm text-slate-600 dark:text-slate-400 mb-6">
+          {{ message }}
+        </p>
         <div class="flex justify-end gap-3">
           <button (click)="cancel.emit()" class="btn btn-outline">{{ cancelLabel }}</button>
           <button (click)="confirm.emit()" [class]="confirmClass">{{ confirmLabel }}</button>

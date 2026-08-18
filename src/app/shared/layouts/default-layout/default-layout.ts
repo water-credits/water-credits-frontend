@@ -8,8 +8,13 @@ import { ToastContainerComponent } from '../../components/toast-container/toast-
 @Component({
   selector: 'app-default-layout',
   standalone: true,
-  imports: [RouterOutlet, HeaderComponent, SidebarComponent, ConfirmOutletComponent],
-  imports: [RouterOutlet, HeaderComponent, SidebarComponent, ToastContainerComponent],
+  imports: [
+    RouterOutlet,
+    HeaderComponent,
+    SidebarComponent,
+    ConfirmOutletComponent,
+    ToastContainerComponent,
+  ],
   template: `
     <div class="min-h-screen flex flex-col">
       <app-header></app-header>
