@@ -1,14 +1,15 @@
-import { Component, Input, Output, EventEmitter, HostListener } from '@angular/core';
+import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { NgIf } from '@angular/common';
 import { StellarAddressPipe } from '../../pipes/stellar-address.pipe';
+import { ClickOutsideDirective } from '../../directives/click-outside.directive';
 import { LucideAngularModule, Wallet, ChevronDown, LogOut, Copy, Check } from 'lucide-angular';
 
 @Component({
   selector: 'app-wallet-connect',
   standalone: true,
-  imports: [NgIf, StellarAddressPipe, LucideAngularModule],
+  imports: [NgIf, StellarAddressPipe, LucideAngularModule, ClickOutsideDirective],
   template: `
-    <div class="relative">
+    <div appClickOutside (appClickOutside)="showMenu = false" class="relative">
       <ng-container *ngIf="!connected">
         <button (click)="connect.emit()" class="btn btn-primary text-sm flex items-center gap-2">
           <lucide-angular [img]="WalletIcon" class="w-4 h-4"></lucide-angular>
@@ -17,7 +18,7 @@ import { LucideAngularModule, Wallet, ChevronDown, LogOut, Copy, Check } from 'l
       </ng-container>
       <ng-container *ngIf="connected">
         <button
-          (click)="showMenu = !showMenu"
+          (click)="toggleMenu()"
           class="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
         >
           <span class="w-2 h-2 rounded-full bg-green-500"></span>
@@ -66,13 +67,12 @@ export class WalletConnectComponent {
   protected readonly CopyIcon = Copy;
   protected readonly CheckIcon = Check;
 
-  @HostListener('document:click')
-  onDocumentClick(): void {
-    this.showMenu = false;
+  toggleMenu(): void {
+    this.showMenu = !this.showMenu;
   }
 
   copyAddress(): void {
-    navigator.clipboard.writeText(this.address);
+    void navigator.clipboard.writeText(this.address);
     this.copied = true;
     setTimeout(() => (this.copied = false), 2000);
   }
