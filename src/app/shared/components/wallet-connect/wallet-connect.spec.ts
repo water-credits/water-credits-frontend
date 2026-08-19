@@ -39,9 +39,9 @@ describe('WalletConnectComponent', () => {
   };
 
   const getMenuActionButton = (label: string): HTMLButtonElement => {
-    return Array.from(fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>).find(
-      (button) => button.textContent?.includes(label),
-    ) as HTMLButtonElement;
+    return Array.from(
+      fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>,
+    ).find((button) => button.textContent?.includes(label)) as HTMLButtonElement;
   };
 
   it('opens the dropdown when the wallet button is clicked and keeps it open', () => {
