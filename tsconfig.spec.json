@@ -3,6 +3,8 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
+    "moduleResolution": "node", // or "bundler" / "nodenext" depending on Angular version
+    "allowSyntheticDefaultImports": true
     "outDir": "./out-tsc/spec",
     "types": [
       "vitest/globals"

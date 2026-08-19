@@ -6,7 +6,6 @@ import { Subject, map, takeUntil } from 'rxjs';
 import { WalletConnectComponent } from '../../components/wallet-connect/wallet-connect';
 import { AppState } from '../../../core/store/app.state';
 import {
-  LucideAngularModule,
   Droplets,
   Bell,
   Sun,
@@ -17,6 +16,7 @@ import {
   Info,
   TriangleAlert,
 } from 'lucide-angular';
+
 import {
   toggleSidebar,
   setDarkMode,
