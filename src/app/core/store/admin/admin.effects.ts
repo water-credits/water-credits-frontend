@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { of, from } from 'rxjs';
 import { catchError, map, mergeMap } from 'rxjs/operators';
@@ -7,6 +7,9 @@ import * as AdminActions from './admin.actions';
 
 @Injectable()
 export class AdminEffects {
+  private actions = inject(Actions);
+  private usersService = inject(UsersService);
+
   loadAdminStatsEffect = createEffect(() =>
     this.actions.pipe(
       ofType(AdminActions.loadAdminStats),
@@ -15,6 +18,7 @@ export class AdminEffects {
           map((res) =>
             AdminActions.loadAdminStatsSuccess({
               totalUsers: res.total,
+              // TODO: loadAdminStats derives activeOracles, pendingQueue, and apiLatency as hardcoded zeros from a user-count endpoint. This is a known limitation.
               activeOracles: 0,
               pendingQueue: 0,
               apiLatency: 0,
@@ -57,8 +61,19 @@ export class AdminEffects {
     ),
   );
 
-  constructor(
-    private actions: Actions,
-    private usersService: UsersService,
-  ) {}
+  // TODO: implement actual effect for toggleUserKyc
+  toggleUserKycEffect = createEffect(() =>
+    this.actions.pipe(
+      ofType(AdminActions.toggleUserKyc),
+      map(() => AdminActions.toggleUserKycSuccess()),
+    ),
+  );
+
+  // TODO: implement actual effect for updateConfig
+  updateConfigEffect = createEffect(() =>
+    this.actions.pipe(
+      ofType(AdminActions.updateConfig),
+      map(() => AdminActions.updateConfigSuccess()),
+    ),
+  );
 }

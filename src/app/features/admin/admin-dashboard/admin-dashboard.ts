@@ -24,6 +24,7 @@ import {
   selectAnalyticsOverviewLoading,
   selectAnalyticsError,
 } from '../../../core/store/analytics/analytics.selectors';
+import * as AdminActions from '../../../core/store/admin/admin.actions';
 import {
   LucideAngularModule,
   Users,
@@ -368,6 +369,8 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     // Dispatch analytics overview through the store; AnalyticsEffects handles the HTTP call.
     this.store.dispatch(AnalyticsActions.loadAnalyticsOverview());
+    this.store.dispatch(AdminActions.loadAdminStats());
+    this.store.dispatch(AdminActions.loadUsers({ page: 1, limit: 10 }));
     // Oracle submissions have no store slice — call the service directly.
     this.loadSubmissions();
   }
