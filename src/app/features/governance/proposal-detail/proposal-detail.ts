@@ -82,7 +82,7 @@ import {
                   </span>
                   <span class="inline-flex items-center gap-1.5">
                     <lucide-angular [img]="ClockIcon" class="w-4 h-4"></lucide-angular>
-                    Deadline {{ proposal.deadline | duration }}
+                    Deadline: {{ proposal.deadline | duration }}
                   </span>
                   <span>{{ proposal.createdAt | dateFormat: 'short' }}</span>
                 </div>
