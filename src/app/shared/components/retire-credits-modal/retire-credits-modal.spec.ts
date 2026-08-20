@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { vi } from 'vitest';
 import { RetireCreditsModalComponent } from './retire-credits-modal';
 
@@ -9,6 +10,7 @@ describe('RetireCreditsModalComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [RetireCreditsModalComponent],
+      providers: [provideRouter([])],
     }).compileComponents();
 
     fixture = TestBed.createComponent(RetireCreditsModalComponent);
@@ -135,6 +137,45 @@ describe('RetireCreditsModalComponent', () => {
     clickContinue();
     clickContinue();
     buttonByText('Confirm Retirement').click();
-    expect(confirmSpy).toHaveBeenCalledWith({ projectId: 'p1', amount: 25, purpose: 'offset' });
+    expect(confirmSpy).toHaveBeenCalledWith({ projectId: 'p1', amount: '25', purpose: 'offset' });
+  });
+
+  it('advances to step 4 on phase = "confirmed"', () => {
+    fixture.componentRef.setInput('phase', 'confirmed');
+    fixture.detectChanges();
+
+    const el = fixture.nativeElement as HTMLElement;
+    expect(el.textContent).toContain('Retirement Submitted!');
+    expect((component as any).currentStep).toBe(4);
+  });
+
+  it('renders View Certificate button on step 4 when retirementId is set', () => {
+    fixture.componentRef.setInput('phase', 'confirmed');
+    fixture.componentRef.setInput('retirementId', 'ret-123');
+    fixture.detectChanges();
+
+    const anchor = fixture.nativeElement.querySelector('a') as HTMLAnchorElement;
+    expect(anchor).toBeTruthy();
+    expect(anchor.textContent).toContain('View Certificate');
+    expect(anchor.getAttribute('href')).toBe('/retirement/ret-123/certificate');
+  });
+
+  it('shows error on phase = "failed"', () => {
+    fixture.componentRef.setInput('phase', 'failed');
+    fixture.componentRef.setInput('error', 'Signature rejected by wallet');
+    fixture.detectChanges();
+
+    const el = fixture.nativeElement as HTMLElement;
+    expect(el.textContent).toContain('Signature rejected by wallet');
+  });
+
+  it('resets currentStep to 0 when phase returns to "idle"', () => {
+    fixture.componentRef.setInput('phase', 'confirmed');
+    fixture.detectChanges();
+    expect((component as any).currentStep).toBe(4);
+
+    fixture.componentRef.setInput('phase', 'idle');
+    fixture.detectChanges();
+    expect((component as any).currentStep).toBe(0);
   });
 });

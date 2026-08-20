@@ -6,7 +6,8 @@ import { CreditsPortfolioComponent } from './credits-portfolio';
 import * as RetirementActions from '../../../core/store/retirement/retirement.actions';
 import {
   selectIsRetirementInProgress,
-  selectIsRetirementConfirmed,
+  selectRetirementPhase,
+  selectActiveRetirement,
 } from '../../../core/store/retirement/retirement.selectors';
 
 describe('CreditsPortfolioComponent', () => {
@@ -102,14 +103,21 @@ describe('CreditsPortfolioComponent', () => {
     });
   });
 
-  describe('modal close on retirement confirmed', () => {
-    it('closes the modal when the store reports retirement as confirmed', () => {
-      (component as any).showRetireModal = true;
-
-      store.overrideSelector(selectIsRetirementConfirmed, true);
+  describe('retirement phase propagation to modal', () => {
+    it('passes retirement phase and active retirement to modal state', async () => {
+      store.overrideSelector(selectRetirementPhase, 'confirmed');
+      store.overrideSelector(selectActiveRetirement, { id: 'ret-999' } as any);
       store.refreshState();
 
-      expect((component as any).showRetireModal).toBe(false);
+      const phase = await new Promise<string>((resolve) => {
+        (component as any).retirementPhase$.subscribe((v: string) => resolve(v));
+      });
+      const activeRetirement = await new Promise<any>((resolve) => {
+        (component as any).activeRetirement$.subscribe((v: any) => resolve(v));
+      });
+
+      expect(phase).toBe('confirmed');
+      expect(activeRetirement).toEqual({ id: 'ret-999' });
     });
   });
 });

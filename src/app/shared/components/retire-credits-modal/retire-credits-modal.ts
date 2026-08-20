@@ -1,8 +1,10 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges } from '@angular/core';
 import { NgIf, NgFor } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { CreditAmountPipe } from '../../pipes/credit-amount.pipe';
 import { LucideAngularModule, X, ChevronLeft, Check, Droplets } from 'lucide-angular';
+import { RetirementPhase } from '../../../core/store/retirement/retirement.reducer';
 
 interface Step {
   label: string;
@@ -12,7 +14,7 @@ interface Step {
 @Component({
   selector: 'app-retire-credits-modal',
   standalone: true,
-  imports: [NgIf, NgFor, FormsModule, CreditAmountPipe, LucideAngularModule],
+  imports: [NgIf, NgFor, FormsModule, RouterLink, CreditAmountPipe, LucideAngularModule],
   template: `
     <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div
@@ -23,7 +25,7 @@ interface Step {
         >
           <div class="flex items-center gap-3">
             <button
-              *ngIf="currentStep > 0"
+              *ngIf="currentStep > 0 && currentStep < 4"
               (click)="prevStep()"
               class="text-slate-400 hover:text-slate-600"
             >
@@ -41,6 +43,13 @@ interface Step {
           </button>
         </div>
         <div class="px-6 py-4">
+          <div
+            *ngIf="phase === 'failed' && error"
+            class="p-3 mb-4 text-sm text-red-700 bg-red-100 dark:bg-red-900/30 dark:text-red-400 rounded-lg font-medium"
+          >
+            {{ error }}
+          </div>
+
           <div class="flex items-center justify-between mb-6">
             <div *ngFor="let step of steps; let i = index" class="flex items-center">
               <div
@@ -141,7 +150,15 @@ interface Step {
             <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-1">
               Retirement Submitted!
             </h3>
-            <p class="text-sm text-slate-500">Your credits are being retired on-chain.</p>
+            <p class="text-sm text-slate-500 mb-4">Your credits are being retired on-chain.</p>
+            <a
+              *ngIf="retirementId"
+              [routerLink]="['/retirement', retirementId, 'certificate']"
+              (click)="close.emit()"
+              class="btn btn-outline inline-flex items-center gap-2 text-sm"
+            >
+              View Certificate
+            </a>
           </div>
         </div>
 
@@ -160,10 +177,14 @@ interface Step {
           <button
             *ngIf="currentStep === 3"
             (click)="confirm.emit({ projectId: selectedProjectId, amount, purpose })"
-            [disabled]="loading"
+            [disabled]="loading || phase === 'preparing' || phase === 'submitting'"
             class="btn btn-primary"
           >
-            {{ loading ? 'Submitting...' : 'Confirm Retirement' }}
+            {{
+              loading || phase === 'preparing' || phase === 'submitting'
+                ? 'Submitting...'
+                : 'Confirm Retirement'
+            }}
           </button>
           <button *ngIf="currentStep === 4" (click)="close.emit()" class="btn btn-primary">
             Done
@@ -173,9 +194,12 @@ interface Step {
     </div>
   `,
 })
-export class RetireCreditsModalComponent {
+export class RetireCreditsModalComponent implements OnChanges {
   @Input() projects: { id: string; name: string; balance: string }[] = [];
   @Input() loading = false;
+  @Input() phase: RetirementPhase = 'idle';
+  @Input() retirementId: string | null = null;
+  @Input() error: string | null = null;
   @Output() close = new EventEmitter<void>();
   @Output() confirm = new EventEmitter<{ projectId: string; amount: string; purpose: string }>();
 
@@ -195,6 +219,17 @@ export class RetireCreditsModalComponent {
   protected readonly ChevronLeft = ChevronLeft;
   protected readonly Check = Check;
   protected readonly Droplets = Droplets;
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['phase']) {
+      const currentPhase = changes['phase'].currentValue;
+      if (currentPhase === 'confirmed') {
+        this.currentStep = 4;
+      } else if (currentPhase === 'idle') {
+        this.currentStep = 0;
+      }
+    }
+  }
 
   get selectedProjectName(): string {
     return this.projects.find((p) => p.id === this.selectedProjectId)?.name || '';
