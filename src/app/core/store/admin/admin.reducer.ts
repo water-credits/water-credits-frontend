@@ -1,5 +1,6 @@
 import { createReducer, on } from '@ngrx/store';
 import * as AdminActions from './admin.actions';
+import { User } from '../../models/user.model';
 
 export interface AdminState {
   stats: {
@@ -10,7 +11,7 @@ export interface AdminState {
   } | null;
   statsLoading: boolean;
   statsError: string | null;
-  users: any[];
+  users: User[];
   usersLoading: boolean;
   usersError: string | null;
   configSaving: boolean;

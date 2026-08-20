@@ -1,4 +1,5 @@
 import { createAction, props } from '@ngrx/store';
+import { User } from '../../models/user.model';
 
 export const loadAdminStats = createAction('[Admin] Load Stats');
 export const loadAdminStatsSuccess = createAction(
@@ -16,7 +17,7 @@ export const loadUsers = createAction(
 );
 export const loadUsersSuccess = createAction(
   '[Admin] Load Users Success',
-  props<{ users: any[]; page: number; totalPages: number; total: number }>(),
+  props<{ users: User[]; page: number; totalPages: number; total: number }>(),
 );
 export const loadUsersFailure = createAction(
   '[Admin] Load Users Failure',
