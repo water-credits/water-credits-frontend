@@ -19,6 +19,10 @@ export class OracleService {
     return this.api.get<OracleConfig>('/oracle/config');
   }
 
+  async getOracleStatus(): Promise<{ id: string, status: 'active' | 'inactive' | 'error' }[]> {
+    return this.api.get<{ id: string, status: 'active' | 'inactive' | 'error' }[]>('/oracle/status');
+  }
+
   async triggerSubmission(): Promise<void> {
     return this.api.post<void>('/oracle/trigger');
   }
