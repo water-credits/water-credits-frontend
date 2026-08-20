@@ -20,7 +20,7 @@ import {
   CreditPortfolio,
   CreditTransaction,
 } from '../../../core/models/credit.model';
-import { RetirementRequest } from '../../../core/models/retirement.model';
+import { Retirement, RetirementRequest } from '../../../core/models/retirement.model';
 import { AppState } from '../../../core/store/app.state';
 import * as CreditsActions from '../../../core/store/credits/credits.actions';
 import * as RetirementActions from '../../../core/store/retirement/retirement.actions';
@@ -32,8 +32,11 @@ import {
 } from '../../../core/store/credits/credits.selectors';
 import {
   selectIsRetirementInProgress,
-  selectIsRetirementConfirmed,
+  selectRetirementPhase,
+  selectActiveRetirement,
+  selectRetirementError,
 } from '../../../core/store/retirement/retirement.selectors';
+import { RetirementPhase } from '../../../core/store/retirement/retirement.reducer';
 import {
   LucideAngularModule,
   Wallet,
@@ -294,6 +297,9 @@ import {
     <app-retire-credits-modal
       *ngIf="showRetireModal"
       [projects]="retireProjects"
+      [phase]="(retirementPhase$ | async) ?? 'idle'"
+      [retirementId]="(activeRetirement$ | async)?.id ?? null"
+      [error]="retirementError$ | async"
       [loading]="(retirementLoading$ | async) ?? false"
       (close)="closeRetireModal()"
       (confirm)="onRetireConfirm($event)"
@@ -306,6 +312,9 @@ export class CreditsPortfolioComponent implements OnInit, OnDestroy {
   protected error$: Observable<string | null>;
   protected transactions$: Observable<CreditTransaction[]>;
   protected retirementLoading$: Observable<boolean>;
+  protected retirementPhase$: Observable<RetirementPhase>;
+  protected activeRetirement$: Observable<Retirement | null>;
+  protected retirementError$: Observable<string | null>;
 
   protected showRetireModal = false;
   protected retireProjects: { id: string; name: string; balance: string }[] = [];
@@ -343,16 +352,14 @@ export class CreditsPortfolioComponent implements OnInit, OnDestroy {
     this.error$ = this.store.select(selectCreditsError);
     this.transactions$ = this.store.select(selectCreditTransactions);
     this.retirementLoading$ = this.store.select(selectIsRetirementInProgress);
+    this.retirementPhase$ = this.store.select(selectRetirementPhase);
+    this.activeRetirement$ = this.store.select(selectActiveRetirement);
+    this.retirementError$ = this.store.select(selectRetirementError);
   }
 
   ngOnInit(): void {
     this.store.dispatch(CreditsActions.loadPortfolio());
     this.store.dispatch(CreditsActions.loadTransactions({}));
-
-    this.store
-      .select(selectIsRetirementConfirmed)
-      .pipe(filter(Boolean), takeUntil(this.destroy$))
-      .subscribe(() => this.closeRetireModal());
   }
 
   ngOnDestroy(): void {
