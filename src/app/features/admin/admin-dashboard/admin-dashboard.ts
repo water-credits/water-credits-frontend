@@ -19,11 +19,13 @@ import { AnalyticsOverview } from '../../../core/models/analytics.model';
 import { OracleSubmission } from '../../../core/models/oracle.model';
 import { AppState } from '../../../core/store/app.state';
 import * as AnalyticsActions from '../../../core/store/analytics/analytics.actions';
+import * as AdminActions from '../../../core/store/admin/admin.actions';
 import {
   selectAnalyticsOverview,
   selectAnalyticsOverviewLoading,
   selectAnalyticsError,
 } from '../../../core/store/analytics/analytics.selectors';
+import { selectAdminStats } from '../../../core/store/admin/admin.selectors';
 import {
   LucideAngularModule,
   Users,
@@ -97,7 +99,7 @@ import { LoggingService } from '../../../core/services/logging.service';
               </div>
             </div>
             <p class="text-2xl font-bold text-slate-900 dark:text-white">
-              {{ (overview$ | async)?.totalUsers ?? 0 | numberAbbreviate }}
+              {{ (adminStats$ | async)?.totalUsers ?? 0 | numberAbbreviate }}
             </p>
           </div>
 
@@ -106,22 +108,19 @@ import { LoggingService } from '../../../core/services/logging.service';
               <p
                 class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider"
               >
-                Total Projects
+                Active Oracles
               </p>
               <div
                 class="w-9 h-9 rounded-lg bg-environmental-green/10 flex items-center justify-center"
               >
                 <lucide-angular
-                  [img]="Building2Icon"
+                  [img]="ShieldCheckIcon"
                   class="w-4 h-4 text-environmental-green"
                 ></lucide-angular>
               </div>
             </div>
             <p class="text-2xl font-bold text-slate-900 dark:text-white">
-              {{ (overview$ | async)?.totalProjects ?? 0 | numberAbbreviate }}
-            </p>
-            <p class="text-xs text-green-600 mt-1">
-              {{ (overview$ | async)?.activeProjects ?? 0 }} active
+              {{ (adminStats$ | async)?.activeOracles ?? '—' }}
             </p>
           </div>
 
@@ -130,17 +129,17 @@ import { LoggingService } from '../../../core/services/logging.service';
               <p
                 class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider"
               >
-                Oracles
+                Pending Queue
               </p>
               <div class="w-9 h-9 rounded-lg bg-credit-gold/10 flex items-center justify-center">
                 <lucide-angular
-                  [img]="ShieldCheckIcon"
+                  [img]="ActivityIcon"
                   class="w-4 h-4 text-credit-gold"
                 ></lucide-angular>
               </div>
             </div>
             <p class="text-2xl font-bold text-slate-900 dark:text-white">
-              {{ (overview$ | async)?.verifiedOracles ?? 0 | numberAbbreviate }}
+              {{ (adminStats$ | async)?.pendingQueue ?? '—' }}
             </p>
           </div>
 
@@ -149,17 +148,20 @@ import { LoggingService } from '../../../core/services/logging.service';
               <p
                 class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider"
               >
-                Retirements
+                API Latency
               </p>
               <div class="w-9 h-9 rounded-lg bg-retirement-red/10 flex items-center justify-center">
                 <lucide-angular
-                  [img]="RefreshCwIcon"
+                  [img]="ClockIcon"
                   class="w-4 h-4 text-retirement-red"
                 ></lucide-angular>
               </div>
             </div>
             <p class="text-2xl font-bold text-slate-900 dark:text-white">
-              {{ (overview$ | async)?.totalRetirements ?? 0 | numberAbbreviate }}
+              <ng-container *ngIf="(adminStats$ | async)?.apiLatency !== null && (adminStats$ | async)?.apiLatency !== undefined; else noLatency">
+                {{ (adminStats$ | async)?.apiLatency }}ms
+              </ng-container>
+              <ng-template #noLatency>—</ng-template>
             </p>
           </div>
         </div>
@@ -321,6 +323,7 @@ import { LoggingService } from '../../../core/services/logging.service';
 export class AdminDashboardComponent implements OnInit, OnDestroy {
   /** Overview stats from the analytics store slice — no async/await in component. */
   protected overview$: Observable<AnalyticsOverview | null>;
+  protected adminStats$: Observable<any>;
   protected loading$: Observable<boolean>;
   protected error$: Observable<string | null>;
 
@@ -361,6 +364,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     private loggingService: LoggingService,
   ) {
     this.overview$ = this.store.select(selectAnalyticsOverview);
+    this.adminStats$ = this.store.select(selectAdminStats);
     this.loading$ = this.store.select(selectAnalyticsOverviewLoading);
     this.error$ = this.store.select(selectAnalyticsError);
   }
@@ -368,6 +372,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     // Dispatch analytics overview through the store; AnalyticsEffects handles the HTTP call.
     this.store.dispatch(AnalyticsActions.loadAnalyticsOverview());
+    this.store.dispatch(AdminActions.loadAdminStats());
     // Oracle submissions have no store slice — call the service directly.
     this.loadSubmissions();
   }
@@ -379,6 +384,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 
   protected refresh(): void {
     this.store.dispatch(AnalyticsActions.loadAnalyticsOverview());
+    this.store.dispatch(AdminActions.loadAdminStats());
     this.loadSubmissions();
   }
 

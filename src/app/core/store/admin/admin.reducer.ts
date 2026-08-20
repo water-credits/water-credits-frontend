@@ -4,9 +4,9 @@ import * as AdminActions from './admin.actions';
 export interface AdminState {
   stats: {
     totalUsers: number;
-    activeOracles: number;
-    pendingQueue: number;
-    apiLatency: number;
+    activeOracles: number | null;
+    pendingQueue: number | null;
+    apiLatency: number | null;
   } | null;
   statsLoading: boolean;
   statsError: string | null;

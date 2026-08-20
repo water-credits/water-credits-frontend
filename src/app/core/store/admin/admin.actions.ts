@@ -3,7 +3,7 @@ import { createAction, props } from '@ngrx/store';
 export const loadAdminStats = createAction('[Admin] Load Stats');
 export const loadAdminStatsSuccess = createAction(
   '[Admin] Load Stats Success',
-  props<{ totalUsers: number; activeOracles: number; pendingQueue: number; apiLatency: number }>(),
+  props<{ totalUsers: number; activeOracles: number | null; pendingQueue: number | null; apiLatency: number | null }>(),
 );
 export const loadAdminStatsFailure = createAction(
   '[Admin] Load Stats Failure',
