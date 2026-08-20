@@ -218,6 +218,12 @@ export class SensorChartComponent implements AfterViewInit, OnChanges, OnDestroy
       hidden: this.hiddenParams.has(p.key),
     }));
 
+    // Only register the secondary right-hand axis when at least one dataset
+    // assigned to it actually has readings. Registering y1 based on the
+    // parameter keys alone (needsDualAxis) produces an orphaned axis with no
+    // ticks when the feed has no data for the secondary parameters.
+    const hasDualAxisData = datasets.some((d) => d.yAxisID === 'y1' && d.data.length > 0);
+
     // Annotation lines for thresholds
     const annotationEntries: Record<string, object> = {};
     if (this.thresholds) {
@@ -269,6 +275,9 @@ export class SensorChartComponent implements AfterViewInit, OnChanges, OnDestroy
         ticks: { color: '#94A3B8', maxTicksLimit: 8 },
       },
       y: {
+        // The new API intentionally does not force the y axis to start at
+        // zero (unlike the legacy series API) so pH-scale readings that hover
+        // around 7.0 are not visually flattened.
         beginAtZero: false,
         grid: { color: '#F1F5F920' },
         ticks: { color: '#94A3B8' },
@@ -276,13 +285,19 @@ export class SensorChartComponent implements AfterViewInit, OnChanges, OnDestroy
       },
     };
 
-    if (dual) {
+    if (hasDualAxisData) {
       scales['y1'] = {
         beginAtZero: false,
         grid: { drawOnChartArea: false },
         ticks: { color: '#94A3B8' },
         position: 'right',
       };
+    } else {
+      // No readings exist for the secondary axis — repoint those datasets at
+      // the primary axis so nothing targets a scale that was never registered.
+      for (const d of datasets) {
+        if (d.yAxisID === 'y1') d.yAxisID = 'y';
+      }
     }
 
     const options: ChartOptions<'line'> = {
@@ -347,6 +362,10 @@ export class SensorChartComponent implements AfterViewInit, OnChanges, OnDestroy
             ticks: { color: '#94A3B8', maxTicksLimit: 10 },
           },
           y: {
+            // Legacy series API keeps beginAtZero: true for backwards
+            // compatibility; the new data/parameters API intentionally uses
+            // beginAtZero: false so pH-scale readings around 7.0 are not
+            // visually flattened.
             beginAtZero: true,
             grid: { color: '#F1F5F9' },
             ticks: { color: '#94A3B8' },
