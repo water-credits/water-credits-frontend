@@ -65,15 +65,15 @@ export class AdminEffects {
   toggleUserKycEffect = createEffect(() =>
     this.actions.pipe(
       ofType(AdminActions.toggleUserKyc),
-      map(() => AdminActions.toggleUserKycSuccess())
-    )
+      map(() => AdminActions.toggleUserKycSuccess()),
+    ),
   );
 
   // TODO: implement actual effect for updateConfig
   updateConfigEffect = createEffect(() =>
     this.actions.pipe(
       ofType(AdminActions.updateConfig),
-      map(() => AdminActions.updateConfigSuccess())
-    )
+      map(() => AdminActions.updateConfigSuccess()),
+    ),
   );
 }

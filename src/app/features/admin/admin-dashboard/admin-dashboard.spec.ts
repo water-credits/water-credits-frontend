@@ -49,7 +49,7 @@ describe('AdminDashboardComponent', () => {
   });
 
   it('should dispatch loadAdminStats and loadUsers on init', () => {
-    fixture.detectChanges();
+    component.ngOnInit();
     expect(store.dispatch).toHaveBeenCalledWith(AdminActions.loadAdminStats());
     expect(store.dispatch).toHaveBeenCalledWith(AdminActions.loadUsers({ page: 1, limit: 10 }));
   });
