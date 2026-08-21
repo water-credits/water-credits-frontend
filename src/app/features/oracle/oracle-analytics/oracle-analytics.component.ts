@@ -1,13 +1,40 @@
 import { Component, OnInit } from '@angular/core';
-import { NgIf, NgFor, NgSwitch, NgSwitchCase, NgSwitchDefault, NgClass, DecimalPipe } from '@angular/common';
+import {
+  NgIf,
+  NgFor,
+  NgSwitch,
+  NgSwitchCase,
+  NgSwitchDefault,
+  NgClass,
+  DecimalPipe,
+} from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { LucideAngularModule, RefreshCw, Activity, AlertTriangle, CheckCircle2, XCircle, Gauge, Clock, Server, Filter } from 'lucide-angular';
+import {
+  LucideAngularModule,
+  RefreshCw,
+  Activity,
+  AlertTriangle,
+  CheckCircle2,
+  XCircle,
+  Gauge,
+  Clock,
+  Server,
+  Filter,
+} from 'lucide-angular';
 import { AnalyticsService } from '../../../core/services/analytics.service';
 import { LoggingService } from '../../../core/services/logging.service';
 import { DateFormatPipe } from '../../../shared/pipes/date-format.pipe';
-import { DataTableComponent, ColumnDef, Pagination, SortEvent } from '../../../shared/components/data-table/data-table.component';
+import {
+  DataTableComponent,
+  ColumnDef,
+  Pagination,
+  SortEvent,
+} from '../../../shared/components/data-table/data-table.component';
 import { StatusBadgeComponent } from '../../../shared/components/status-badge/status-badge';
-import { SensorChartComponent, ChartSeries } from '../../../shared/components/sensor-chart/sensor-chart';
+import {
+  SensorChartComponent,
+  ChartSeries,
+} from '../../../shared/components/sensor-chart/sensor-chart';
 import {
   OracleAnomaly,
   OracleNodeHealth,
@@ -60,7 +87,9 @@ type SortDirection = 'asc' | 'desc';
             class="px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-dark-bg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-stellar-blue/50"
           >
             <option [ngValue]="null">All nodes</option>
-            <option *ngFor="let node of nodes" [ngValue]="node.nodeId">{{ node.nodeAddress }}</option>
+            <option *ngFor="let node of nodes" [ngValue]="node.nodeId">
+              {{ node.nodeAddress }}
+            </option>
           </select>
         </div>
         <div class="flex items-center gap-2">
@@ -78,7 +107,9 @@ type SortDirection = 'asc' | 'desc';
       </div>
 
       <div *ngIf="loading" class="flex items-center justify-center py-12">
-        <div class="animate-spin w-8 h-8 border-2 border-stellar-blue border-t-transparent rounded-full"></div>
+        <div
+          class="animate-spin w-8 h-8 border-2 border-stellar-blue border-t-transparent rounded-full"
+        ></div>
       </div>
 
       <ng-container *ngIf="!loading">
@@ -94,7 +125,8 @@ type SortDirection = 'asc' | 'desc';
           </div>
           <div class="card p-4">
             <div class="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-xs">
-              <lucide-angular [img]="CheckCircle2" class="w-4 h-4"></lucide-angular> Avg success rate
+              <lucide-angular [img]="CheckCircle2" class="w-4 h-4"></lucide-angular> Avg success
+              rate
             </div>
             <p class="text-2xl font-bold text-slate-900 dark:text-white mt-1">
               {{ avgSuccessRate | number: '1.1-1' }}%
@@ -112,12 +144,16 @@ type SortDirection = 'asc' | 'desc';
             <div class="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-xs">
               <lucide-angular [img]="AlertTriangle" class="w-4 h-4"></lucide-angular> Anomalies
             </div>
-            <p class="text-2xl font-bold text-slate-900 dark:text-white mt-1">{{ anomalies.length }}</p>
+            <p class="text-2xl font-bold text-slate-900 dark:text-white mt-1">
+              {{ anomalies.length }}
+            </p>
           </div>
         </div>
 
         <div *ngIf="anomalies.length" class="card p-5">
-          <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
+          <h3
+            class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2"
+          >
             <lucide-angular [img]="AlertTriangle" class="w-4 h-4 text-amber-500"></lucide-angular>
             Anomaly alerts
           </h3>
@@ -128,7 +164,7 @@ type SortDirection = 'asc' | 'desc';
               [ngClass]="{
                 'border-red-200 bg-red-50 dark:bg-red-900/20': anomaly.severity === 'critical',
                 'border-amber-200 bg-amber-50 dark:bg-amber-900/20': anomaly.severity === 'warning',
-                'border-slate-200 bg-slate-50 dark:bg-slate-800/40': anomaly.severity === 'info'
+                'border-slate-200 bg-slate-50 dark:bg-slate-800/40': anomaly.severity === 'info',
               }"
             >
               <lucide-angular
@@ -137,7 +173,7 @@ type SortDirection = 'asc' | 'desc';
                 [ngClass]="{
                   'text-red-500': anomaly.severity === 'critical',
                   'text-amber-500': anomaly.severity === 'warning',
-                  'text-slate-400': anomaly.severity === 'info'
+                  'text-slate-400': anomaly.severity === 'info',
                 }"
               ></lucide-angular>
               <div class="flex-1">
@@ -146,21 +182,34 @@ type SortDirection = 'asc' | 'desc';
                 </p>
                 <p class="text-xs text-slate-500 dark:text-slate-400">{{ anomaly.message }}</p>
               </div>
-              <span class="text-xs text-slate-400">{{ anomaly.detectedAt | dateFormat: 'relative' }}</span>
+              <span class="text-xs text-slate-400">{{
+                anomaly.detectedAt | dateFormat: 'relative'
+              }}</span>
             </div>
           </div>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <app-sensor-chart [title]="'Submission volume'" [series]="submissionVolumeSeries"></app-sensor-chart>
-          <app-sensor-chart [title]="'Average latency (ms)'" [series]="latencySeries"></app-sensor-chart>
+          <app-sensor-chart
+            [title]="'Submission volume'"
+            [series]="submissionVolumeSeries"
+          ></app-sensor-chart>
+          <app-sensor-chart
+            [title]="'Average latency (ms)'"
+            [series]="latencySeries"
+          ></app-sensor-chart>
           <app-sensor-chart [title]="'Uptime %'" [series]="uptimeSeries"></app-sensor-chart>
-          <app-sensor-chart [title]="'Success rate %'" [series]="successRateSeries"></app-sensor-chart>
+          <app-sensor-chart
+            [title]="'Success rate %'"
+            [series]="successRateSeries"
+          ></app-sensor-chart>
         </div>
 
         <div class="card p-5">
           <div class="flex items-center justify-between mb-4">
-            <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300">Submission history</h3>
+            <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300">
+              Submission history
+            </h3>
             <div class="flex items-center gap-2">
               <lucide-angular [img]="Filter" class="w-4 h-4 text-slate-400"></lucide-angular>
               <select
@@ -193,7 +242,9 @@ type SortDirection = 'asc' | 'desc';
                   <app-status-badge [status]="row.status"></app-status-badge>
                 </span>
                 <span *ngSwitchCase="'latencyMs'" class="text-right">{{ row.latencyMs }}ms</span>
-                <span *ngSwitchCase="'createdAt'" class="text-right">{{ row.createdAt | dateFormat: 'relative' }}</span>
+                <span *ngSwitchCase="'createdAt'" class="text-right">{{
+                  row.createdAt | dateFormat: 'relative'
+                }}</span>
                 <span *ngSwitchDefault>{{ row[col.key] }}</span>
               </ng-container>
             </ng-template>
@@ -254,9 +305,7 @@ export class OracleAnalyticsComponent implements OnInit {
   anomalyTypeLabel = anomalyTypeLabel;
 
   get sortedAnomalies(): OracleAnomaly[] {
-    return [...this.anomalies].sort(
-      (a, b) => severityRank(b.severity) - severityRank(a.severity),
-    );
+    return [...this.anomalies].sort((a, b) => severityRank(b.severity) - severityRank(a.severity));
   }
 
   get onlineCount(): number {
@@ -392,7 +441,10 @@ export class OracleAnalyticsComponent implements OnInit {
 
   private async loadTimeseries(): Promise<void> {
     try {
-      this.timeseries = await this.analytics.getOracleTimeseries(this.rangeDays, this.selectedNodeId ?? undefined);
+      this.timeseries = await this.analytics.getOracleTimeseries(
+        this.rangeDays,
+        this.selectedNodeId ?? undefined,
+      );
     } catch (error) {
       this.logging.error('Failed to load oracle timeseries:', error);
       this.timeseries = [];

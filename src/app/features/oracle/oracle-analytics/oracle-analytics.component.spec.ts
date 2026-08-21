@@ -17,9 +17,9 @@ describe('OracleAnalyticsComponent', () => {
   const mockAnalytics = {
     getOracleNodes: vi.fn().mockResolvedValue(generateOracleNodes()),
     getOracleTimeseries: vi.fn().mockResolvedValue(generateOracleTimeseries(30)),
-    getOracleSubmissions: vi.fn().mockResolvedValue(
-      generateOracleSubmissions({ page: 1, limit: 10 }),
-    ),
+    getOracleSubmissions: vi
+      .fn()
+      .mockResolvedValue(generateOracleSubmissions({ page: 1, limit: 10 })),
     getOracleAnomalies: vi.fn().mockResolvedValue(generateOracleAnomalies()),
   };
 

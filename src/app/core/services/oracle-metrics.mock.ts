@@ -61,10 +61,7 @@ export function generateOracleNodes(): OracleNodeHealth[] {
   });
 }
 
-export function generateOracleTimeseries(
-  days = 30,
-  nodeId?: string,
-): OracleTimeseriesPoint[] {
+export function generateOracleTimeseries(days = 30, nodeId?: string): OracleTimeseriesPoint[] {
   const seed = hashString(`ts:${nodeId ?? 'all'}:${days}`);
   const rand = mulberry32(seed);
   const points: OracleTimeseriesPoint[] = [];

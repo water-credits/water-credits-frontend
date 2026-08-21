@@ -72,13 +72,28 @@ describe('AnalyticsService oracle-metrics methods', () => {
 
   it('getOracleSubmissions maps the paginated payload and params', async () => {
     const payload: PaginatedOracleSubmissions = {
-      data: [{ id: 's1', nodeId: 'node-1', nodeAddress: 'G1', projectId: 'p1', status: 'success', latencyMs: 200, createdAt: new Date().toISOString() }],
+      data: [
+        {
+          id: 's1',
+          nodeId: 'node-1',
+          nodeAddress: 'G1',
+          projectId: 'p1',
+          status: 'success',
+          latencyMs: 200,
+          createdAt: new Date().toISOString(),
+        },
+      ],
       page: 2,
       totalPages: 5,
       total: 50,
     };
     api.get.mockResolvedValue(payload);
-    const query: OracleSubmissionsQuery = { page: 2, limit: 10, nodeId: 'node-1', status: 'success' };
+    const query: OracleSubmissionsQuery = {
+      page: 2,
+      limit: 10,
+      nodeId: 'node-1',
+      status: 'success',
+    };
     const result = await service.getOracleSubmissions(query);
     expect(result).toEqual(payload);
     expect(api.get).toHaveBeenCalledWith('/analytics/oracle-submissions', { params: query });
@@ -106,7 +121,9 @@ describe('AnalyticsService oracle-metrics methods', () => {
     api.get.mockResolvedValue(payload);
     const result = await service.getOracleAnomalies('node-1');
     expect(result).toEqual(payload);
-    expect(api.get).toHaveBeenCalledWith('/analytics/oracle-anomalies', { params: { nodeId: 'node-1' } });
+    expect(api.get).toHaveBeenCalledWith('/analytics/oracle-anomalies', {
+      params: { nodeId: 'node-1' },
+    });
   });
 
   it('getOracleAnomalies falls back to mock data when the request fails', async () => {
