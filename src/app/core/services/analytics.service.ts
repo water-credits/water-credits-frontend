@@ -8,6 +8,19 @@ import {
   TopProject,
   TopRetiree,
 } from '../models/analytics.model';
+import {
+  OracleAnomaly,
+  OracleNodeHealth,
+  OracleSubmissionsQuery,
+  OracleTimeseriesPoint,
+  PaginatedOracleSubmissions,
+} from '../models/oracle-metrics.model';
+import {
+  generateOracleAnomalies,
+  generateOracleNodes,
+  generateOracleSubmissions,
+  generateOracleTimeseries,
+} from './oracle-metrics.mock';
 
 @Injectable({ providedIn: 'root' })
 export class AnalyticsService {
@@ -37,5 +50,45 @@ export class AnalyticsService {
 
   async getTopRetirees(limit = 5): Promise<TopRetiree[]> {
     return this.api.get<TopRetiree[]>('/analytics/top-retirees', { params: { limit } });
+  }
+
+  async getOracleNodes(): Promise<OracleNodeHealth[]> {
+    try {
+      return await this.api.get<OracleNodeHealth[]>('/analytics/oracle-nodes');
+    } catch {
+      return generateOracleNodes();
+    }
+  }
+
+  async getOracleTimeseries(days = 30, nodeId?: string): Promise<OracleTimeseriesPoint[]> {
+    try {
+      return await this.api.get<OracleTimeseriesPoint[]>('/analytics/oracle-metrics/timeseries', {
+        params: { days, ...(nodeId ? { nodeId } : {}) },
+      });
+    } catch {
+      return generateOracleTimeseries(days, nodeId);
+    }
+  }
+
+  async getOracleSubmissions(
+    query: OracleSubmissionsQuery = {},
+  ): Promise<PaginatedOracleSubmissions> {
+    try {
+      return await this.api.get<PaginatedOracleSubmissions>('/analytics/oracle-submissions', {
+        params: query as Record<string, unknown>,
+      });
+    } catch {
+      return generateOracleSubmissions(query);
+    }
+  }
+
+  async getOracleAnomalies(nodeId?: string): Promise<OracleAnomaly[]> {
+    try {
+      return await this.api.get<OracleAnomaly[]>('/analytics/oracle-anomalies', {
+        params: nodeId ? { nodeId } : {},
+      });
+    } catch {
+      return generateOracleAnomalies(nodeId);
+    }
   }
 }

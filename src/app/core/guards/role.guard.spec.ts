@@ -90,6 +90,23 @@ describe('RoleGuard', () => {
     expect((result as UrlTree).toString()).toBe('/dashboard');
   });
 
+  it('allows an oracle user to access oracle-only routes', async () => {
+    store.dispatch(AuthActions.loginSuccess({ user: buildUser(UserRole.ORACLE), token: 't' }));
+
+    const result = await executeGuard([UserRole.ORACLE]);
+
+    expect(result).toBe(true);
+  });
+
+  it('blocks a buyer from accessing oracle-only routes and redirects to /dashboard', async () => {
+    store.dispatch(AuthActions.loginSuccess({ user: buildUser(UserRole.BUYER), token: 't' }));
+
+    const result = await executeGuard([UserRole.ORACLE]);
+
+    expect(result).toBeInstanceOf(UrlTree);
+    expect((result as UrlTree).toString()).toBe('/dashboard');
+  });
+
   it('blocks a user with no role (null) and redirects to /dashboard', async () => {
     // Session ready but no user in store
     store.dispatch(AuthActions.sessionReady());
