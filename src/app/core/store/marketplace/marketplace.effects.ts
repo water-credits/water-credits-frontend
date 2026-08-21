@@ -8,7 +8,7 @@ import * as MarketplaceActions from './marketplace.actions';
 import { MarketplaceService } from '../../services/marketplace.service';
 import { WalletService } from '../../services/wallet.service';
 import { NotificationService } from '../../services/notification.service';
-import { isWalletDeclined } from '../../utils/wallet.utils';
+import { isUserDeclined, extractSigningError } from '../../utils/wallet-tx.utils';
 
 @Injectable()
 export class MarketplaceEffects {
@@ -139,13 +139,12 @@ export class MarketplaceEffects {
                 networkPassphrase,
               );
             } catch (sigErr) {
-              if (isWalletDeclined(sigErr)) {
+              if (isUserDeclined(sigErr)) {
                 return MarketplaceActions.buySignatureRejected({ listingId: listing.id });
               }
-              const message = sigErr instanceof Error ? sigErr.message : 'Signing failed';
               return MarketplaceActions.buySignatureFailure({
                 listingId: listing.id,
-                error: message,
+                error: extractSigningError(sigErr),
               });
             }
 
