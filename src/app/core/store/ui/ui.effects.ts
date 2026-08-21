@@ -2,8 +2,9 @@ import { Injectable, inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { Actions, createEffect, ofType, OnInitEffects } from '@ngrx/effects';
 import { Action } from '@ngrx/store';
-import { tap } from 'rxjs/operators';
+import { map, switchMap, tap } from 'rxjs/operators';
 
+import { NotificationService } from '../../services/notification.service';
 import * as UIActions from './ui.actions';
 
 /** localStorage key for the persisted theme preference. */
@@ -32,6 +33,7 @@ const THEME_KEY = 'theme';
 export class UIEffects implements OnInitEffects {
   private readonly actions$ = inject(Actions);
   private readonly platformId = inject(PLATFORM_ID);
+  private readonly notificationService = inject(NotificationService);
 
   /**
    * OnInitEffects: called once when the effects class is registered.
@@ -68,6 +70,46 @@ export class UIEffects implements OnInitEffects {
             localStorage.setItem(THEME_KEY, isDark ? 'dark' : 'light');
           }
         }),
+      ),
+    { dispatch: false },
+  );
+
+  /**
+   * Bridge NotificationService's fire-and-forget toast events into the
+   * persistent `ui.notifications` store slice.
+   *
+   * This subscribes to `NotificationService.events$` — a stream separate
+   * from `notifications$` (which drives the transient toast list and is
+   * consumed independently by ToastContainerComponent). Because both
+   * consumers read from the same single emission in `NotificationService.show()`
+   * rather than one deriving from the other, the toast list and the
+   * notification centre never double-count the same event; the reducer's
+   * id-dedupe in `addNotification` is a second safety net against replays.
+   */
+  bridgeNotificationEvents$ = createEffect(() =>
+    this.notificationService.events$.pipe(
+      map((toast) =>
+        UIActions.addNotification({
+          id: toast.id,
+          notificationType: toast.type,
+          title: toast.title,
+          message: toast.message,
+        }),
+      ),
+    ),
+  );
+
+  /**
+   * Persist the email notification opt-in preference whenever the user
+   * changes it. Backed by `NotificationService.updateEmailOptIn`, which is
+   * currently a stub — see the TODO on that method for the missing
+   * backend endpoint.
+   */
+  persistEmailOptIn$ = createEffect(
+    () =>
+      this.actions$.pipe(
+        ofType(UIActions.setEmailNotificationsOptIn),
+        switchMap(({ optIn }) => this.notificationService.updateEmailOptIn(optIn)),
       ),
     { dispatch: false },
   );

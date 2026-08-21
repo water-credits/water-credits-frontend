@@ -16,3 +16,8 @@ export const addNotification = createAction(
 );
 export const removeNotification = createAction('[UI] Remove Notification', props<{ id: string }>());
 export const markNotificationsRead = createAction('[UI] Mark Notifications Read');
+
+export const setEmailNotificationsOptIn = createAction(
+  '[UI] Set Email Notifications Opt In',
+  props<{ optIn: boolean }>(),
+);

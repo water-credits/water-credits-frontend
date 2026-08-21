@@ -11,3 +11,7 @@ export const selectUnreadNotificationCount = createSelector(
   selectUIState,
   (state) => state.unreadNotificationCount,
 );
+export const selectEmailNotificationsOptIn = createSelector(
+  selectUIState,
+  (state) => state.emailNotificationsOptIn,
+);
