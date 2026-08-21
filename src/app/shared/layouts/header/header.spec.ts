@@ -4,11 +4,7 @@ import { MockStore, provideMockStore } from '@ngrx/store/testing';
 
 import { HeaderComponent } from './header';
 import { WalletService } from '../../../core/services/wallet.service';
-import {
-  selectNotifications,
-  selectUnreadNotificationCount,
-} from '../../../core/store/ui/ui.selectors';
-import { markNotificationsRead } from '../../../core/store/ui/ui.actions';
+import { toggleSidebar, setDarkMode } from '../../../core/store/ui/ui.actions';
 
 describe('HeaderComponent', () => {
   let component: HeaderComponent;
@@ -22,6 +18,7 @@ describe('HeaderComponent', () => {
       isLoading: false,
       notifications: [],
       unreadNotificationCount: 0,
+      emailNotificationsOptIn: false,
     },
     wallet: {
       address: null,
@@ -50,93 +47,38 @@ describe('HeaderComponent', () => {
     vi.clearAllMocks();
   });
 
-  const openPanel = (): void => {
-    const bell = fixture.nativeElement.querySelector('[aria-label="Notifications"]') as HTMLElement;
-    bell.click();
-    fixture.detectChanges();
-  };
-
-  const markAllReadButton = (): HTMLElement => {
-    const buttons = Array.from(
-      fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLElement>,
-    );
-    return buttons.find((b) => b.textContent?.includes('Mark all read')) as HTMLElement;
-  };
-
   it('should create', () => {
     fixture.detectChanges();
     expect(component).toBeTruthy();
   });
 
-  it('hides the badge when the unread count is 0', () => {
+  it('renders the notification centre', () => {
     fixture.detectChanges();
-
-    const bell = fixture.nativeElement.querySelector('[aria-label="Notifications"]') as HTMLElement;
-    expect(bell.querySelector('.bg-retirement-red')).toBeNull();
+    const el = fixture.nativeElement.querySelector('app-notification-center');
+    expect(el).toBeTruthy();
   });
 
-  it('shows the unread count badge when the unread count is greater than 0', () => {
-    store.overrideSelector(selectUnreadNotificationCount, 3);
-    store.refreshState();
+  it('dispatches toggleSidebar when the sidebar button is clicked', () => {
     fixture.detectChanges();
-
-    const bell = fixture.nativeElement.querySelector('[aria-label="Notifications"]') as HTMLElement;
-    const badge = bell.querySelector('.bg-retirement-red') as HTMLElement;
-    expect(badge).toBeTruthy();
-    expect(badge.textContent?.trim()).toBe('3');
-  });
-
-  it('opens the notification panel when the bell is clicked', () => {
-    fixture.detectChanges();
-    expect(markAllReadButton()).toBeFalsy();
-
-    openPanel();
-
-    expect(markAllReadButton()).toBeTruthy();
-  });
-
-  it('closes the notification panel when clicking outside', () => {
-    fixture.detectChanges();
-    openPanel();
-    expect(markAllReadButton()).toBeTruthy();
-
-    document.body.click();
-    fixture.detectChanges();
-
-    expect(markAllReadButton()).toBeFalsy();
-  });
-
-  it('dispatches markNotificationsRead when "Mark all read" is clicked', () => {
-    fixture.detectChanges();
-    openPanel();
-
     const dispatchSpy = vi.spyOn(store, 'dispatch');
-    markAllReadButton().click();
 
-    expect(dispatchSpy).toHaveBeenCalledWith(markNotificationsRead());
+    const button = fixture.nativeElement.querySelector(
+      '[aria-label="Toggle sidebar"]',
+    ) as HTMLElement;
+    button.click();
+
+    expect(dispatchSpy).toHaveBeenCalledWith(toggleSidebar());
   });
 
-  it('shows the last 5 notifications with title and timestamp', () => {
-    const notifications = Array.from({ length: 6 }, (_, i) => ({
-      id: `n-${i}`,
-      notificationType: (i % 2 === 0 ? 'info' : 'warning') as 'info' | 'warning',
-      title: `Notification ${i}`,
-      message: `Message ${i}`,
-      timestamp: Date.now() - i * 1000,
-      read: false,
-    }));
-
-    store.overrideSelector(selectNotifications, notifications);
-    store.refreshState();
+  it('dispatches setDarkMode when the theme toggle is clicked', () => {
     fixture.detectChanges();
-    openPanel();
+    const dispatchSpy = vi.spyOn(store, 'dispatch');
 
-    const ul = fixture.nativeElement.querySelector('ul') as HTMLElement;
-    const items = Array.from(ul.querySelectorAll('li'));
-    expect(items.length).toBe(5);
-    expect(items[0].textContent).toContain('Notification 0');
-    expect(items[4].textContent).toContain('Notification 4');
-    expect(ul.textContent).not.toContain('Notification 5');
-    expect(ul.textContent).toContain('Notification 4');
+    const button = fixture.nativeElement.querySelector(
+      '[aria-label="Switch to light mode"]',
+    ) as HTMLElement;
+    button.click();
+
+    expect(dispatchSpy).toHaveBeenCalledWith(setDarkMode({ isDark: false }));
   });
 });
