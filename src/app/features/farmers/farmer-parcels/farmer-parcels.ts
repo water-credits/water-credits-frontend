@@ -11,6 +11,7 @@ import { NotificationService } from '../../../core/services/notification.service
 import { Project, ProjectCreate } from '../../../core/models/project.model';
 import { AppState } from '../../../core/store/app.state';
 import * as FarmersActions from '../../../core/store/farmers/farmers.actions';
+import * as SensorsActions from '../../../core/store/sensors/sensors.actions';
 import {
   selectParcels,
   selectParcelsLoading,
@@ -306,6 +307,7 @@ export class FarmerParcelsComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.store.dispatch(FarmersActions.loadParcels());
+    this.store.dispatch(SensorsActions.loadDevices({}));
 
     this.actions$
       .pipe(ofType(FarmersActions.registerParcelSuccess), takeUntil(this.destroy$))
@@ -321,7 +323,7 @@ export class FarmerParcelsComponent implements OnInit, OnDestroy {
   }
 
   goToParcel(parcel: Project): void {
-    this.router.navigate(['/projects', parcel.id]);
+    this.router.navigate(['/farmers/parcels', parcel.id]);
   }
 
   trackByParcel(_index: number, parcel: Project): string {

@@ -26,6 +26,19 @@ export const loadReadingsFailure = createAction(
   props<{ error: string }>(),
 );
 
+export const loadProjectReadings = createAction(
+  '[Sensors] Load Project Readings',
+  props<{ projectId: string }>(),
+);
+export const loadProjectReadingsSuccess = createAction(
+  '[Sensors] Load Project Readings Success',
+  props<{ projectId: string; readings: SensorReading[] }>(),
+);
+export const loadProjectReadingsFailure = createAction(
+  '[Sensors] Load Project Readings Failure',
+  props<{ projectId: string; error: string }>(),
+);
+
 export const loadSummary = createAction('[Sensors] Load Summary', props<{ projectId: string }>());
 export const loadSummarySuccess = createAction(
   '[Sensors] Load Summary Success',

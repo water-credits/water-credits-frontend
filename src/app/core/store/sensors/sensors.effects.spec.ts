@@ -67,6 +67,7 @@ describe('SensorsEffects', () => {
 
     sensorsServiceMock = {
       getDevices: vi.fn().mockResolvedValue([]),
+      getLatestReadings: vi.fn().mockResolvedValue([]),
     };
 
     routerMock = {
@@ -129,6 +130,23 @@ describe('SensorsEffects', () => {
 
       expect(wsServiceMock.unsubscribeFromProject).toHaveBeenCalledWith('project-1');
       sub.unsubscribe();
+    });
+  });
+
+  describe('loadProjectReadings$', () => {
+    it('emits loadProjectReadingsSuccess with readings', async () => {
+      sensorsServiceMock.getLatestReadings.mockResolvedValue([mockReading]);
+      const resultPromise = firstValueFrom(effects.loadProjectReadings$);
+      actions$.next(SensorsActions.loadProjectReadings({ projectId: 'project-1' }));
+      const action = await resultPromise;
+
+      expect(sensorsServiceMock.getLatestReadings).toHaveBeenCalledWith('project-1');
+      expect(action).toEqual(
+        SensorsActions.loadProjectReadingsSuccess({
+          projectId: 'project-1',
+          readings: [mockReading],
+        }),
+      );
     });
   });
 

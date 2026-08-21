@@ -29,7 +29,7 @@ export class SensorsEffects {
     this.router.events.pipe(
       filter((event): event is NavigationEnd => event instanceof NavigationEnd),
       map((event) => {
-        const match = event.urlAfterRedirects.match(/\/sensors\/([^/]+)/);
+        const match = event.urlAfterRedirects.match(/\/(?:sensors|farmers\/parcels)\/([^/]+)/);
         const projectId = match && match[1] !== 'config' ? match[1] : null;
         return projectId;
       }),
@@ -80,6 +80,25 @@ export class SensorsEffects {
             of(
               SensorsActions.loadDevicesFailure({
                 error: error instanceof Error ? error.message : 'Failed to load devices',
+              }),
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+
+  loadProjectReadings$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(SensorsActions.loadProjectReadings),
+      mergeMap(({ projectId }) =>
+        from(this.sensorsService.getLatestReadings(projectId)).pipe(
+          map((readings) => SensorsActions.loadProjectReadingsSuccess({ projectId, readings })),
+          catchError((error) =>
+            of(
+              SensorsActions.loadProjectReadingsFailure({
+                projectId,
+                error: error instanceof Error ? error.message : 'Failed to load project readings',
               }),
             ),
           ),

@@ -10,6 +10,7 @@ import {
 export interface SensorsState {
   devices: SensorDevice[];
   readings: SensorReading[];
+  readingsByProjectId: Record<string, SensorReading[]>;
   recentReadings: SensorReading[];
   realTimeBuffer: SensorReading[];
   alerts: SensorAlert[];
@@ -21,6 +22,7 @@ export interface SensorsState {
 const initialState: SensorsState = {
   devices: [],
   readings: [],
+  readingsByProjectId: {},
   recentReadings: [],
   realTimeBuffer: [],
   alerts: [],
@@ -49,6 +51,24 @@ export const sensorsReducer = createReducer(
     readings,
   })),
   on(SensorsActions.loadReadingsFailure, (state, { error }) => ({
+    ...state,
+    loading: false,
+    error,
+  })),
+  on(SensorsActions.loadProjectReadings, (state) => ({
+    ...state,
+    loading: true,
+    error: null,
+  })),
+  on(SensorsActions.loadProjectReadingsSuccess, (state, { projectId, readings }) => ({
+    ...state,
+    loading: false,
+    readingsByProjectId: {
+      ...state.readingsByProjectId,
+      [projectId]: readings,
+    },
+  })),
+  on(SensorsActions.loadProjectReadingsFailure, (state, { error }) => ({
     ...state,
     loading: false,
     error,

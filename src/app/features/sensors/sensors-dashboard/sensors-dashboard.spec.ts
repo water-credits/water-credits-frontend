@@ -15,6 +15,7 @@ describe('SensorsDashboardComponent', () => {
     sensors: {
       devices: [],
       readings: [],
+      readingsByProjectId: {},
       recentReadings: [],
       realTimeBuffer: [],
       alerts: [],
