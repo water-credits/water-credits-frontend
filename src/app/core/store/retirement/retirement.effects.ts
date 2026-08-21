@@ -9,7 +9,7 @@ import * as CreditsActions from '../credits/credits.actions';
 import { RetirementService } from '../../services/retirement.service';
 import { WalletService } from '../../services/wallet.service';
 import { NotificationService } from '../../services/notification.service';
-import { isWalletDeclined } from '../../utils/wallet.utils';
+import { isUserDeclined, extractSigningError } from '../../utils/wallet-tx.utils';
 
 @Injectable()
 export class RetirementEffects {
@@ -57,15 +57,14 @@ export class RetirementEffects {
                 networkPassphrase,
               );
             } catch (sigErr) {
-              if (isWalletDeclined(sigErr)) {
+              if (isUserDeclined(sigErr)) {
                 return RetirementActions.retirementSignatureRejected({
                   retirementId: retirement.id,
                 });
               }
-              const message = sigErr instanceof Error ? sigErr.message : 'Signing failed';
               return RetirementActions.retirementSignatureFailure({
                 retirementId: retirement.id,
-                error: message,
+                error: extractSigningError(sigErr),
               });
             }
 

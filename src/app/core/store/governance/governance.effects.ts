@@ -8,7 +8,7 @@ import * as GovernanceActions from './governance.actions';
 import { GovernanceService } from '../../services/governance.service';
 import { WalletService } from '../../services/wallet.service';
 import { NotificationService } from '../../services/notification.service';
-import { isWalletDeclined } from '../../utils/wallet.utils';
+import { isUserDeclined, extractSigningError } from '../../utils/wallet-tx.utils';
 
 @Injectable()
 export class GovernanceEffects {
@@ -151,11 +151,13 @@ export class GovernanceEffects {
                 networkPassphrase,
               );
             } catch (sigErr) {
-              if (isWalletDeclined(sigErr)) {
+              if (isUserDeclined(sigErr)) {
                 return GovernanceActions.castVoteSignatureRejected({ proposalId });
               }
-              const message = sigErr instanceof Error ? sigErr.message : 'Signing failed';
-              return GovernanceActions.castVoteSignatureFailure({ proposalId, error: message });
+              return GovernanceActions.castVoteSignatureFailure({
+                proposalId,
+                error: extractSigningError(sigErr),
+              });
             }
 
             if (!signedXdr) {
