@@ -276,6 +276,20 @@ export const routes: Routes = [
           },
         ],
       },
+      {
+        path: 'oracle',
+        canActivate: [AuthGuard, RoleGuard],
+        data: { roles: [UserRole.ORACLE] },
+        children: [
+          {
+            path: 'analytics',
+            loadComponent: () =>
+              import('./features/oracle/oracle-analytics/oracle-analytics.component').then(
+                (m) => m.OracleAnalyticsComponent,
+              ),
+          },
+        ],
+      },
     ],
   },
   { path: '**', redirectTo: 'dashboard' },

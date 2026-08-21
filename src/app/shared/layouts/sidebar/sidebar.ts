@@ -16,6 +16,7 @@ import {
   Vote,
   ShieldCheck,
   ChevronLeft,
+  Activity,
 } from 'lucide-angular';
 import { toggleSidebar } from '../../../core/store/ui/ui.actions';
 import { selectSidebarOpen } from '../../../core/store/ui/ui.selectors';
@@ -76,6 +77,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
     { label: 'Farmers', route: '/farmers', icon: Sprout },
     { label: 'Governance', route: '/governance', icon: Vote },
     { label: 'Admin', route: '/admin', icon: ShieldCheck },
+    { label: 'Oracle Analytics', route: '/oracle/analytics', icon: Activity },
   ];
 
   protected isOpen = true;

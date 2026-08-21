@@ -3,6 +3,7 @@ export enum UserRole {
   VERIFIER = 'verifier',
   ADMIN = 'admin',
   BUYER = 'buyer',
+  ORACLE = 'oracle',
 }
 
 export interface User {
