@@ -16,6 +16,7 @@ export interface UIState {
   isLoading: boolean;
   notifications: Notification[];
   unreadNotificationCount: number;
+  emailNotificationsOptIn: boolean;
 }
 
 export const initialState: UIState = {
@@ -24,6 +25,7 @@ export const initialState: UIState = {
   isLoading: false,
   notifications: [],
   unreadNotificationCount: 0,
+  emailNotificationsOptIn: false,
 };
 
 const MAX_NOTIFICATIONS = 50;
@@ -34,6 +36,9 @@ export const uiReducer = createReducer(
   on(UIActions.setDarkMode, (state, { isDark }) => ({ ...state, isDarkMode: isDark })),
   on(UIActions.setLoading, (state, { isLoading }) => ({ ...state, isLoading })),
   on(UIActions.addNotification, (state, { id, notificationType, title, message }) => {
+    if (state.notifications.some((n) => n.id === id)) {
+      return state;
+    }
     const notification: Notification = {
       id,
       notificationType,
@@ -53,5 +58,9 @@ export const uiReducer = createReducer(
     ...state,
     unreadNotificationCount: 0,
     notifications: state.notifications.map((n) => ({ ...n, read: true })),
+  })),
+  on(UIActions.setEmailNotificationsOptIn, (state, { optIn }) => ({
+    ...state,
+    emailNotificationsOptIn: optIn,
   })),
 );

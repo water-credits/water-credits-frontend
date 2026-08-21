@@ -15,6 +15,7 @@ describe('DefaultLayoutComponent', () => {
       isLoading: false,
       notifications: [],
       unreadNotificationCount: 0,
+      emailNotificationsOptIn: false,
     },
     wallet: {
       address: null,
