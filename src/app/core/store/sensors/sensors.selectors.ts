@@ -36,9 +36,7 @@ export const selectHistoricalReadingsForProject = (projectId: string) =>
   createSelector(selectReadingsByProjectId, (byId) => byId[projectId] ?? []);
 
 export const selectRealtimeReadingsForProject = (projectId: string) =>
-  createSelector(selectRealTimeBuffer, (buffer) =>
-    buffer.filter((r) => r.projectId === projectId),
-  );
+  createSelector(selectRealTimeBuffer, (buffer) => buffer.filter((r) => r.projectId === projectId));
 
 export const selectChartReadingsForProject = (projectId: string) =>
   createSelector(

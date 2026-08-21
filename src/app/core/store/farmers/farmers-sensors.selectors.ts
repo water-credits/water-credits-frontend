@@ -16,10 +16,7 @@ export interface ParcelSensorView {
   readings: SensorReading[];
 }
 
-function mergeReadings(
-  historical: SensorReading[],
-  realtime: SensorReading[],
-): SensorReading[] {
+function mergeReadings(historical: SensorReading[], realtime: SensorReading[]): SensorReading[] {
   const byId = new Map(historical.map((r) => [r.id, r]));
   for (const r of realtime) byId.set(r.id, r);
   return Array.from(byId.values()).sort(

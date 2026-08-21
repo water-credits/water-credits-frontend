@@ -53,7 +53,9 @@ const PARCEL_SENSOR_PARAMS: SensorParameter[] = [
       <ng-container *ngIf="view$ | async as view; else loading">
         <div>
           <div class="flex items-center gap-3 mb-2">
-            <h1 class="text-2xl font-bold text-slate-900 dark:text-white">{{ view.parcel.name }}</h1>
+            <h1 class="text-2xl font-bold text-slate-900 dark:text-white">
+              {{ view.parcel.name }}
+            </h1>
             <app-status-badge [status]="view.parcel.status"></app-status-badge>
           </div>
           <p class="text-sm text-slate-500 dark:text-slate-400">{{ view.parcel.description }}</p>
@@ -64,7 +66,10 @@ const PARCEL_SENSOR_PARAMS: SensorParameter[] = [
         </div>
 
         <div *ngIf="view.devices.length === 0" class="card p-8 text-center">
-          <lucide-angular [img]="Radio" class="w-8 h-8 text-slate-400 mx-auto mb-2"></lucide-angular>
+          <lucide-angular
+            [img]="Radio"
+            class="w-8 h-8 text-slate-400 mx-auto mb-2"
+          ></lucide-angular>
           <p class="text-sm text-slate-500 dark:text-slate-400">
             No edge-of-field sensors linked to this parcel yet.
           </p>

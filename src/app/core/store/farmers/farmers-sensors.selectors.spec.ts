@@ -86,10 +86,11 @@ describe('farmers-sensors selectors', () => {
   });
 
   it('selectParcelSensorView scopes to one parcel', () => {
-    const result = selectParcelSensorView('parcel-a').projector(parcelA, [deviceA], [
-      readingA,
-      readingARt,
-    ]);
+    const result = selectParcelSensorView('parcel-a').projector(
+      parcelA,
+      [deviceA],
+      [readingA, readingARt],
+    );
     expect(result?.parcel.id).toBe('parcel-a');
     expect(result?.devices).toHaveLength(1);
     expect(result?.readings.every((r) => r.projectId === 'parcel-a')).toBe(true);
