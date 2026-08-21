@@ -9,8 +9,11 @@ import {
   selectBmpsLoading,
   selectEnrollingPracticeIds,
   selectIsPracticeEnrolling,
+  selectParcels,
 } from '../../../core/store/farmers/farmers.selectors';
+import { selectParcelsWithSensors } from '../../../core/store/farmers/farmers-sensors.selectors';
 import { Bmp } from '../../../core/models/bmp.model';
+import * as SensorsActions from '../../../core/store/sensors/sensors.actions';
 
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
 
@@ -51,6 +54,8 @@ function setup(
           { selector: selectBmps, value: bmps },
           { selector: selectBmpsLoading, value: loading },
           { selector: selectEnrollingPracticeIds, value: enrollingIds },
+          { selector: selectParcels, value: [] },
+          { selector: selectParcelsWithSensors, value: [] },
         ],
       }),
     ],
@@ -74,9 +79,11 @@ describe('FarmerPracticesComponent', () => {
   // ── Init dispatch ──────────────────────────────────────────────────────────
 
   describe('ngOnInit', () => {
-    it('dispatches loadBmps on initialisation', () => {
+    it('dispatches loadBmps, loadParcels, and loadDevices on initialisation', () => {
       const { store } = setup();
       expect(store.dispatch).toHaveBeenCalledWith(FarmersActions.loadBmps());
+      expect(store.dispatch).toHaveBeenCalledWith(FarmersActions.loadParcels());
+      expect(store.dispatch).toHaveBeenCalledWith(SensorsActions.loadDevices({}));
     });
 
     it('does NOT inject or use NotificationService directly', () => {

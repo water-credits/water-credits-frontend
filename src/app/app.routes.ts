@@ -204,6 +204,13 @@ export const routes: Routes = [
               ),
           },
           {
+            path: 'parcels/:id',
+            loadComponent: () =>
+              import('./features/farmers/farmer-parcel-detail/farmer-parcel-detail').then(
+                (m) => m.FarmerParcelDetailComponent,
+              ),
+          },
+          {
             path: 'practices',
             loadComponent: () =>
               import('./features/farmers/farmer-practices/farmer-practices').then(

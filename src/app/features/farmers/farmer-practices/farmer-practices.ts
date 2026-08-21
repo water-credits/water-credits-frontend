@@ -1,7 +1,8 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnDestroy, OnInit } from '@angular/core';
 import { AsyncPipe, NgClass, NgFor, NgIf } from '@angular/common';
 import { Store } from '@ngrx/store';
-import { Observable } from 'rxjs';
+import { Observable, Subject } from 'rxjs';
+import { filter, map, takeUntil } from 'rxjs/operators';
 import {
   LucideAngularModule,
   LucideIconData,
@@ -19,20 +20,21 @@ import {
 
 import { AppState } from '../../../core/store/app.state';
 import * as FarmersActions from '../../../core/store/farmers/farmers.actions';
+import * as SensorsActions from '../../../core/store/sensors/sensors.actions';
 import {
   selectBmps,
   selectBmpsLoading,
   selectIsPracticeEnrolling,
+  selectParcels,
 } from '../../../core/store/farmers/farmers.selectors';
+import {
+  ParcelSensorView,
+  selectParcelsWithSensors,
+} from '../../../core/store/farmers/farmers-sensors.selectors';
 import { Bmp } from '../../../core/models/bmp.model';
+import { SensorChartComponent } from '../../../shared/components/sensor-chart/sensor-chart';
+import { SensorParameter } from '../../../shared/components/sensor-chart/sensor-parameter.model';
 
-/**
- * BMP icon map — resolved at component level (the only place Lucide is
- * rendered) so the Bmp model stays free of render-layer dependencies.
- *
- * When the server returns a BMP whose id is not in this map the default
- * `Sprout` icon is used as a safe fallback.
- */
 const BMP_ICON_MAP: Record<string, unknown> = {
   'cover-crops': Sprout,
   'no-till': Sun,
@@ -43,10 +45,17 @@ const BMP_ICON_MAP: Record<string, unknown> = {
 
 const DEFAULT_ICON = Sprout;
 
+const PARCEL_SENSOR_PARAMS: SensorParameter[] = [
+  { key: 'ph', label: 'pH', unit: '', color: '#7B2FBE', decimals: 2 },
+  { key: 'turbidity', label: 'Turbidity', unit: 'NTU', color: '#F59E0B', decimals: 1 },
+  { key: 'dissolvedOxygen', label: 'Dissolved O₂', unit: 'mg/L', color: '#3B82F6', decimals: 1 },
+  { key: 'temperature', label: 'Temperature', unit: '°C', color: '#F97316', decimals: 1 },
+];
+
 @Component({
   selector: 'app-farmer-practices',
   standalone: true,
-  imports: [NgIf, NgFor, NgClass, AsyncPipe, LucideAngularModule],
+  imports: [NgIf, NgFor, NgClass, AsyncPipe, LucideAngularModule, SensorChartComponent],
   template: `
     <div class="space-y-6">
       <div>
@@ -56,7 +65,6 @@ const DEFAULT_ICON = Sprout;
         </p>
       </div>
 
-      <!-- Loading skeleton -->
       <div
         *ngIf="bmpsLoading$ | async"
         class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"
@@ -77,7 +85,6 @@ const DEFAULT_ICON = Sprout;
         </div>
       </div>
 
-      <!-- BMP cards -->
       <div
         *ngIf="!(bmpsLoading$ | async)"
         class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"
@@ -113,7 +120,6 @@ const DEFAULT_ICON = Sprout;
               </div>
             </div>
 
-            <!-- Toggle button — disabled while this practice's request is in flight -->
             <button
               (click)="toggleBmp(bmp)"
               class="shrink-0 transition-opacity"
@@ -128,7 +134,6 @@ const DEFAULT_ICON = Sprout;
               [attr.aria-label]="(bmp.enrolled ? 'Unenroll from ' : 'Enroll in ') + bmp.name"
               [attr.aria-pressed]="bmp.enrolled"
             >
-              <!-- Spinner while in-flight -->
               <lucide-angular
                 *ngIf="isEnrolling(bmp.id) | async; else toggleIcon"
                 [img]="Loader"
@@ -178,6 +183,32 @@ const DEFAULT_ICON = Sprout;
         </div>
       </div>
 
+      <div *ngIf="(parcelsWithSensors$ | async)?.length" class="space-y-4">
+        <div>
+          <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Parcel water quality</h2>
+          <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
+            Edge-of-field sensor readings linked to each parcel
+          </p>
+        </div>
+        <div
+          *ngFor="let view of parcelsWithSensors$ | async; trackBy: trackByParcelId"
+          class="space-y-2"
+        >
+          <h3 class="text-sm font-medium text-slate-700 dark:text-slate-300">
+            {{ view.parcel.name }}
+            <span class="text-xs text-slate-400 font-normal">
+              · {{ view.devices.length }} device{{ view.devices.length === 1 ? '' : 's' }}
+            </span>
+          </h3>
+          <app-sensor-chart
+            [title]="view.parcel.name + ' — edge-of-field'"
+            [data]="view.readings"
+            [parameters]="sensorParams"
+            [height]="260"
+          />
+        </div>
+      </div>
+
       <div class="card p-5 bg-stellar-blue/5 border border-stellar-blue/10">
         <div class="flex items-start gap-3">
           <lucide-angular
@@ -198,13 +229,18 @@ const DEFAULT_ICON = Sprout;
     </div>
   `,
 })
-export class FarmerPracticesComponent implements OnInit {
+export class FarmerPracticesComponent implements OnInit, OnDestroy {
   private readonly store = inject(Store<AppState>);
+  private readonly destroy$ = new Subject<void>();
+  private readonly requestedReadings = new Set<string>();
 
   protected readonly bmps$: Observable<Bmp[]> = this.store.select(selectBmps);
   protected readonly bmpsLoading$: Observable<boolean> = this.store.select(selectBmpsLoading);
+  protected readonly sensorParams = PARCEL_SENSOR_PARAMS;
+  protected readonly parcelsWithSensors$: Observable<ParcelSensorView[]> = this.store
+    .select(selectParcelsWithSensors)
+    .pipe(map((views) => views.filter((v) => v.devices.length > 0)));
 
-  // Lucide icon references for the template
   protected readonly Leaf = Leaf;
   protected readonly CheckCircle = CheckCircle;
   protected readonly Circle = Circle;
@@ -213,6 +249,27 @@ export class FarmerPracticesComponent implements OnInit {
 
   ngOnInit(): void {
     this.store.dispatch(FarmersActions.loadBmps());
+    this.store.dispatch(FarmersActions.loadParcels());
+    this.store.dispatch(SensorsActions.loadDevices({}));
+
+    this.store
+      .select(selectParcels)
+      .pipe(
+        filter((parcels) => parcels.length > 0),
+        takeUntil(this.destroy$),
+      )
+      .subscribe((parcels) => {
+        for (const parcel of parcels) {
+          if (this.requestedReadings.has(parcel.id)) continue;
+          this.requestedReadings.add(parcel.id);
+          this.store.dispatch(SensorsActions.loadProjectReadings({ projectId: parcel.id }));
+        }
+      });
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   toggleBmp(bmp: Bmp): void {
@@ -223,29 +280,18 @@ export class FarmerPracticesComponent implements OnInit {
     }
   }
 
-  /**
-   * Returns an Observable<boolean> for the per-card loading state.
-   * Called once per card render; Angular's async pipe handles subscription
-   * and unsubscription automatically even with OnPush change detection.
-   */
   isEnrolling(practiceId: string): Observable<boolean> {
     return this.store.select(selectIsPracticeEnrolling(practiceId));
   }
 
-  /**
-   * trackBy for *ngFor — prevents full DOM re-creation when the store
-   * updates a single BMP's enrolled field.
-   */
   trackByBmpId(_index: number, bmp: Bmp): string {
     return bmp.id;
   }
 
-  /**
-   * Resolves the Lucide icon for a BMP. The server-side Bmp model's `icon`
-   * field may be null/undefined (JSON cannot carry a function reference), so
-   * we fall back to the local BMP_ICON_MAP keyed by BMP id. If neither is
-   * available, DEFAULT_ICON (Sprout) is used.
-   */
+  trackByParcelId(_index: number, view: ParcelSensorView): string {
+    return view.parcel.id;
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   resolveIcon(bmp: Bmp): LucideIconData {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
