@@ -19,6 +19,7 @@ describe('DefaultLayoutComponent', () => {
     },
     wallet: {
       address: null,
+      network: null,
       loading: false,
       error: null,
     },

@@ -69,7 +69,7 @@ const loggingMock: LoggingService = {
 
 function makeService(): { service: WebsocketService; socket: ReturnType<typeof createSocketStub> } {
   const socket = createSocketStub();
-  (io as ReturnType<typeof vi.fn>).mockReturnValueOnce(socket);
+  (io as ReturnType<typeof vi.fn>).mockReturnValue(socket);
 
   const service = new WebsocketService(loggingMock);
   // Open the socket so on<T>() does not immediately error.

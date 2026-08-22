@@ -11,6 +11,9 @@ export class WalletService {
   private publicKeySubject = new BehaviorSubject<string | null>(null);
   public publicKey$ = this.publicKeySubject.asObservable();
 
+  private networkSubject = new BehaviorSubject<'testnet' | 'public' | null>(null);
+  public network$ = this.networkSubject.asObservable();
+
   /**
    * Emits the new public key whenever the user switches Stellar accounts in
    * Freighter mid-session. Only emits distinct values (no duplicate fires if
@@ -34,6 +37,22 @@ export class WalletService {
 
   constructor(private loggingService: LoggingService) {}
 
+  onAddressChange(): Observable<string> {
+    return this.addressChange$;
+  }
+
+  onNetworkChange(): Observable<string> {
+    return this.networkChange$;
+  }
+
+  normalizeNetwork(network: string): 'testnet' | 'public' | null {
+    if (!network) return null;
+    const lower = network.toLowerCase();
+    if (lower.includes('test') || lower === 'testnet') return 'testnet';
+    if (lower.includes('public') || lower === 'public') return 'public';
+    return null;
+  }
+
   async checkConnection(): Promise<boolean> {
     try {
       const result = await freighter.isConnected();
@@ -41,6 +60,15 @@ export class WalletService {
         const addressResult = await freighter.getAddress();
         if (addressResult.address) {
           this.publicKeySubject.next(addressResult.address);
+          try {
+            const netResult = await freighter.getNetwork();
+            if (netResult.network) {
+              const net = this.normalizeNetwork(netResult.network);
+              this.networkSubject.next(net);
+            }
+          } catch {
+            // Ignore network fetch error if extension is slow
+          }
           return true;
         }
       }
@@ -55,6 +83,15 @@ export class WalletService {
       const result = await freighter.getAddress();
       if (result.address) {
         this.publicKeySubject.next(result.address);
+        try {
+          const netResult = await freighter.getNetwork();
+          if (netResult.network) {
+            const net = this.normalizeNetwork(netResult.network);
+            this.networkSubject.next(net);
+          }
+        } catch {
+          // Ignore network fetch error
+        }
         return result.address;
       }
       return null;
@@ -66,6 +103,21 @@ export class WalletService {
 
   async disconnect(): Promise<void> {
     this.publicKeySubject.next(null);
+    this.networkSubject.next(null);
+  }
+
+  async getNetwork(): Promise<'testnet' | 'public' | null> {
+    try {
+      const netResult = await freighter.getNetwork();
+      if (netResult.network) {
+        const net = this.normalizeNetwork(netResult.network);
+        this.networkSubject.next(net);
+        return net;
+      }
+    } catch (e) {
+      this.loggingService.error('Failed to get network from Freighter:', e);
+    }
+    return this.networkSubject.value;
   }
 
   async signChallenge(challenge: string): Promise<string | null> {
@@ -111,6 +163,10 @@ export class WalletService {
     return this.publicKeySubject.value;
   }
 
+  getStoredNetwork(): 'testnet' | 'public' | null {
+    return this.networkSubject.value;
+  }
+
   // ── Private helpers ─────────────────────────────────────────────────────────
 
   /**
@@ -139,6 +195,7 @@ export class WalletService {
       const watcher = new WatchWalletChanges();
       watcher.watch(({ address }) => {
         if (address) {
+          this.publicKeySubject.next(address);
           observer.next(address);
         }
       });
@@ -165,6 +222,10 @@ export class WalletService {
       const watcher = new WatchWalletChanges();
       watcher.watch(({ network }) => {
         if (network) {
+          const normalized = this.normalizeNetwork(network);
+          if (normalized) {
+            this.networkSubject.next(normalized);
+          }
           observer.next(network);
         }
       });

@@ -47,9 +47,11 @@ export class AuthEffects implements OnInitEffects {
 
   /**
    * On app start, check localStorage for a persisted token.  If one exists,
-   * try to fetch the current user.  On success, dispatch loginSuccess to
-   * populate the store.  On any failure (expired token, network, etc.),
-   * clear storage and dispatch sessionReady so guards do not wait forever.
+   * try to fetch the current user.  On success, check Freighter connection
+   * to restore WalletState.address and network, and dispatch loginSuccess
+   * and optionally connectWalletSuccess.  On any failure (expired token,
+   * network, etc.), clear storage and dispatch sessionReady so guards do not
+   * wait forever.
    */
   rehydrateSession$ = createEffect(() =>
     this.actions$.pipe(
@@ -57,17 +59,34 @@ export class AuthEffects implements OnInitEffects {
       switchMap(async () => {
         const token = localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
         if (!token) {
-          return AuthActions.sessionReady();
+          return [AuthActions.sessionReady()];
         }
         try {
           const user = await this.authService.fetchCurrentUser();
-          // loginSuccess sets sessionReady = true in the reducer
-          return AuthActions.loginSuccess({ user, token });
+          let isConnected = false;
+          try {
+            isConnected = await this.walletService.checkConnection();
+          } catch {
+            isConnected = false;
+          }
+
+          const actions: Action[] = [AuthActions.loginSuccess({ user, token })];
+
+          if (isConnected) {
+            const address = this.walletService.getStoredPublicKey();
+            if (address) {
+              const network = this.walletService.getStoredNetwork();
+              actions.push(connectWalletSuccess({ address, network }));
+            }
+          }
+
+          return actions;
         } catch {
           localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
-          return AuthActions.sessionReady();
+          return [AuthActions.sessionReady()];
         }
       }),
+      switchMap((actions) => actions),
     ),
   );
 
@@ -80,7 +99,8 @@ export class AuthEffects implements OnInitEffects {
         try {
           const wallet = await this.walletService.connect();
           if (!wallet) throw new Error('Wallet connection failed');
-          this.store.dispatch(connectWalletSuccess({ address: wallet }));
+          const network = this.walletService.getStoredNetwork();
+          this.store.dispatch(connectWalletSuccess({ address: wallet, network }));
           const { challenge } = await this.authService.requestChallenge(wallet);
           const signature = await this.walletService.signChallenge(challenge);
           if (!signature) throw new Error('Signature failed');
@@ -101,15 +121,7 @@ export class AuthEffects implements OnInitEffects {
         tap(({ user, token }) => {
           localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, token);
           // Open the WebSocket connection now that we have a valid JWT and
-          // user ID.  We use user.id (internal DB identifier) rather than
-          // the wallet address because the wallet address may be null on
-          // the WalletState after a reload (Issue 3 — tracked separately).
-          // connect() safely disconnects any pre-existing socket first.
-          //
-          // TODO: if the JWT is silently refreshed mid-session the socket's
-          // auth handshake token will become stale.  A future fix should
-          // either reconnect the socket after token refresh or use a
-          // short-lived handshake token.  Tracked in a follow-up issue.
+          // user ID.  connect() safely disconnects any pre-existing socket first.
           this.wsService.connect(token, user.id);
           this.notificationService.success(
             'Welcome!',
@@ -141,7 +153,8 @@ export class AuthEffects implements OnInitEffects {
         try {
           const wallet = await this.walletService.connect();
           if (!wallet) throw new Error('Wallet connection failed');
-          this.store.dispatch(connectWalletSuccess({ address: wallet }));
+          const network = this.walletService.getStoredNetwork();
+          this.store.dispatch(connectWalletSuccess({ address: wallet, network }));
           const { challenge } = await this.authService.requestChallenge(wallet);
           const signature = await this.walletService.signChallenge(challenge);
           if (!signature) throw new Error('Signature failed');

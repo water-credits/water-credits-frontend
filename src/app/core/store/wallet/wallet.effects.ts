@@ -45,7 +45,7 @@ export class WalletEffects {
 
   /**
    * On every `loginSuccess` (fresh login AND rehydrated session), attempt to
-   * read the current Freighter address and populate WalletState.address.
+   * read the current Freighter address and populate WalletState.address & network.
    *
    * Guard: skip when WalletState.address is already set — this prevents a
    * redundant `connectWalletSuccess` dispatch when `AuthEffects.login$` has
@@ -76,7 +76,8 @@ export class WalletEffects {
               return null;
             }
             const address = this.walletService.getStoredPublicKey();
-            return address ? WalletActions.connectWalletSuccess({ address }) : null;
+            const network = this.walletService.getStoredNetwork();
+            return address ? WalletActions.connectWalletSuccess({ address, network }) : null;
           }),
           filter(
             (action): action is ReturnType<typeof WalletActions.connectWalletSuccess> =>
@@ -89,11 +90,11 @@ export class WalletEffects {
 
   /**
    * On `logout` or `forceLogout`, dispatch `disconnectWallet` to clear
-   * WalletState.address. This ensures the header's "Connect Wallet" button
+   * WalletState.address and network. This ensures the header's "Connect Wallet" button
    * is shown correctly after session expiry or manual logout.
    *
    * Note: `AuthEffects.logout$` already calls `walletService.disconnect()`
-   * (which clears the publicKeySubject). This effect handles the NgRx store
+   * (which clears the publicKeySubject and networkSubject). This effect handles the NgRx store
    * slice to keep it consistent with the service layer.
    */
   clearWalletOnLogout$ = createEffect(() =>
@@ -108,12 +109,31 @@ export class WalletEffects {
    * When the user changes their active Stellar account, update WalletState
    * so that subsequent transaction signing uses the correct address.
    *
-   * `walletService.addressChange$` is `EMPTY` when Freighter v6 does not
+   * `walletService.onAddressChange()` is `EMPTY` when Freighter v6 does not
    * expose the callback setter, so this effect is a no-op in that case.
    */
   syncAddressChange$ = createEffect(() =>
-    this.walletService.addressChange$.pipe(
-      map((address) => WalletActions.connectWalletSuccess({ address })),
+    this.walletService.onAddressChange().pipe(
+      map((address) => {
+        const network = this.walletService.getStoredNetwork();
+        return WalletActions.connectWalletSuccess({ address, network });
+      }),
+    ),
+  );
+
+  /**
+   * Listens for mid-session network switches from the Freighter extension.
+   * When the user changes their network in Freighter, update WalletState.network.
+   *
+   * `walletService.onNetworkChange()` is `EMPTY` when Freighter v6 does not
+   * expose the callback setter, so this effect is a no-op in that case.
+   */
+  syncNetworkChange$ = createEffect(() =>
+    this.walletService.onNetworkChange().pipe(
+      map((rawNetwork) => {
+        const network = this.walletService.normalizeNetwork(rawNetwork);
+        return WalletActions.setNetwork({ network });
+      }),
     ),
   );
 }
