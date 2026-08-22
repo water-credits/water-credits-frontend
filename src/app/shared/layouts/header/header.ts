@@ -108,7 +108,8 @@ export class HeaderComponent implements OnInit, OnDestroy {
   async connectWallet(): Promise<void> {
     const address = await this.walletService.connect();
     if (address) {
-      this.store.dispatch(WalletActions.connectWalletSuccess({ address }));
+      const network = this.walletService.getStoredNetwork();
+      this.store.dispatch(WalletActions.connectWalletSuccess({ address, network }));
       this.store.dispatch(AuthActions.login());
     }
   }

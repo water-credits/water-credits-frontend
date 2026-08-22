@@ -21,6 +21,7 @@ import { NotificationService } from '../../services/notification.service';
 import { SessionBusService } from '../../services/session-bus.service';
 import { ApiService } from '../../services/api.service';
 import * as AuthActions from './auth.actions';
+import * as WalletActions from '../wallet/wallet.actions';
 import { reducers } from '../app.state';
 import { UserRole } from '../../models/user.model';
 import { STORAGE_KEYS } from '../../constants/app.constants';
@@ -57,6 +58,9 @@ describe('AuthEffects', () => {
     connect: vi.fn(),
     disconnect: vi.fn(),
     signChallenge: vi.fn(),
+    checkConnection: vi.fn().mockResolvedValue(false),
+    getStoredPublicKey: vi.fn().mockReturnValue(null),
+    getStoredNetwork: vi.fn().mockReturnValue(null),
   };
 
   const wsServiceMock = {
@@ -117,15 +121,60 @@ describe('AuthEffects', () => {
       expect(action).toEqual(AuthActions.sessionReady());
     });
 
-    it('emits loginSuccess when token exists and /users/me succeeds', async () => {
+    it('emits loginSuccess and connectWalletSuccess when token exists and wallet is connected', async () => {
       localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, mockToken);
       authServiceMock.fetchCurrentUser.mockResolvedValue(mockUser);
+      walletServiceMock.checkConnection.mockResolvedValue(true);
+      walletServiceMock.getStoredPublicKey.mockReturnValue('GABC1234STELLAR');
+      walletServiceMock.getStoredNetwork.mockReturnValue('testnet');
 
-      const resultPromise = firstValueFrom(effects.rehydrateSession$);
+      const emissions: Action[] = [];
+      const sub = effects.rehydrateSession$.subscribe((a) => emissions.push(a));
+
       actions$.next(AuthActions.rehydrateSession());
-      const action = await resultPromise;
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      sub.unsubscribe();
 
-      expect(action).toEqual(AuthActions.loginSuccess({ user: mockUser, token: mockToken }));
+      expect(emissions).toHaveLength(2);
+      expect(emissions[0]).toEqual(AuthActions.loginSuccess({ user: mockUser, token: mockToken }));
+      expect(emissions[1]).toEqual(
+        WalletActions.connectWalletSuccess({
+          address: 'GABC1234STELLAR',
+          network: 'testnet',
+        }),
+      );
+    });
+
+    it('emits loginSuccess without connectWalletSuccess when wallet is disconnected', async () => {
+      localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, mockToken);
+      authServiceMock.fetchCurrentUser.mockResolvedValue(mockUser);
+      walletServiceMock.checkConnection.mockResolvedValue(false);
+
+      const emissions: Action[] = [];
+      const sub = effects.rehydrateSession$.subscribe((a) => emissions.push(a));
+
+      actions$.next(AuthActions.rehydrateSession());
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      sub.unsubscribe();
+
+      expect(emissions).toHaveLength(1);
+      expect(emissions[0]).toEqual(AuthActions.loginSuccess({ user: mockUser, token: mockToken }));
+    });
+
+    it('emits loginSuccess without connectWalletSuccess when wallet checkConnection throws', async () => {
+      localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, mockToken);
+      authServiceMock.fetchCurrentUser.mockResolvedValue(mockUser);
+      walletServiceMock.checkConnection.mockRejectedValue(new Error('Freighter unavailable'));
+
+      const emissions: Action[] = [];
+      const sub = effects.rehydrateSession$.subscribe((a) => emissions.push(a));
+
+      actions$.next(AuthActions.rehydrateSession());
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      sub.unsubscribe();
+
+      expect(emissions).toHaveLength(1);
+      expect(emissions[0]).toEqual(AuthActions.loginSuccess({ user: mockUser, token: mockToken }));
     });
 
     it('emits sessionReady and clears localStorage when token exists but /users/me fails', async () => {
