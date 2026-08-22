@@ -248,7 +248,7 @@ describe('WebsocketService', () => {
     });
   });
 
-  // ── sensorReadings$ / sensorAlerts$ getters ────────────────────────────────
+  // ── sensorReadings$ / sensorAlerts$ stable streams ────────────────────────
 
   describe('sensorReadings$', () => {
     it('emits on sensor:reading events', () => {
@@ -260,6 +260,71 @@ describe('WebsocketService', () => {
 
       expect(readings).toEqual([{ ph: 7.2 }]);
       sub.unsubscribe();
+    });
+
+    it('returns the same observable instance on every access (stable field, not a getter)', () => {
+      const service = new WebsocketService(loggingMock);
+
+      expect(service.sensorReadings$).toBe(service.sensorReadings$);
+    });
+
+    it('delivers events to subscribers that attached before connect()', () => {
+      const socket = createSocketStub();
+      (io as ReturnType<typeof vi.fn>).mockReturnValueOnce(socket);
+      const service = new WebsocketService(loggingMock);
+
+      const received: unknown[] = [];
+      const errors: unknown[] = [];
+      const sub = service.sensorReadings$.subscribe({
+        next: (r) => received.push(r),
+        error: (e) => errors.push(e),
+      });
+
+      // No immediate error despite the socket not existing yet.
+      expect(errors).toHaveLength(0);
+
+      service.connect('test-token', 'user-1');
+      socket.trigger('sensor:reading', { ph: 7.0 });
+
+      expect(received).toEqual([{ ph: 7.0 }]);
+      sub.unsubscribe();
+    });
+
+    it('registers exactly one socket listener regardless of subscriber count', () => {
+      const { service, socket } = makeService();
+
+      const sub1 = service.sensorReadings$.subscribe();
+      const sub2 = service.sensorReadings$.subscribe();
+
+      expect(socket.listenerCount('sensor:reading')).toBe(1);
+
+      sub1.unsubscribe();
+      sub2.unsubscribe();
+    });
+
+    it('keeps delivering on the same stream after disconnect() → connect()', () => {
+      const { service } = makeService();
+      const received: unknown[] = [];
+
+      const sub = service.sensorReadings$.subscribe((r) => received.push(r));
+
+      service.disconnect();
+      const secondSocket = createSocketStub();
+      (io as ReturnType<typeof vi.fn>).mockReturnValueOnce(secondSocket);
+      service.connect('new-token', 'user-2');
+
+      secondSocket.trigger('sensor:reading', { ph: 6.5 });
+      expect(received).toEqual([{ ph: 6.5 }]);
+      sub.unsubscribe();
+    });
+
+    it('removes its socket handlers on disconnect()', () => {
+      const { service, socket } = makeService();
+
+      service.disconnect();
+
+      expect(socket.listenerCount('sensor:reading')).toBe(0);
+      expect(socket.listenerCount('sensor:alert')).toBe(0);
     });
   });
 

@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { io, Socket } from 'socket.io-client';
 import { environment } from '../../../environments/environment';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject, Observable, Subject } from 'rxjs';
 import { LoggingService } from './logging.service';
 import { SensorReading, SensorAlert } from '../models/sensor-reading.model';
 
@@ -13,7 +13,82 @@ export class WebsocketService {
   private connectedSubject = new BehaviorSubject<boolean>(false);
   public connected$ = this.connectedSubject.asObservable();
 
+  /**
+   * Stable, multicast streams for sensor data.  Created once (not per access)
+   * so that every subscriber shares the same socket listener and effects that
+   * subscribe at app bootstrap keep working across logout → re-login cycles.
+   * The subjects are intentionally never completed — completing them would
+   * permanently tear down those long-lived subscriptions on disconnect().
+   */
+  private readonly sensorReadingsSubject = new Subject<SensorReading>();
+  private readonly sensorAlertsSubject = new Subject<SensorAlert>();
+  public readonly sensorReadings$: Observable<SensorReading> = new Observable<SensorReading>(
+    (observer) => {
+      const subscription = this.sensorReadingsSubject.subscribe(observer);
+      this.ensureSensorHandlers();
+      return () => subscription.unsubscribe();
+    },
+  );
+  public readonly sensorAlerts$: Observable<SensorAlert> = new Observable<SensorAlert>(
+    (observer) => {
+      const subscription = this.sensorAlertsSubject.subscribe(observer);
+      this.ensureSensorHandlers();
+      return () => subscription.unsubscribe();
+    },
+  );
+
+  /** Stable handler references so they can be removed precisely on teardown. */
+  private readonly handleSensorReading = (data: SensorReading): void => {
+    this.sensorReadingsSubject.next(data);
+  };
+  private readonly handleSensorAlert = (data: SensorAlert): void => {
+    this.sensorAlertsSubject.next(data);
+  };
+
+  /**
+   * Whether the stable sensor handlers are currently registered on the active
+   * socket. The handlers are attached lazily — only while at least one
+   * subscriber exists on either multicast stream — so that generic `on<T>()`
+   * listeners for the same event names remain isolated and independently
+   * ref-counted.
+   */
+  private sensorHandlersAttached = false;
+
   constructor(private loggingService: LoggingService) {}
+
+  /** Register the stable sensor handlers on the current socket, if needed. */
+  private attachSensorHandlers(): void {
+    if (!this.socket || this.sensorHandlersAttached) {
+      return;
+    }
+    this.socket.on('sensor:reading', this.handleSensorReading);
+    this.socket.on('sensor:alert', this.handleSensorAlert);
+    this.sensorHandlersAttached = true;
+  }
+
+  /** Remove the stable sensor handlers from the current socket, if present. */
+  private detachSensorHandlers(): void {
+    if (!this.socket || !this.sensorHandlersAttached) {
+      return;
+    }
+    this.socket.off('sensor:reading', this.handleSensorReading);
+    this.socket.off('sensor:alert', this.handleSensorAlert);
+    this.sensorHandlersAttached = false;
+  }
+
+  /**
+   * Lazily wires the socket to the multicast subjects: the first subscriber
+   * to either stream attaches the stable handlers; connect() re-attaches them
+   * when subscribers already exist.
+   */
+  private ensureSensorHandlers(): void {
+    if (!this.socket) {
+      return;
+    }
+    if (this.sensorReadingsSubject.observed || this.sensorAlertsSubject.observed) {
+      this.attachSensorHandlers();
+    }
+  }
 
   connect(token: string, userId: string): void {
     if (this.socket) {
@@ -40,10 +115,16 @@ export class WebsocketService {
     this.socket.on('connect_error', (error) => {
       this.loggingService.error('WebSocket connection error:', error);
     });
+
+    // Fan sensor events into the shared multicast subjects — but only when
+    // someone is actually subscribed to them, so that `on<T>()` listeners for
+    // the same event names stay isolated (see on() tests).
+    this.ensureSensorHandlers();
   }
 
   disconnect(): void {
     if (this.socket) {
+      this.detachSensorHandlers();
       this.socket.disconnect();
       this.socket = null;
     }
@@ -74,14 +155,6 @@ export class WebsocketService {
     if (this.socket) {
       this.socket.emit(event, data);
     }
-  }
-
-  get sensorReadings$(): Observable<SensorReading> {
-    return this.on<SensorReading>('sensor:reading');
-  }
-
-  get sensorAlerts$(): Observable<SensorAlert> {
-    return this.on<SensorAlert>('sensor:alert');
   }
 
   subscribeToProject(projectId: string): void {
