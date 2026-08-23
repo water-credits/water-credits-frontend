@@ -22,6 +22,7 @@ describe('HeaderComponent', () => {
     },
     wallet: {
       address: null,
+      network: null,
       loading: false,
       error: null,
     },

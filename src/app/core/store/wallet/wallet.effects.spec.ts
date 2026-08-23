@@ -33,16 +33,26 @@ const mockToken = 'mock-jwt-token';
 interface WalletServiceMock {
   checkConnection: ReturnType<typeof vi.fn>;
   getStoredPublicKey: ReturnType<typeof vi.fn>;
-  addressChange$: Subject<string> | typeof EMPTY;
-  networkChange$: typeof EMPTY;
+  getStoredNetwork: ReturnType<typeof vi.fn>;
+  normalizeNetwork: (net: string) => 'testnet' | 'public' | null;
+  onAddressChange: ReturnType<typeof vi.fn>;
+  onNetworkChange: ReturnType<typeof vi.fn>;
 }
 
 function buildWalletServiceMock(overrides: Partial<WalletServiceMock> = {}): WalletServiceMock {
   return {
     checkConnection: vi.fn(),
     getStoredPublicKey: vi.fn(),
-    addressChange$: EMPTY,
-    networkChange$: EMPTY,
+    getStoredNetwork: vi.fn().mockReturnValue(null),
+    normalizeNetwork: (net: string) => {
+      if (!net) return null;
+      const lower = net.toLowerCase();
+      if (lower.includes('test') || lower === 'testnet') return 'testnet';
+      if (lower.includes('public') || lower === 'public') return 'public';
+      return null;
+    },
+    onAddressChange: vi.fn().mockReturnValue(EMPTY),
+    onNetworkChange: vi.fn().mockReturnValue(EMPTY),
     ...overrides,
   };
 }
@@ -85,11 +95,12 @@ describe('WalletEffects', () => {
   // ── rehydrateWalletOnLogin$ ──────────────────────────────────────────────────
 
   describe('rehydrateWalletOnLogin$', () => {
-    it('dispatches connectWalletSuccess when Freighter is connected and address is not yet set', async () => {
+    it('dispatches connectWalletSuccess with address and network when Freighter is connected and address is not yet set', async () => {
       setup(
         {
           checkConnection: vi.fn().mockResolvedValue(true),
           getStoredPublicKey: vi.fn().mockReturnValue(mockAddress),
+          getStoredNetwork: vi.fn().mockReturnValue('testnet'),
         },
         null, // WalletState.address is null — rehydration needed
       );
@@ -98,7 +109,9 @@ describe('WalletEffects', () => {
       actions$.next(AuthActions.loginSuccess({ user: mockUser, token: mockToken }));
       const action = await resultPromise;
 
-      expect(action).toEqual(WalletActions.connectWalletSuccess({ address: mockAddress }));
+      expect(action).toEqual(
+        WalletActions.connectWalletSuccess({ address: mockAddress, network: 'testnet' }),
+      );
       expect(walletServiceMock.checkConnection).toHaveBeenCalledTimes(1);
     });
 
@@ -107,6 +120,7 @@ describe('WalletEffects', () => {
         {
           checkConnection: vi.fn().mockResolvedValue(false),
           getStoredPublicKey: vi.fn().mockReturnValue(null),
+          getStoredNetwork: vi.fn().mockReturnValue(null),
         },
         null,
       );
@@ -175,22 +189,53 @@ describe('WalletEffects', () => {
   // ── syncAddressChange$ ───────────────────────────────────────────────────────
 
   describe('syncAddressChange$', () => {
-    it('dispatches connectWalletSuccess when addressChange$ emits', async () => {
+    it('dispatches connectWalletSuccess when onAddressChange emits', async () => {
       const addressSubject = new Subject<string>();
-      setup({ addressChange$: addressSubject });
+      setup({
+        onAddressChange: vi.fn().mockReturnValue(addressSubject),
+        getStoredNetwork: vi.fn().mockReturnValue('testnet'),
+      });
 
       const resultPromise = firstValueFrom(effects.syncAddressChange$);
       addressSubject.next(mockAddress);
       const action = await resultPromise;
 
-      expect(action).toEqual(WalletActions.connectWalletSuccess({ address: mockAddress }));
+      expect(action).toEqual(
+        WalletActions.connectWalletSuccess({ address: mockAddress, network: 'testnet' }),
+      );
     });
 
-    it('emits nothing when addressChange$ is EMPTY (WatchWalletChanges not available)', async () => {
-      setup({ addressChange$: EMPTY });
+    it('emits nothing when onAddressChange is EMPTY (WatchWalletChanges not available)', async () => {
+      setup({ onAddressChange: vi.fn().mockReturnValue(EMPTY) });
 
       const emissions: Action[] = [];
       const sub = effects.syncAddressChange$.subscribe((a) => emissions.push(a));
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      sub.unsubscribe();
+
+      expect(emissions).toHaveLength(0);
+    });
+  });
+
+  // ── syncNetworkChange$ ───────────────────────────────────────────────────────
+
+  describe('syncNetworkChange$', () => {
+    it('dispatches setNetwork when onNetworkChange emits', async () => {
+      const networkSubject = new Subject<string>();
+      setup({ onNetworkChange: vi.fn().mockReturnValue(networkSubject) });
+
+      const resultPromise = firstValueFrom(effects.syncNetworkChange$);
+      networkSubject.next('TESTNET');
+      const action = await resultPromise;
+
+      expect(action).toEqual(WalletActions.setNetwork({ network: 'testnet' }));
+    });
+
+    it('emits nothing when onNetworkChange is EMPTY', async () => {
+      setup({ onNetworkChange: vi.fn().mockReturnValue(EMPTY) });
+
+      const emissions: Action[] = [];
+      const sub = effects.syncNetworkChange$.subscribe((a) => emissions.push(a));
       await new Promise((resolve) => setTimeout(resolve, 20));
       sub.unsubscribe();
 

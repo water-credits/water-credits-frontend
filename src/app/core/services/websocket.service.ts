@@ -19,6 +19,7 @@ export class WebsocketService {
   private socket: Socket | null = null;
   private connectedSubject = new BehaviorSubject<boolean>(false);
   public connected$ = this.connectedSubject.asObservable();
+  private socketIoFactory: SocketIoFactory;
 
   /**
    * Stable, multicast streams for sensor data.  Created once (not per access)
