@@ -14,7 +14,7 @@ import {
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { PLATFORM_ID } from '@angular/core';
 import * as L from 'leaflet';
-import { environment } from '../../../environments/environment';
+import { environment } from '../../../../environments/environment';
 
 // Leaflet/webpack workaround: delete the default _getIconUrl method to fix marker icon paths
 // This is a known issue where Leaflet's default icon paths don't work with webpack bundling
