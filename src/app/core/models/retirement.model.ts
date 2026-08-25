@@ -66,3 +66,30 @@ export interface RecentRetirement {
   amount: string;
   retiredAt: string;
 }
+
+/** Data model for ESG report generation */
+export interface EsgReportData {
+  reportId: string;
+  userAddress: string;
+  startDate: string;
+  endDate: string;
+  generatedAt: string;
+  totalCreditsRetired: string;
+  totalRetirements: number;
+  projectBreakdown: ProjectBreakdown[];
+  retirements: Retirement[];
+}
+
+export interface ProjectBreakdown {
+  projectId: string;
+  projectName: string;
+  totalCredits: string;
+  retirementCount: number;
+  environmentalCoBenefits?: string[];
+}
+
+export interface EsgReportOptions {
+  userAddress: string;
+  startDate: Date;
+  endDate: Date;
+}
